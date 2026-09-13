@@ -1,14 +1,44 @@
 {
-  "name": "baileys-bot",
-  "version": "1.0.0",
-  "type": "module",
+  "name": "incognito-bot",
+  "version": "1.3.0",
+  "description": "WhatsApp Bot with Advanced Features - Termux Edition",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "setup": "npm install",
+    "clean": "rm -rf node_modules package-lock.json",
+    "reinstall": "rm -rf node_modules package-lock.json && npm install"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.1.3",
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^6.7.18",
-    "pino": "^9.5.0"
-  }
+    "axios": "^1.6.2",
+    "cheerio": "^1.1.2",
+    "dotenv": "^16.3.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "form-data": "^4.0.5",
+    "nodemon": "^3.1.14",
+    "pdfkit": "^0.14.0",
+    "pino": "^8.15.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.2",
+    "ytdl-core": "^4.11.5",
+    "yt-search": "^2.10.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "termux",
+    "multi-feature",
+    "incognito",
+    "chatbot"
+  ],
+  "author": "Incognito",
+  "license": "MIT",
+  "type": "commonjs"
 }
