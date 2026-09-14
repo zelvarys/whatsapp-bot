@@ -527,13 +527,13 @@ class CommandHelper {
       if (fs.existsSync(imagePath)) {
         const imageBuffer = fs.readFileSync(imagePath);
         
-        const helpText = `╔═══════════════ ⊰◰ ✧ ◰⊱ ═══════════════╗
+        const helpText = `╔═══════ ∘◦ ✧ ◦∘ ═══════╗
             ${config.botName} v${config.version}
-╚═══════════════ ⊰◰ ✧ ◰⊱ ═══════════════╝
+╚═══════ ∘◦ ✧ ◦∘ ═══════╝
 
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
-▸ *Dev:* Incognitoシ︎♛︎
+▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
 
 ╒═══════════════════╕
 
@@ -623,13 +623,13 @@ class CommandHelper {
   }
   
   async showAllCommands(sender, msg, config, sock) {
-    const commandsText = `╔═══════════════ ⊰◰ ✧ ◰⊱ ═══════════════╗
-             ${config.botName} v${config.version}
-╚═══════════════ ⊰◰ ✧ ◰⊱ ═══════════════╝
+    const commandsText = `╔═══════ ∘◦ ✧ ◦∘ ═══════╗
+            ${config.botName} v${config.version}
+╚═══════ ∘◦ ✧ ◦∘ ═══════╝
 
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
-▸ *Dev:* Incognitoシ︎♛︎
+▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
 
 ╒═══════════════════╕
 
