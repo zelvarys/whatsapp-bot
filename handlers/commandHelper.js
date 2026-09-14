@@ -488,7 +488,7 @@ class CommandHelper {
 └─────────────⊶
 
 ┌─⊶ *CAREER*
-│• Aspiring Backend Developer
+│• Backend Developer
 │• Machine Learning Enthusiast
 │• Bot Developer
 │• Automation Expert
@@ -504,8 +504,8 @@ class CommandHelper {
 
 ┌─⊶ *CONTACT*
 │ *WhatsApp:* +2349065168872
-│ *Email:* osasanolusola2007@gmail.com
-│ *Github:* @incognito-dev07
+│ *Email:* me.zelvarys@gmail.com
+│ *Github:* github.com/zelvarys
 └─────────────⊶
 
 ╘═══════════════════╛`;

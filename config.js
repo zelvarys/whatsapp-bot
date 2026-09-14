@@ -6,7 +6,7 @@ module.exports = {
   prefix: process.env.BOT_PREFIX,
   adminPassword: process.env.ADMIN_PASSWORD,
   
-  version: "1.7",
+  version: "1.3",
   botMode: "public",
   
   USER_DATA_PATH: './data/user_data.json',

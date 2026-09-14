@@ -190,7 +190,7 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
 
 ┌─⊶ *CONTACT*
 │ *Contact:* +234 906 516 8872
-│ *Email:* osasanolusola2007@gmail.com
+│ *Email:* me.zelvarys@gmail.com
 └─────────────⊶
 
 ╘═══════════════════╛

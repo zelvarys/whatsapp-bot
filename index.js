@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, downloadMediaMessage, Browsers } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const pino = require('pino');
 const fs = require('fs');
@@ -35,7 +35,6 @@ global.botMessageIds = new Set();
 global.helpMessageIds = new Map();
 global.gameMessageIds = new Set();
 global.tictactoeGames = new Map();
-
 global.chatbotState = false;
 global.botMode = "public";
 
@@ -64,10 +63,13 @@ class WhatsAppBot {
     this.botUserId = null;
     this.downloadMediaMessage = downloadMediaMessage;
     this.stats = global.botStats;
-    this.pairingRequested = false;
     this.dataLoaded = false;
     this.handlerReady = false;
+    this.pairingRequested = false;
+    this.pairingCodeShown = false;
+    this.phoneNumber = null;
     this.reconnectAttempts = 0;
+
     global.botInstance = this;
 
     this.cleanupManager = new CleanupManager();
@@ -76,7 +78,6 @@ class WhatsAppBot {
     this.start();
   }
 
-  // ---- One-time setup (directories, data, cleanup) ----
   async start() {
     try {
       console.log(`
@@ -112,29 +113,26 @@ class WhatsAppBot {
     try {
       const p = './data/chatbot_state.json';
       if (fs.existsSync(p)) {
-        const s = JSON.parse(fs.readFileSync(p, 'utf8'));
-        global.chatbotState = s.enabled || false;
+        global.chatbotState = JSON.parse(fs.readFileSync(p, 'utf8')).enabled || false;
       } else {
         global.chatbotState = false;
       }
       console.log(`ChatBot state: ${global.chatbotState ? 'ACTIVE ✅' : 'INACTIVE ❌'}`);
-    } catch (e) { global.chatbotState = false; }
+    } catch { global.chatbotState = false; }
   }
 
   async loadBotMode() {
     try {
       const p = './data/bot_mode.json';
       if (fs.existsSync(p)) {
-        const m = JSON.parse(fs.readFileSync(p, 'utf8'));
-        global.botMode = m.mode || "public";
+        global.botMode = JSON.parse(fs.readFileSync(p, 'utf8')).mode || "public";
       } else {
         global.botMode = "public";
       }
       console.log(`Bot mode: ${global.botMode.toUpperCase()} ✅️`);
-    } catch (e) { global.botMode = "public"; }
+    } catch { global.botMode = "public"; }
   }
 
-  // ---- Socket connect (called on start & on reconnect) ----
   async connect() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
     const { version } = await fetchLatestBaileysVersion();
@@ -150,57 +148,32 @@ class WhatsAppBot {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' })),
       },
-      browser: ["Ubuntu", "Chrome", "20.0.04"],
+      browser: Browsers.macOS("Chrome"),
       markOnlineOnConnect: false,
       generateHighQualityLinkPreview: false,
+      syncFullHistory: false,
+      // ROOT CAUSE FIX: without this callback, Baileys 7.x rejects ALL
+      // history sync types, breaking LID mapping and silently dropping
+      // every inbound message.
+      // syncType 2 = FULL history download (the massive one).
+      // Types 1 (INITIAL_BOOTSTRAP), 3 (RECENT), 4 (ON_DEMAND) must be
+      // allowed so WhatsApp can route messages to this device.
+      shouldSyncHistoryMessage: ({ syncType }) => syncType !== 2,
     });
 
     this.sock.downloadMediaMessage = this.downloadMediaMessage;
 
-    // Only build MessageHandler once
     if (!this.handlerReady) {
       this.messageHandler = new MessageHandler(this.sock, this);
       this.handlerReady = true;
     } else {
-      // Rebind the socket to the handler (socket changed on reconnect)
       this.messageHandler.sock = this.sock;
-      this.messageHandler.commandRouter.sock = this.sock;
+      if (this.messageHandler.commandRouter) this.messageHandler.commandRouter.sock = this.sock;
+      if (this.messageHandler.messageProcessor) this.messageHandler.messageProcessor.sock = this.sock;
     }
 
     this.setupEnhancedSendMessage();
     this.setupEventListeners(saveCreds);
-
-    // If not registered, prompt for pairing code
-    if (!isRegistered) {
-      // wait a tick for the socket to be ready
-      setTimeout(() => this.requestPairing(), 2000);
-    }
-  }
-
-  async requestPairing() {
-    if (this.pairingRequested) return;
-    if (this.sock?.authState?.creds?.registered) return;
-
-    this.pairingRequested = true;
-
-    try {
-      const phone = await askPhoneNumber();
-      if (!phone || phone.length < 8) {
-        console.error('❌ Invalid number. Restart the bot.');
-        process.exit(1);
-      }
-
-      const code = await this.sock.requestPairingCode(phone);
-      const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
-
-      console.log(`\n╔══════════════════════════════════╗`);
-      console.log(`   Your Pairing Code: ${formatted}`);
-      console.log(`╚══════════════════════════════════╝`);
-      console.log('WhatsApp → Linked Devices → Link with phone number\n');
-    } catch (err) {
-      console.error('❌ Pairing request failed:', err.message);
-      this.pairingRequested = false;
-    }
   }
 
   setupEnhancedSendMessage() {
@@ -233,8 +206,24 @@ class WhatsAppBot {
     this.sock.ev.on('messages.upsert', (m) => this.handleMessagesUpsert(m));
   }
 
+  // FIX: Do NOT call teardownSocket() inside 'close' events.
+  // The socket is already closed by the time 'close' fires. Calling
+  // sock.end() on an already-closed socket corrupts the next session
+  // and produces zombie sockets (terminal says connected, WhatsApp
+  // shows device offline, inbound silently dies).
+  // Just reconnect cleanly with a fresh socket.
   async handleConnectionUpdate(update) {
     const { connection, lastDisconnect } = update;
+
+    if (connection === 'connecting') {
+      const isRegistered = this.sock.authState.creds.registered;
+      console.log(`🔗 Socket connecting (registered: ${isRegistered})`);
+
+      if (!isRegistered && !this.pairingRequested) {
+        await this.requestPairing();
+      }
+      return;
+    }
 
     if (connection === 'open') {
       this.handleConnectionOpen();
@@ -246,25 +235,65 @@ class WhatsAppBot {
       const isLoggedOut = statusCode === DisconnectReason.loggedOut;
       const isRestartRequired = statusCode === DisconnectReason.restartRequired;
 
-      console.log(`🔌 Connection closed. Status: ${statusCode} (${isRestartRequired ? 'restart required' : isLoggedOut ? 'logged out' : 'other'})`);
+      console.log(`🔌 Closed. Status: ${statusCode} (${isRestartRequired ? 'restart required' : isLoggedOut ? 'logged out' : 'other'})`);
 
       if (isLoggedOut) {
         console.log('❌ Logged out. Delete ./auth_info and restart to re-pair.');
         process.exit(1);
+        return;
       }
 
-      // Everything else: reconnect
       this.isConnected = false;
       this.onlineSince = null;
       this.botUserId = null;
 
-      // If we were still in the "not yet paired" state, don't reset the flag
-      // so we don't spam pairing prompts.
-      this.reconnectAttempts++;
-      const delay = Math.min(3000 + this.reconnectAttempts * 1000, 15000);
+      const alreadyRegistered = this.sock.authState.creds.registered;
 
+      // During pairing, 515 (restart required) fires normally after the
+      // pairing code is issued. Reconnect quietly and wait for the user
+      // to enter the code on their phone. Do NOT tear down the socket.
+      if (!alreadyRegistered && this.pairingCodeShown) {
+        console.log('🔄 Reconnecting (waiting for you to enter the pairing code)...');
+        setTimeout(() => this.connect(), 3000);
+        return;
+      }
+
+      this.reconnectAttempts++;
+      const delay = isRestartRequired ? 3000 : Math.min(5000 + this.reconnectAttempts * 2000, 30000);
       console.log(`🔄 Reconnecting in ${delay / 1000}s...`);
       setTimeout(() => this.connect(), delay);
+    }
+  }
+
+  async requestPairing() {
+    if (this.pairingRequested) return;
+    this.pairingRequested = true;
+
+    try {
+      if (!this.phoneNumber) {
+        this.phoneNumber = await askPhoneNumber();
+        if (!this.phoneNumber || this.phoneNumber.length < 8) {
+          console.error('❌ Invalid phone number. Restart the bot.');
+          process.exit(1);
+        }
+      }
+
+      console.log(`⏳ Requesting pairing code for ${this.phoneNumber}...`);
+      const code = await this.sock.requestPairingCode(this.phoneNumber);
+      const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
+
+      console.log(`\n╔══════════════════════════════════╗`);
+      console.log(`   Your Pairing Code: ${formatted}`);
+      console.log(`╚══════════════════════════════════╝`);
+      console.log('1. Open WhatsApp on your phone');
+      console.log('2. Settings → Linked Devices → Link a Device');
+      console.log('3. Tap "Link with phone number instead"');
+      console.log('4. Enter the code above\n');
+
+      this.pairingCodeShown = true;
+    } catch (err) {
+      console.error('❌ Pairing request failed:', err.message);
+      this.pairingRequested = false;
     }
   }
 
@@ -272,7 +301,8 @@ class WhatsAppBot {
     this.isConnected = true;
     this.onlineSince = Date.now();
     this.botUserId = this.sock.user?.id;
-    this.pairingRequested = true; // ensure we never prompt again
+    this.pairingRequested = true;
+    this.pairingCodeShown = true;
     this.reconnectAttempts = 0;
 
     console.log(`\n✅ ${config.botName} is CONNECTED and ready!`);
@@ -281,16 +311,19 @@ class WhatsAppBot {
     console.log(`⏰ Online at: ${new Date(this.onlineSince).toLocaleTimeString()}`);
     console.log(`🚀 Mode: ${global.botMode.toUpperCase()}\n`);
 
-    this.sendOnlineNotification();
+    setTimeout(() => {
+      this.sendOnlineNotification().catch(e => console.error('Online notify failed:', e.message));
+    }, 30000);
   }
 
   async sendOnlineNotification() {
     try {
-      if (config.ownerNumber) {
-        await this.sock.sendMessage(config.ownerNumber + '@s.whatsapp.net', {
-          text: `🎭 ${config.botName} is now ONLINE!`
-        });
-      }
+      if (!this.isConnected) return;
+      if (!config.ownerNumber) return;
+      const ownerJid = config.ownerNumber.replace(/\D/g, '') + '@s.whatsapp.net';
+      await this.sock.sendMessage(ownerJid, {
+        text: `🎭 ${config.botName} is now ONLINE!`
+      });
     } catch (e) {
       console.error('Online notify failed:', e.message);
     }
@@ -334,9 +367,21 @@ class WhatsAppBot {
   async broadcastMessage(message, source = 'owner', specificGroups = []) {
     return this.systemMonitor.broadcastMessage(this.sock, message, source, specificGroups);
   }
+
+  static saveBotMode(mode) {
+    try {
+      fs.writeFileSync('./data/bot_mode.json', JSON.stringify({ mode }, null, 2));
+      global.botMode = mode;
+      console.log(`Bot mode saved: ${mode.toUpperCase()}`);
+      return true;
+    } catch (error) {
+      console.error('Error saving bot mode:', error);
+      return false;
+    }
+  }
 }
 
-//========== START ==========
+// ---------- START ----------
 const bot = new WhatsAppBot();
 
 process.on('SIGINT', () => bot.cleanupManager.handleShutdown('SIGINT'));
