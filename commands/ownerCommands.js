@@ -1,4 +1,5 @@
 const config = require('../config');
+const DataManager = require('../utils/dataManager');
 
 class OwnerCommands {
   constructor(sock) {
@@ -217,6 +218,38 @@ _Message from ${source}_`
       console.error('Groups command error:', error);
       await this.sock.sendMessage(sender, {
         text: `❌ Error fetching groups: ${error.message}`
+      }, { quoted: msg });
+    }
+  }
+  
+  async linkProtect(sender, userJid, msg, args) {
+    if (args.length === 0) {
+      const settings = DataManager.getGroupSettings(sender);
+      const status = settings.linkProtect ? '✅ ACTIVE' : '❌ INACTIVE';
+      
+      await this.sock.sendMessage(sender, {
+        text: `✧ *LINK PROTECTION*
+┌─⊶
+│ *Status:* ${status}
+│ *Usage:* ${config.prefix}linkprotect [on/off]
+└─────────────⊶
+▸ Owner only`
+      }, { quoted: msg });
+      return;
+    }
+    
+    const action = args[0].toLowerCase();
+    
+    if (action === 'on' || action === 'off') {
+      const enabled = action === 'on';
+      DataManager.updateGroupSettings(sender, { linkProtect: enabled });
+      
+      await this.sock.sendMessage(sender, {
+        text: `Link protection is now ${enabled ? 'Active ✅' : 'Inactive ❌'}`
+      }, { quoted: msg });
+    } else {
+      await this.sock.sendMessage(sender, {
+        text: '❌ Invalid option!\nUse !linkprotect on/off'
       }, { quoted: msg });
     }
   }
