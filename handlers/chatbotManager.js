@@ -198,17 +198,6 @@ Your short, friendly response:`;
     return fallbacks[Math.floor(Math.random() * fallbacks.length)];
   }
 
-  clearUserContext(userJid) {
-    let cleared = 0;
-    for (const [chatJid, conversation] of this.conversationHistory.entries()) {
-      if (!chatJid.endsWith('@g.us') && chatJid.includes(userJid.split('@')[0])) {
-        this.conversationHistory.delete(chatJid);
-        cleared++;
-      }
-    }
-    return cleared > 0;
-  }
-
   cleanupOldConversations() {
     const oneHourAgo = Date.now() - (60 * 60 * 1000);
     let cleaned = 0;
