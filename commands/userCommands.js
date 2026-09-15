@@ -61,39 +61,6 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
     }, { quoted: msg });
   }
   
-  async ranks(sender, userJid, msg) {
-    const ranksText = `✧ *RANKING SYSTEM* v${config.version}
-╒═══════════════════╕
-
-┌─⊶ *TIER SYSTEM*
-│ *Newbie:* Level 1-4
-│ *Veteran:* Level 5-9
-│ *Advanced:* Level 10-19
-│ *Expert:* Level 20-29
-│ *Master:* Level 30-49
-│ *Legend:* Level 50+
-└─────────────⊶
-
-┌─⊶ *LEVELING UP*
-│ *XP per game:* 10-50 points
-│ *Level requirement:* 100 XP
-│ Earn XP by Playing games
-└─────────────⊶
-
-┌─⊶ *BENEFITS*
-│ • Higher global ranking
-│ • Exclusive achievements
-│ • Bragging rights!
-└─────────────⊶
-
-╘═══════════════════╛
-▸ *Check your rank with* ${config.prefix}profile`;
-    
-    await this.sock.sendMessage(sender, {
-      text: ranksText
-    }, { quoted: msg });
-  }
-  
   async leaderboard(sender, msg, args) {
     let limit = args[0] ? parseInt(args[0]) : 10;
     if (limit > 100) limit = 100;
