@@ -229,7 +229,6 @@ class CommandRouter {
         break;
         
       case 'broadcast':
-      case 'execute':
       case 'eval':
       case 'groups':
         await this.handleOwnerCommand(command, sender, userJid, msg, args, fullText);
@@ -283,7 +282,6 @@ class CommandRouter {
         await this.ownerCommands.broadcast(sender, userJid, msg, args, fullText);
         break;
         
-      case 'execute':
       case 'eval':
         await this.ownerCommands.evalCode(sender, userJid, msg, args, fullText);
         break;
