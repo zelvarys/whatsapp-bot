@@ -103,39 +103,6 @@ class AdminCommands {
     }
   }
   
-  async unmute(sender, userJid, msg) {
-    const contextInfo = msg.message?.extendedTextMessage?.contextInfo;
-    const quotedParticipant = contextInfo?.participant;
-    
-    if (!quotedParticipant) {
-      await this.sock.sendMessage(sender, {
-        text: `❌ Reply to the user's message you want to unmute!`
-      }, { quoted: msg });
-      return;
-    }
-    
-    if (!await this.isAdmin(sender, userJid)) {
-      await this.sock.sendMessage(sender, {
-        text: '❌ Only admins can unmute users!'
-      }, { quoted: msg });
-      return;
-    }
-    
-    const muteKey = `${sender}_${quotedParticipant}`;
-    
-    if (global.manualMutes && global.manualMutes.has(muteKey)) {
-      global.manualMutes.delete(muteKey);
-      await this.sock.sendMessage(sender, {
-        text: `🔊 User has been unmuted!`,
-        mentions: [quotedParticipant]
-      });
-    } else {
-      await this.sock.sendMessage(sender, {
-        text: '❌ This user is not muted!'
-      }, { quoted: msg });
-    }
-  }
-  
   async linkProtect(sender, userJid, msg, args) {
     if (args.length === 0) {
       const settings = DataManager.getGroupSettings(sender);
