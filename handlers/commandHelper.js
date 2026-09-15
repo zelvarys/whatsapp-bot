@@ -263,25 +263,6 @@ class CommandHelper {
     }
   }
   
-  async handleClearChat(sender, userJid, msg, chatbotManager, sock) {
-    try {
-      if (chatbotManager.clearUserContext(userJid)) {
-        await sock.sendMessage(sender, {
-          text: '✅ Your chatbot conversation history has been cleared!'
-        }, { quoted: msg });
-      } else {
-        await sock.sendMessage(sender, {
-          text: '❌ No chatbot conversation history to clear.'
-        }, { quoted: msg });
-      }
-    } catch (error) {
-      console.error('Clear chat error:', error);
-      await sock.sendMessage(sender, {
-        text: '❌ Error clearing chat history.'
-      }, { quoted: msg });
-    }
-  }
-  
   async handleFeedback(sender, userJid, msg, fullText, config, sock) {
     try {
       if (!fullText) {
@@ -520,184 +501,104 @@ class CommandHelper {
     await sock.sendMessage(sender, { text: ownerInfo }, { quoted: msg });
   }
   
+  buildHelpText(config) {
+    return `¤
+
+▸ *Mode:* ${global.botMode}
+▸ *Prefix:* ${config.prefix}
+▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
+
+╔═══════ ∘◦ ✧ ◦∘ ═══════╗
+
+┌─⊶ *AI & CREATIVE*
+│• ask [question]
+│• image [prompt]
+│• chatbot on/off
+│• translate
+│• tts [text]
+│• summary [num]
+└────────────⊶
+
+┌─⊶ *GAMES & FUN*
+│• games
+│• game [type]
+│• ttt start @friend
+│• rps [choice]
+└────────────⊶
+
+┌─⊶ *UTILITY TOOLS*
+│• compress
+│• qrcode [text]
+│• reveal
+│• sticker
+│• pdf [image/text]
+│• delete
+└────────────⊶
+
+┌─⊶ *USER SYSTEM*
+│• profile
+│• leaderboard
+│• register [name]
+│• donate
+│• crypto [coin]
+│• feedback
+└────────────⊶
+
+┌─⊶ *ADMIN COMMANDS*
+│• tagall [msg]
+│• kick
+│• linkprotect
+└────────────⊶
+
+┌─⊶ *MEDIA DOWNLOAD*
+│• download
+│• song [name/url]
+│• youtube
+│• tiktok
+│• instagram
+└────────────⊶
+
+┌─⊶ *OWNER ONLY*
+│• execute
+│• broadcast
+│• eval [script]
+│• groups
+│• mode [args]
+└────────────⊶
+
+┌─⊶ *OTHERS*
+│• ping - Bot latency
+│• stats - Bot statistics
+│• !! - Repeat command
+│• dev - Owner info
+│• help - Show help menu
+└────────────⊶
+
+╘═══════════════════╛`;
+  }
+  
   async sendHelp(sender, msg, config, sock, fs) {
+    const helpText = this.buildHelpText(config);
+    const imagePath = './data/bot_image.jpg';
+    
     try {
-      const imagePath = './data/bot_image.jpg';
-      
       if (fs.existsSync(imagePath)) {
         const imageBuffer = fs.readFileSync(imagePath);
         
-        const helpText = `¤
-▸ *Mode:* ${global.botMode}
-▸ *Prefix:* ${config.prefix}
-▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
-
-╔═══════ ∘◦ ✧ ◦∘ ═══════╗
-
-┌─⊶ *AI & CREATIVE*
-│• ask [question]
-│• image [prompt]
-│• chatbot on/off
-│• translate
-│• tts [text]
-│• summary [num]
-└────────────⊶
-
-┌─⊶ *GAMES & FUN*
-│• games
-│• game [type]
-│• ttt start @friend
-│• rps [choice]
-└────────────⊶
-
-┌─⊶ *UTILITY TOOLS*
-│• compress
-│• qrcode [text]
-│• reveal
-│• sticker
-│• pdf [image/text]
-│• clearchat
-│• delete
-└────────────⊶
-
-┌─⊶ *USER SYSTEM*
-│• profile
-│• ranks
-│• leaderboard
-│• register [name]
-│• donate
-│• crypto [coin]
-│• feedback
-└────────────⊶
-
-┌─⊶ *ADMIN COMMANDS*
-│• tagall [msg]
-│• kick
-│• unmute
-│• linkprotect
-└────────────⊶
-
-┌─⊶ *MEDIA DOWNLOAD*
-│• download
-│• song [name/url]
-│• youtube
-│• tiktok
-│• instagram
-└────────────⊶
-
-┌─⊶ *OWNER ONLY*
-│• execute
-│• broadcast
-│• eval [script]
-│• groups
-│• mode [args]
-└────────────⊶
-
-┌─⊶ *OTHERS*
-│• ping - Bot latency
-│• stats - Bot statistics
-│• !! - Repeat command
-│• dev - Owner info
-│• help - Show help menu
-└────────────⊶
-
-╘═══════════════════╛`;
-        
         await sock.sendMessage(sender, {
           image: imageBuffer,
-          caption: helpText
+          mimetype: 'image/jpeg',
+          caption: helpText,
+          jpegThumbnail: null,
+          viewOnce: false
         }, { quoted: msg });
-        
       } else {
-        await this.showAllCommands(sender, msg, config, sock);
+        await sock.sendMessage(sender, { text: helpText }, { quoted: msg });
       }
-      
     } catch (error) {
-      console.error('Error sending help image:', error);
-      await this.showAllCommands(sender, msg, config, sock);
+      console.error('Error sending help:', error);
+      await sock.sendMessage(sender, { text: helpText }, { quoted: msg });
     }
-  }
-  
-  async showAllCommands(sender, msg, config, sock) {
-    const commandsText = `¤
-▸ *Mode:* ${global.botMode}
-▸ *Prefix:* ${config.prefix}
-▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
-
-╔═══════ ∘◦ ✧ ◦∘ ═══════╗
-
-┌─⊶ *AI & CREATIVE*
-│• ask [question]
-│• image [prompt]
-│• chatbot on/off
-│• translate
-│• tts [text]
-│• summary [num]
-└────────────⊶
-
-┌─⊶ *GAMES & FUN*
-│• games
-│• game [type]
-│• ttt start @friend
-│• rps [choice]
-└────────────⊶
-
-┌─⊶ *UTILITY TOOLS*
-│• compress
-│• qrcode [text]
-│• reveal
-│• sticker
-│• pdf [image/text]
-│• clearchat
-│• delete
-└────────────⊶
-
-┌─⊶ *USER SYSTEM*
-│• profile
-│• ranks
-│• leaderboard
-│• register [name]
-│• donate
-│• crypto [coin]
-│• feedback
-└────────────⊶
-
-┌─⊶ *ADMIN COMMANDS*
-│• tagall [msg]
-│• kick
-│• unmute
-│• linkprotect
-└────────────⊶
-
-┌─⊶ *MEDIA DOWNLOAD*
-│• download
-│• song [name/url]
-│• youtube
-│• tiktok
-│• instagram
-└────────────⊶
-
-┌─⊶ *OWNER ONLY*
-│• execute
-│• broadcast
-│• eval [script]
-│• groups
-│• mode [args]
-└────────────⊶
-
-┌─⊶ *OTHERS*
-│• ping - Bot latency
-│• stats - Bot statistics
-│• !! - Repeat command
-│• dev - Owner info
-│• help - Show help menu
-└────────────⊶
-
-╘═══════════════════╛`;
-
-    await sock.sendMessage(sender, {
-      text: commandsText
-    }, { quoted: msg });
   }
   
   async handlePingCommand(sender, msg, config, sock) {
@@ -751,8 +652,8 @@ class CommandHelper {
       'ask', 'image', 'chatbot', 'translate', 'tts', 'summary',
       'games', 'game', 'tictactoe', 'rps',
       'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
-      'profile', 'ranks', 'leaderboard', 'register', 'donate', 'owner', 'crypto', 'mode',
-      'tagall', 'kick', 'unmute', 'linkprotect',
+      'profile', 'leaderboard', 'register', 'donate', 'owner', 'crypto', 'mode',
+      'tagall', 'kick', 'linkprotect',
       'download', 'song', 'tiktok', 'groups', 'instagram', 'youtube',
       'ping', 'stats', 'help', 'commands', 'menu'
     ];

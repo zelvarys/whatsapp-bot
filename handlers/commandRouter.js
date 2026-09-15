@@ -48,7 +48,7 @@ class CommandRouter {
     
     const cacheKey = `${command}_${args.join('_')}`;
     
-    const cacheableCommands = ['profile', 'rank', 'games', 'help', 'commands', 'owner'];
+    const cacheableCommands = ['profile', 'games', 'help', 'commands', 'owner'];
     if (cacheableCommands.includes(command)) {
       if (global.commandCache) {
         const cachedResponse = global.commandCache.get(cacheKey);
@@ -123,10 +123,6 @@ class CommandRouter {
         await this.commandHelper.handleSongCommand(sender, userJid, msg, fullText, this.sock, config);
         break;
         
-      case 'clearchat':
-        await this.commandHelper.handleClearChat(sender, userJid, msg, this.chatbotManager, this.sock);
-        break;
-        
       case 'tts':
         await this.utilityCommands.textToSpeech(sender, userJid, msg, fullText);
         break;
@@ -155,10 +151,6 @@ class CommandRouter {
         
       case 'profile':
         await this.userCommands.profile(sender, userJid, msg);
-        break;
-        
-      case 'ranks':
-        await this.userCommands.ranks(sender, userJid, msg);
         break;
         
       case 'leaderboard':
@@ -236,10 +228,6 @@ class CommandRouter {
       case 'kick':
       case 'remove':
         await this.adminCommands.kick(sender, userJid, msg);
-        break;
-        
-      case 'unmute':
-        await this.adminCommands.unmute(sender, userJid, msg);
         break;
         
       case 'linkprotect':
