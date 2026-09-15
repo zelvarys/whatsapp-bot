@@ -20,7 +20,6 @@ class CommandRouter {
       this.aiCommands = new (require('../commands/generative/aiCommands'))(this.sock);
       this.gameCommands = new (require('../commands/games/gameCommands'))(this.sock);
       this.userCommands = new (require('../commands/userCommands'))(this.sock);
-      this.adminCommands = new (require('../commands/adminCommands'))(this.sock);
       this.ownerCommands = new (require('../commands/ownerCommands'))(this.sock);
       this.utilityCommands = new (require('../commands/utility/utilityCommands'))(this.sock);
       this.mediaCommands = new (require('../commands/mediaCommands'))(this.sock);
@@ -219,19 +218,8 @@ class CommandRouter {
         await this.mediaCommands.downloadTikTok(sender, userJid, msg, fullText);
         break;
         
-      case 'tagall':
-      case 'everyone':
-      case 'tag':
-        await this.adminCommands.tagAll(sender, userJid, isGroup, fullText, msg);
-        break;
-        
-      case 'kick':
-      case 'remove':
-        await this.adminCommands.kick(sender, userJid, msg);
-        break;
-        
       case 'linkprotect':
-        await this.adminCommands.linkProtect(sender, userJid, msg, args);
+        await this.ownerCommands.linkProtect(sender, userJid, msg, args);
         break;
         
       case 'owner':

@@ -354,11 +354,10 @@ class CommandHelper {
       }
       
       const isOwnerUser = CommandHelper.isOwner(userJid, config);
-      const isAdmin = sender.endsWith('@g.us') ? await this.isAdmin(sender, userJid) : false;
       
-      if (!isOwnerUser && !isAdmin) {
+      if (!isOwnerUser) {
         await sock.sendMessage(sender, {
-          text: '❌ Only owner or admins can delete bot messages!'
+          text: '❌ Only owner can delete bot messages!'
         }, { quoted: msg });
         return;
       }
@@ -379,16 +378,6 @@ class CommandHelper {
       await sock.sendMessage(sender, {
         text: '❌ Failed to delete message.'
       }, { quoted: msg });
-    }
-  }
-  
-  async isAdmin(sender, userJid) {
-    try {
-      const metadata = await this.sock.groupMetadata(sender);
-      const participant = metadata.participants.find(p => p.id === userJid);
-      return participant && (participant.admin === 'admin' || participant.admin === 'superadmin');
-    } catch (error) {
-      return false;
     }
   }
   
@@ -502,8 +491,7 @@ class CommandHelper {
   }
   
   buildHelpText(config) {
-    return `¤
-
+    return `⨳
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
 ▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
@@ -544,12 +532,6 @@ class CommandHelper {
 │• feedback
 └────────────⊶
 
-┌─⊶ *ADMIN COMMANDS*
-│• tagall [msg]
-│• kick
-│• linkprotect
-└────────────⊶
-
 ┌─⊶ *MEDIA DOWNLOAD*
 │• download
 │• song [name/url]
@@ -559,11 +541,11 @@ class CommandHelper {
 └────────────⊶
 
 ┌─⊶ *OWNER ONLY*
-│• execute
 │• broadcast
 │• eval [script]
 │• groups
 │• mode [args]
+│• linkprotect
 └────────────⊶
 
 ┌─⊶ *OTHERS*
@@ -653,7 +635,7 @@ class CommandHelper {
       'games', 'game', 'tictactoe', 'rps',
       'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
       'profile', 'leaderboard', 'register', 'donate', 'owner', 'crypto', 'mode',
-      'tagall', 'kick', 'linkprotect',
+      'linkprotect',
       'download', 'song', 'tiktok', 'groups', 'instagram', 'youtube',
       'ping', 'stats', 'help', 'commands', 'menu'
     ];
