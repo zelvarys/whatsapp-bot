@@ -527,15 +527,12 @@ class CommandHelper {
       if (fs.existsSync(imagePath)) {
         const imageBuffer = fs.readFileSync(imagePath);
         
-        const helpText = `╔═══════ ∘◦ ✧ ◦∘ ═══════╗
-            ${config.botName} v${config.version}
-╚═══════ ∘◦ ✧ ◦∘ ═══════╝
-
+        const helpText = `¤
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
 ▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
 
-╒═══════════════════╕
+╔═══════ ∘◦ ✧ ◦∘ ═══════╗
 
 ┌─⊶ *AI & CREATIVE*
 │• ask [question]
@@ -544,14 +541,14 @@ class CommandHelper {
 │• translate
 │• tts [text]
 │• summary [num]
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *GAMES & FUN*
 │• games
 │• game [type]
 │• ttt start @friend
 │• rps [choice]
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *UTILITY TOOLS*
 │• compress
@@ -561,7 +558,7 @@ class CommandHelper {
 │• pdf [image/text]
 │• clearchat
 │• delete
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *USER SYSTEM*
 │• profile
@@ -571,14 +568,14 @@ class CommandHelper {
 │• donate
 │• crypto [coin]
 │• feedback
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *ADMIN COMMANDS*
 │• tagall [msg]
 │• kick
 │• unmute
 │• linkprotect
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *MEDIA DOWNLOAD*
 │• download
@@ -586,7 +583,7 @@ class CommandHelper {
 │• youtube
 │• tiktok
 │• instagram
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *OWNER ONLY*
 │• execute
@@ -594,7 +591,7 @@ class CommandHelper {
 │• eval [script]
 │• groups
 │• mode [args]
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *OTHERS*
 │• ping - Bot latency
@@ -602,10 +599,9 @@ class CommandHelper {
 │• !! - Repeat command
 │• dev - Owner info
 │• help - Show help menu
-└─────────────⊶
+└────────────⊶
 
-╘═══════════════════╛
-▸ *Total Commands:* 40+`;
+╘═══════════════════╛`;
         
         await sock.sendMessage(sender, {
           image: imageBuffer,
@@ -623,15 +619,12 @@ class CommandHelper {
   }
   
   async showAllCommands(sender, msg, config, sock) {
-    const commandsText = `╔═══════ ∘◦ ✧ ◦∘ ═══════╗
-            ${config.botName} v${config.version}
-╚═══════ ∘◦ ✧ ◦∘ ═══════╝
-
+    const commandsText = `¤
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
 ▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
 
-╒═══════════════════╕
+╔═══════ ∘◦ ✧ ◦∘ ═══════╗
 
 ┌─⊶ *AI & CREATIVE*
 │• ask [question]
@@ -640,14 +633,14 @@ class CommandHelper {
 │• translate
 │• tts [text]
 │• summary [num]
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *GAMES & FUN*
 │• games
 │• game [type]
 │• ttt start @friend
 │• rps [choice]
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *UTILITY TOOLS*
 │• compress
@@ -657,7 +650,7 @@ class CommandHelper {
 │• pdf [image/text]
 │• clearchat
 │• delete
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *USER SYSTEM*
 │• profile
@@ -667,14 +660,14 @@ class CommandHelper {
 │• donate
 │• crypto [coin]
 │• feedback
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *ADMIN COMMANDS*
 │• tagall [msg]
 │• kick
 │• unmute
 │• linkprotect
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *MEDIA DOWNLOAD*
 │• download
@@ -682,7 +675,7 @@ class CommandHelper {
 │• youtube
 │• tiktok
 │• instagram
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *OWNER ONLY*
 │• execute
@@ -690,7 +683,7 @@ class CommandHelper {
 │• eval [script]
 │• groups
 │• mode [args]
-└─────────────⊶
+└────────────⊶
 
 ┌─⊶ *OTHERS*
 │• ping - Bot latency
@@ -698,10 +691,9 @@ class CommandHelper {
 │• !! - Repeat command
 │• dev - Owner info
 │• help - Show help menu
-└─────────────⊶
+└────────────⊶
 
-╘═══════════════════╛
-▸ *Total Commands:* 40+`;
+╘═══════════════════╛`;
 
     await sock.sendMessage(sender, {
       text: commandsText
