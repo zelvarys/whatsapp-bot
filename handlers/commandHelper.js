@@ -500,7 +500,7 @@ class CommandHelper {
 
 ┌─⊶ *AI & CREATIVE*
 │• ask [question]
-│• image [prompt]
+│• imagine [prompt]
 │• chatbot on/off
 │• translate
 │• tts [text]

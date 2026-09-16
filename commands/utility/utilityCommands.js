@@ -75,7 +75,7 @@ class UtilityCommands {
   
   async summarizeMessages(sender, userJid, msg, args) {
     try {
-      let limit = args[0] ? parseInt(args[0]) : 20;
+      let limit = args[0] ? parseInt(args[0]) : 30;
       
       if (!global.chatHistory || !global.chatHistory[sender]) {
         await this.sock.sendMessage(sender, {
@@ -97,18 +97,15 @@ class UtilityCommands {
       
       const AIService = require('../../utils/generative/aiService');
       const summary = await AIService.getGeminiAIResponse(
-        `Summarize this chat conversation in 3-5 key points:\n\n${conversation}`,
+        `Summarize this chat conversation in 4-10 sentences. Go straight to the points, no need for introduction or greeting':\n\n${conversation}`,
         userJid
       );
       
       await this.sock.sendMessage(sender, {
-        text: `✧ *CHAT SUMMARY* (${messages.length} messages)
-╒═════════════════════╕
-
+        text: `Here is a summary of the last ${messages.length} messages:
+        
 ${summary}
-
-╘═════════════════════╛
-▸ _Powered by ${config.botName}_`
+`
       });
       
     } catch (error) {

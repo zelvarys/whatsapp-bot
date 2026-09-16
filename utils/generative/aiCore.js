@@ -52,7 +52,7 @@ class AICore {
           });
           
           const prompt = `You are ${config.botName}, a friendly and helpful WhatsApp assistant created by Incognito.
-Answer the user's question in a clear and concise manner.
+Answer the user's question in a clear and concise manner, no need for greetings.
 Keep your response under 150 words.
 If you cannot answer the question, say so.
 User's question: ${question}
@@ -204,7 +204,7 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
     if (lowerQ.includes('your name')) {
       return `I'm ${config.botName}, your friendly WhatsApp bot!`;
     } else if (lowerQ.includes('who made you') || lowerQ.includes('created you')) {
-      return "I was created by my awesome developer, Incognito! 🚀";
+      return "Hehe, I was created by my awesome developer, Incognito! 🗿";
     } else if (lowerQ.includes('weather')) {
       return "I can't check real-time weather, but you can use weather apps for accurate forecasts!";
     } else if (lowerQ.includes('love you')) {
@@ -221,10 +221,9 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
   
   static getChatbotFallback() {
     const fallbacks = [
-      "That's cool! Tell me more about that.",
-      "I see what you mean. Anyway, what's up?",
-      "Interesting! Anything else on your mind?",
-      "Cool! What else you wanna chat about?"
+      "Uh huh.. I've hit my limit, laterr",
+      "Limit reached, let's chat some other time",
+      "Interesting! I'm going off soon"
     ];
     
     return fallbacks[Math.floor(Math.random() * fallbacks.length)];

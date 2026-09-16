@@ -27,19 +27,8 @@ class AICommands {
     });
     
     try {
-      const aiResponse = await AIService.getGeminiAIResponse(question, userJid);
-      
-      const responseText = `✧ *AI Response*
-╒═══════════════════╕
-
-▸ *Question:* ${question}
-
-▸ *Answer:* ${aiResponse}
-
-╘═══════════════════╛
-▸  _Powered by ${config.botName}_`;
-      
-      await this.sock.sendMessage(sender, { text: responseText });
+      const aiResponse = await AIService.getGeminiAIResponse(question, userJid);              
+      await this.sock.sendMessage(sender, { text: aiResponse });
       
       try {
         if (thinkingMsg && thinkingMsg.key) {

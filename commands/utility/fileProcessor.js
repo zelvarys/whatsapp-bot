@@ -135,7 +135,7 @@ class FileProcessor {
 │ Reply to any image/video with
 │ !compress
 └─────────────⊶
-▸ *Reduces size by 50-80%*`
+▸  Reduces size by 50-80%`
         }, { quoted: msg });
         return;
       }
