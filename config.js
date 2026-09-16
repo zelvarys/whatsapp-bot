@@ -118,7 +118,8 @@ module.exports = {
     'dev': 'owner',
     'menu': 'commands',
     's': 'sticker',
-    'del': 'delete'
+    'del': 'delete',
+    'write': 'story'
   },
   
   AUTO_RESPONSES: {
