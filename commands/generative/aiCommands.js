@@ -24,11 +24,12 @@ class AICommands {
     
     const thinkingMsg = await this.sock.sendMessage(sender, {
       text: `🤔 *Thinking...*`
-    });
+    }, { quoted: msg });
     
     try {
-      const aiResponse = await AIService.getGeminiAIResponse(question, userJid);              
-      await this.sock.sendMessage(sender, { text: aiResponse });
+      const aiResponse = await AIService.getGeminiAIResponse(question, userJid);
+      
+      await this.sock.sendMessage(sender, { text: aiResponse }, { quoted: msg });
       
       try {
         if (thinkingMsg && thinkingMsg.key) {
@@ -40,60 +41,55 @@ class AICommands {
       console.error('❌ Error in AI command:', error);
       await this.sock.sendMessage(sender, {
         text: "❌ I encountered an error while processing your request. Try again later!"
-      });
+      }, { quoted: msg });
     }
   }
   
-  async image(sender, userJid, msg, fullText) {
+  async write(sender, userJid, msg, fullText) {
     if (!fullText) {
       await this.sock.sendMessage(sender, {
-        text: `❌ Provide a prompt!\n*Usage:* ${config.prefix}image [prompt]`
+        text: `❌ Provide a prompt!\n*Usage:* ${config.prefix}story [prompt]`
       }, { quoted: msg });
       return;
     }
     
     const prompt = fullText;
-    if (prompt.length > 200) {
+    if (prompt.length > 300) {
       await this.sock.sendMessage(sender, {
-        text: "❌ Prompt too long! Keep it under 200 characters."
+        text: "❌ Prompt too long! Keep it under 300 characters."
       }, { quoted: msg });
       return;
     }
     
-    const generatingMsg = await this.sock.sendMessage(sender, {
-      text: `🎨 *Generating image...*`
-    });
+    const processingMsg = await this.sock.sendMessage(sender, {
+      text: `✍️ *Writing your story...*`
+    }, { quoted: msg });
     
     try {
-      const imageResult = await AIService.generateImageGemini(prompt, userJid);
+      const result = await AIService.generateStory(prompt, userJid);
       
-      if (!imageResult.success) {
+      if (!result.success) {
         await this.sock.sendMessage(sender, {
-          text: `❌ ${imageResult.error}`
-        });
+          text: `❌ ${result.error}`
+        }, { quoted: msg });
         return;
       }
       
       await this.sock.sendMessage(sender, {
-        image: imageResult.imageBuffer,
-        caption: `┌─⊶✧ *AI Generated Image*
-│ *Prompt:* ${prompt}
-└─────────────⊶
- ▸ _Powered by ${config.botName}_`
-      });
+        text: result.story
+      }, { quoted: msg });
       
       try {
-        if (generatingMsg && generatingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: generatingMsg.key });
+        if (processingMsg && processingMsg.key) {
+          await this.sock.sendMessage(sender, { delete: processingMsg.key });
         }
       } catch (e) {}
       
     } catch (error) {
-      console.error('❌ Error in image command:', error);
-      
+      console.error('❌ Error in story command:', error);
       await this.sock.sendMessage(sender, {
-        text: "❌ Image generation failed."
-      });
+        text: "❌ Story generation failed. Try again later."
+      }, { quoted: msg });
     }
   }
 }

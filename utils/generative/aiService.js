@@ -1,31 +1,13 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const axios = require("axios");
 const config = require('../../config');
 const AICore = require('./aiCore');
-const ImageGenerator = require('./imageGenerator');
-const TextGenerator = require('./textGenerator');
-const TranslationService = require('./translation');
 
-let currentTextKeyIndex = 0;
-let currentTextModelIndex = 0;
-let currentChatbotKeyIndex = 0;
-let currentChatbotModelIndex = 0;
+let currentStoryKeyIndex = 0;
+let currentStoryModelIndex = 0;
 
-const TEXT_MODELS = [
+const STORY_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-pro"
-];
-
-const IMAGE_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-pro"
-];
-
-const CHATBOT_MODELS = [
-  "gemini-2.5-flash-lite",
-  "gemini-2.5-flash",
   "gemini-pro"
 ];
 
@@ -48,30 +30,11 @@ class AIService {
     return { allowed: true, remaining: config.DAILY_AI_LIMIT - (count + 1) };
   }
   
-  static canUseImage(userId) {
-    const today = this.getCurrentDate();
-    const userKey = `${userId}_image_${today}`;
-    
-    if (!global.imageUsage.has(userKey)) {
-      global.imageUsage.set(userKey, 1);
-      return { allowed: true, remaining: config.DAILY_IMAGE_LIMIT - 1 };
-    }
-    
-    const count = global.imageUsage.get(userKey);
-    if (count >= config.DAILY_IMAGE_LIMIT) {
-      return { allowed: false, remaining: 0 };
-    }
-    
-    global.imageUsage.set(userKey, count + 1);
-    return { allowed: true, remaining: config.DAILY_IMAGE_LIMIT - (count + 1) };
-  }
-  
   static async getGeminiAIResponse(question, userId) {
     const isTranslation = userId.includes('_translate');
     const isChatbot = userId.includes('_chatbot');
-    const isDirectTranslation = userId.includes('_direct_translate');
     
-    if (!isTranslation && !isDirectTranslation && !isChatbot) {
+    if (!isTranslation && !isChatbot) {
       const usageCheck = this.canUseAI(userId);
       if (!usageCheck.allowed) {
         return `❌ You've reached your daily AI limit. Try again tomorrow!`;
@@ -93,9 +56,7 @@ class AIService {
     
     let response = null;
     
-    if (isTranslation || isDirectTranslation) {
-      response = await TranslationService.translateText(question, userId);
-    } else if (isChatbot) {
+    if (isChatbot) {
       response = await AICore.generateChatbotResponse(question, userId, config);
     } else {
       response = await AICore.generateAIResponse(question, userId, config);
@@ -104,16 +65,88 @@ class AIService {
     return response;
   }
   
-  static async generateImageGemini(prompt, userId) {
-    return await ImageGenerator.generateImage(prompt, userId, config);
-  }
-  
   static async generateStory(prompt, userId) {
-    return await TextGenerator.generateStory(prompt, userId, config);
-  }
+    const usageCheck = this.canUseAI(userId);
+    if (!usageCheck.allowed) {
+      return { success: false, error: `You've reached your daily AI limit. Try again tomorrow!` };
+    }
+    
+    try {
+      let result = null;
+      
+      for (let keyLoop = 0; keyLoop < config.GEMINI_API_KEYS.length; keyLoop++) {
+        const keyIndex = (currentStoryKeyIndex + keyLoop) % config.GEMINI_API_KEYS.length;
+        const apiKey = config.GEMINI_API_KEYS[keyIndex];
+        
+        if (!apiKey || apiKey === "your_gemini_api_key") {
+          console.log(`🔑 Skipping key ${keyIndex + 1} (empty or placeholder)`);
+          continue;
+        }
+        
+        for (let modelLoop = 0; modelLoop < STORY_MODELS.length; modelLoop++) {
+          const modelIndex = (currentStoryModelIndex + modelLoop) % STORY_MODELS.length;
+          const modelName = STORY_MODELS[modelIndex];
+          
+          try {
+            console.log(`📖 Story: Trying key ${keyIndex + 1}, model ${modelName}`);
+            
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ 
+              model: modelName,
+              generationConfig: {
+                temperature: 0.9,
+                maxOutputTokens: 1200,
+                topP: 0.95,
+                topK: 40
+              }
+            });
+            
+            const storyPrompt = `Write a short story based on this prompt: "${prompt}"
 
-  static async generateCode(description, userId) {
-    return await TextGenerator.generateCode(description, userId, config);
+Requirements:
+- Under 400 words
+- Engaging and creative
+- Start directly with the story, no title, no intro like "Here's a story"
+- No markdown formatting
+- End with a satisfying conclusion`;
+            
+            const response = await model.generateContent(storyPrompt);
+            const story = response.response.text().trim();
+            
+            if (story && story.length > 20) {
+              result = { success: true, story: story };
+              currentStoryKeyIndex = keyIndex;
+              currentStoryModelIndex = modelIndex;
+              console.log(`✅ Story success with key ${keyIndex + 1}, model ${modelName}`);
+              break;
+            }
+          } catch (modelError) {
+            const errorMsg = modelError.message || '';
+            
+            if (errorMsg.includes('model not found') || errorMsg.includes('404')) {
+              continue;
+            } else if (errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+              continue;
+            } else if (errorMsg.includes('permission denied') || errorMsg.includes('403')) {
+              break;
+            } else {
+              continue;
+            }
+          }
+        }
+        
+        if (result) break;
+      }
+      
+      if (!result) {
+        return { success: false, error: "Failed to generate story. Try again later." };
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Generate Story Error:', error);
+      return { success: false, error: `Failed: ${error.message}` };
+    }
   }
   
   static getCurrentDate() {
