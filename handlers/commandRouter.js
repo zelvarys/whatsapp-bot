@@ -101,11 +101,9 @@ class CommandRouter {
         await this.aiCommands.ask(sender, userJid, msg, fullText);
         break;
         
-      case 'image':
-      case 'img':
-      case 'imagine':
-      case 'generate':
-        await this.aiCommands.image(sender, userJid, msg, fullText);
+      case 'story':
+      case 'write':
+        await this.aiCommands.write(sender, userJid, msg, fullText);
         break;
         
       case 'chatbot':

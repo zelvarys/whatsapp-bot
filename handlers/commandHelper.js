@@ -166,23 +166,13 @@ class CommandHelper {
       
       const processingMsg = await sock.sendMessage(sender, {
         text: '🌍 *Translating...*'
-      });
+      }, { quoted: msg });
       
       const result = await chatbotManager.translateText(textToTranslate, userJid);
       
       if (result.success) {
-        const translationText = `✧ TRANSLATION
-╒═══════════════════╕
-
-▸ *Original:* ${textToTranslate}
-
-▸ *English:* ${result.translation}
-
-╘═══════════════════╛
-▸ _Translated by ${config.botName}_`;
-        
         await sock.sendMessage(sender, {
-          text: translationText
+          text: `*Original:* ${textToTranslate}\n*English:* ${result.translation}`
         }, { quoted: msg });
       } else {
         await sock.sendMessage(sender, {
@@ -221,7 +211,7 @@ class CommandHelper {
     try {
       const processingMsg = await sock.sendMessage(sender, {
         text: `🎵 *Searching ${query.substring(0, 30)}...*`
-      });
+      }, { quoted: msg });
       
       const MusicDownloader = require('../utils/musicDownloader');
       let result;
@@ -238,7 +228,7 @@ class CommandHelper {
           mimetype: 'audio/mpeg',
           fileName: `${result.title.replace(/[^\w\s]/gi, '')}.mp3`,
           caption: `🎵 ${result.title}\n✅ Downloaded`
-        });
+        }, { quoted: msg });
         
         try {
           if (processingMsg && processingMsg.key) {
@@ -500,7 +490,7 @@ class CommandHelper {
 
 ┌─⊶ *AI & CREATIVE*
 │• ask [question]
-│• imagine [prompt]
+│• story [prompt]
 │• chatbot on/off
 │• translate
 │• tts [text]
@@ -573,13 +563,13 @@ class CommandHelper {
           caption: helpText,
           jpegThumbnail: null,
           viewOnce: false
-        }, { quoted: msg });
+        });
       } else {
-        await sock.sendMessage(sender, { text: helpText }, { quoted: msg });
+        await sock.sendMessage(sender, { text: helpText });
       }
     } catch (error) {
       console.error('Error sending help:', error);
-      await sock.sendMessage(sender, { text: helpText }, { quoted: msg });
+      await sock.sendMessage(sender, { text: helpText });
     }
   }
   
@@ -631,7 +621,7 @@ class CommandHelper {
   
   suggestCommand(input, config) {
     const commands = [
-      'ask', 'image', 'chatbot', 'translate', 'tts', 'summary',
+      'ask', 'story', 'chatbot', 'translate', 'tts', 'summary',
       'games', 'game', 'tictactoe', 'rps',
       'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
       'profile', 'leaderboard', 'register', 'donate', 'owner', 'crypto', 'mode',
