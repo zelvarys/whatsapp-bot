@@ -447,7 +447,7 @@ class CommandHelper {
   }
   
   async showOwnerInfo(sender, msg, config, sock) {
-    const ownerInfo = `✧ *OWNER INFORMATION*
+    const ownerInfo = `✧ *DEVELOPER INFO*
 ╒═══════════════════╕
 
 ┌─⊶ *ABOUT*

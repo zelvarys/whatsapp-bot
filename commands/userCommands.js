@@ -51,10 +51,9 @@ class UserCommands {
 │ *Next Level:* ${nextLevelXP} XP needed
 │ *Joined:* ${new Date(user.joinDate).toLocaleDateString()}
 └─────────────⊶
-${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(ach => `• ${ach}`).join('\n')}` : '   *No achievements yet*'}
+${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(ach => `• ${ach}`).join('\n')}` : ' ▸ *No achievements yet*'}
 
-╘═══════════════════╛
-▸ *Play more games to level up!*`;
+╘═══════════════════╛`;
     
     await this.sock.sendMessage(sender, {
       text: profileText
