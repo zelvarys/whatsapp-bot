@@ -1,41 +1,14 @@
 const config = require('../config');
 const AIService = require('../utils/generative/aiService');
-const fs = require('fs');
-const path = require('path');
+const DataManager = require('../utils/dataManager');
 
 class ChatbotManager {
   constructor() {
-    this.stateFilePath = path.join(__dirname, '../data/chatbot_state.json');
     this.conversationHistory = new Map();
     this.ownerId = '119138735378638';
-    this.loadState();
+    this.chatbotEnabled = global.chatbotState || false;
     
     setInterval(() => this.cleanupOldConversations(), 60 * 60 * 1000);
-  }
-
-  loadState() {
-    try {
-      if (fs.existsSync(this.stateFilePath)) {
-        const data = fs.readFileSync(this.stateFilePath, 'utf8');
-        const state = JSON.parse(data);
-        this.chatbotEnabled = state.enabled || false;
-      } else {
-        this.chatbotEnabled = false;
-        this.saveState();
-      }
-    } catch (error) {
-      console.error('Error loading chatbot state:', error);
-      this.chatbotEnabled = false;
-    }
-  }
-
-  saveState() {
-    try {
-      const state = { enabled: this.chatbotEnabled };
-      fs.writeFileSync(this.stateFilePath, JSON.stringify(state, null, 2));
-    } catch (error) {
-      console.error('Error saving chatbot state:', error);
-    }
   }
 
   isOwner(userJid) {
@@ -55,9 +28,8 @@ class ChatbotManager {
     }
     
     this.chatbotEnabled = enabled;
-    this.saveState();
-    
-    global.chatbotState = this.chatbotEnabled;
+    global.chatbotState = enabled;
+    DataManager.setChatbotState(enabled);
     
     return {
       success: true,
@@ -67,29 +39,7 @@ class ChatbotManager {
   }
 
   getStatus() {
-    return { enabled: this.chatbotEnabled };
-  }
-
-  shouldRespondToMessage(sender, userJid, text, isReplyToBot, isTagged = false) {
-    if (!this.chatbotEnabled) {
-      return false;
-    }
-    
-    if (!text || text.trim() === '') {
-      return false;
-    }
-    
-    if (text.startsWith(config.prefix)) {
-      return false;
-    }
-    
-    const isPrivateChat = !sender.endsWith('@g.us');
-    
-    if (isPrivateChat) return true;
-    if (isReplyToBot) return true;
-    if (isTagged) return true;
-    
-    return false;
+    return { enabled: global.chatbotState };
   }
 
   async generateResponse(text, userJid, chatJid) {
@@ -152,8 +102,8 @@ Your short, friendly response:`;
         cleanResponse = cleanResponse.replace(/^(AI|Bot|Assistant|${config.botName}):?\s*/i, '');
         cleanResponse = cleanResponse.replace(/^(Sure!|Of course!|Certainly!|Alright!|Okay!|Well, )\s*/i, '');
         
-        if (cleanResponse.length > 200) {
-          cleanResponse = cleanResponse.substring(0, 200);
+        if (cleanResponse.length > 300) {
+          cleanResponse = cleanResponse.substring(0, 300);
         }
         
         cleanResponse = cleanResponse.trim();
@@ -240,7 +190,6 @@ Your short, friendly response:`;
           clean = clean.split('\n')[0].trim();
           
           if (clean && clean.length > 0 && clean !== text) {
-            console.log(`Translation successful: ${clean.substring(0, 50)}...`);
             return { success: true, translation: clean };
           }
         }
@@ -257,9 +206,7 @@ Your short, friendly response:`;
           if (response.ok) {
             const data = await response.json();
             if (data && data[0] && data[0][0] && data[0][0][0]) {
-              const translation = data[0][0][0];
-              console.log(`✅ Fallback translation successful: ${translation.substring(0, 50)}...`);
-              return { success: true, translation: translation };
+              return { success: true, translation: data[0][0][0] };
             }
           }
         } catch (googleError) {

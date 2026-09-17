@@ -6,7 +6,7 @@ class DataManager {
   static loadAllData() {
     this.loadUserData();
     this.loadGameStats();
-    this.loadGroupSettings();
+    this.loadBotState();
     this.loadCommandCache();
     console.log('All data loaded successfully ✅');
   }
@@ -14,7 +14,7 @@ class DataManager {
   static saveAllData() {
     this.saveUserData();
     this.saveGameStats();
-    this.saveGroupSettings();
+    this.saveBotState();
     this.saveCommandCache();
   }
   
@@ -185,39 +185,43 @@ class DataManager {
     }
   }
   
-  static loadGroupSettings() {
+  static loadBotState() {
     try {
-      if (fs.existsSync(config.GROUP_SETTINGS_PATH)) {
-        const data = fs.readFileSync(config.GROUP_SETTINGS_PATH, 'utf8');
-        global.groupSettings = JSON.parse(data);
+      if (fs.existsSync(config.BOT_STATE_PATH)) {
+        const data = JSON.parse(fs.readFileSync(config.BOT_STATE_PATH, 'utf8'));
+        global.botMode = data.mode || "public";
+        global.chatbotState = data.chatbot || false;
+      } else {
+        global.botMode = "public";
+        global.chatbotState = false;
+        this.saveBotState();
       }
     } catch (error) {
-      console.error('❌ Error loading group settings:', error);
-      global.groupSettings = {};
+      console.error('❌ Error loading bot state:', error);
+      global.botMode = "public";
+      global.chatbotState = false;
     }
   }
   
-  static saveGroupSettings() {
+  static saveBotState() {
     try {
-      fs.writeFileSync(config.GROUP_SETTINGS_PATH, JSON.stringify(global.groupSettings, null, 2));
+      fs.writeFileSync(config.BOT_STATE_PATH, JSON.stringify({
+        mode: global.botMode,
+        chatbot: global.chatbotState
+      }, null, 2));
     } catch (error) {
-      console.error('❌ Error saving group settings:', error);
+      console.error('❌ Error saving bot state:', error);
     }
   }
   
-  static getGroupSettings(chatJid) {
-    if (!global.groupSettings[chatJid]) {
-      global.groupSettings[chatJid] = {
-        linkProtect: false
-      };
-    }
-    return global.groupSettings[chatJid];
+  static setBotMode(mode) {
+    global.botMode = mode;
+    this.saveBotState();
   }
   
-  static updateGroupSettings(chatJid, settings) {
-    const current = this.getGroupSettings(chatJid);
-    global.groupSettings[chatJid] = { ...current, ...settings };
-    this.saveGroupSettings();
+  static setChatbotState(enabled) {
+    global.chatbotState = enabled;
+    this.saveBotState();
   }
   
   static loadCommandCache() {

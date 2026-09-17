@@ -12,16 +12,11 @@ const SystemMonitor = require('./system/systemMonitor');
 
 global.userData = {};
 global.gameStats = {};
-global.groupSettings = {};
 global.activeGames = new Map();
 global.userCooldowns = new Map();
 global.userWarnings = new Map();
-global.userMessageTimestamps = new Map();
-global.mutedUsers = new Map();
-global.manualMutes = new Map();
 global.aiCooldowns = new Map();
 global.aiUsage = new Map();
-global.imageUsage = new Map();
 global.nameCache = new Map();
 global.groupData = {};
 global.chatHistory = {};
@@ -61,6 +56,7 @@ class WhatsAppBot {
     this.isConnected = false;
     this.onlineSince = null;
     this.botUserId = null;
+    this.botLid = null;
     this.downloadMediaMessage = downloadMediaMessage;
     this.stats = global.botStats;
     this.dataLoaded = false;
@@ -95,10 +91,9 @@ class WhatsAppBot {
 
       if (!this.dataLoaded) {
         await DataManager.loadAllData();
-        await this.loadChatbotState();
-        await this.loadBotMode();
         this.dataLoaded = true;
-        console.log('All data loaded successfully ✅');
+        console.log(`Bot mode: ${global.botMode.toUpperCase()}`);
+        console.log(`ChatBot state: ${global.chatbotState ? 'ACTIVE ✅' : 'INACTIVE ❌'}`);
       }
 
       this.cleanupManager.setupIntervals();
@@ -109,36 +104,20 @@ class WhatsAppBot {
     }
   }
 
-  async loadChatbotState() {
-    try {
-      const p = './data/chatbot_state.json';
-      if (fs.existsSync(p)) {
-        global.chatbotState = JSON.parse(fs.readFileSync(p, 'utf8')).enabled || false;
-      } else {
-        global.chatbotState = false;
-      }
-      console.log(`ChatBot state: ${global.chatbotState ? 'ACTIVE ✅' : 'INACTIVE ❌'}`);
-    } catch { global.chatbotState = false; }
-  }
-
-  async loadBotMode() {
-    try {
-      const p = './data/bot_mode.json';
-      if (fs.existsSync(p)) {
-        global.botMode = JSON.parse(fs.readFileSync(p, 'utf8')).mode || "public";
-      } else {
-        global.botMode = "public";
-      }
-      console.log(`Bot mode: ${global.botMode.toUpperCase()} ✅️`);
-    } catch { global.botMode = "public"; }
-  }
-
   async connect() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
     const { version } = await fetchLatestBaileysVersion();
 
     const isRegistered = state.creds.registered;
     console.log(`🔐 Registered: ${isRegistered ? 'YES' : 'NO'}`);
+
+    // Capture bot LID from creds if available (used for mention detection)
+    try {
+      if (state.creds?.me?.lid) {
+        this.botLid = state.creds.me.lid.split(':')[0].split('@')[0];
+        console.log(`🤖 Bot LID: ${this.botLid}`);
+      }
+    } catch (e) {}
 
     this.sock = makeWASocket({
       version,
@@ -152,12 +131,6 @@ class WhatsAppBot {
       markOnlineOnConnect: false,
       generateHighQualityLinkPreview: false,
       syncFullHistory: false,
-      // ROOT CAUSE FIX: without this callback, Baileys 7.x rejects ALL
-      // history sync types, breaking LID mapping and silently dropping
-      // every inbound message.
-      // syncType 2 = FULL history download (the massive one).
-      // Types 1 (INITIAL_BOOTSTRAP), 3 (RECENT), 4 (ON_DEMAND) must be
-      // allowed so WhatsApp can route messages to this device.
       shouldSyncHistoryMessage: ({ syncType }) => syncType !== 2,
     });
 
@@ -206,12 +179,6 @@ class WhatsAppBot {
     this.sock.ev.on('messages.upsert', (m) => this.handleMessagesUpsert(m));
   }
 
-  // FIX: Do NOT call teardownSocket() inside 'close' events.
-  // The socket is already closed by the time 'close' fires. Calling
-  // sock.end() on an already-closed socket corrupts the next session
-  // and produces zombie sockets (terminal says connected, WhatsApp
-  // shows device offline, inbound silently dies).
-  // Just reconnect cleanly with a fresh socket.
   async handleConnectionUpdate(update) {
     const { connection, lastDisconnect } = update;
 
@@ -249,9 +216,6 @@ class WhatsAppBot {
 
       const alreadyRegistered = this.sock.authState.creds.registered;
 
-      // During pairing, 515 (restart required) fires normally after the
-      // pairing code is issued. Reconnect quietly and wait for the user
-      // to enter the code on their phone. Do NOT tear down the socket.
       if (!alreadyRegistered && this.pairingCodeShown) {
         console.log('🔄 Reconnecting (waiting for you to enter the pairing code)...');
         setTimeout(() => this.connect(), 3000);
@@ -305,11 +269,20 @@ class WhatsAppBot {
     this.pairingCodeShown = true;
     this.reconnectAttempts = 0;
 
+    // Capture LID from creds after connection opens
+    try {
+      if (this.sock.authState?.creds?.me?.lid) {
+        this.botLid = this.sock.authState.creds.me.lid.split(':')[0].split('@')[0];
+      }
+    } catch (e) {}
+
     console.log(`\n✅ ${config.botName} is CONNECTED and ready!`);
     console.log(`🤖 Bot User ID: ${this.botUserId}`);
+    console.log(`🆔 Bot LID: ${this.botLid || 'not yet available'}`);
     console.log(`👥 Total users: ${Object.keys(global.userData).length}`);
     console.log(`⏰ Online at: ${new Date(this.onlineSince).toLocaleTimeString()}`);
-    console.log(`🚀 Mode: ${global.botMode.toUpperCase()}\n`);
+    console.log(`🚀 Mode: ${global.botMode.toUpperCase()}`);
+    console.log(`💬 Chatbot: ${global.chatbotState ? 'ON' : 'OFF'}\n`);
 
     setTimeout(() => {
       this.sendOnlineNotification().catch(e => console.error('Online notify failed:', e.message));
@@ -366,18 +339,6 @@ class WhatsAppBot {
 
   async broadcastMessage(message, source = 'owner', specificGroups = []) {
     return this.systemMonitor.broadcastMessage(this.sock, message, source, specificGroups);
-  }
-
-  static saveBotMode(mode) {
-    try {
-      fs.writeFileSync('./data/bot_mode.json', JSON.stringify({ mode }, null, 2));
-      global.botMode = mode;
-      console.log(`Bot mode saved: ${mode.toUpperCase()}`);
-      return true;
-    } catch (error) {
-      console.error('Error saving bot mode:', error);
-      return false;
-    }
   }
 }
 

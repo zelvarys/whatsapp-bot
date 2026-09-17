@@ -1,6 +1,5 @@
 const config = require('../config');
 const CommandRouter = require('./commandRouter');
-const LinkProtection = require('../utils/linkProtection');
 const GameLogic = require('../utils/gameLogic');
 const ChatbotManager = require('./chatbotManager');
 const MessageProcessor = require('./messageProcessor');
@@ -36,17 +35,6 @@ class MessageHandler {
         }
       }
       
-      if (isGroup && text) {
-        const groupSettings = global.groupSettings?.[sender];
-        if (groupSettings?.linkProtect) {
-          const linkCheck = await LinkProtection.checkLink(text, userJid, sender, this.sock);
-          if (linkCheck.hasLink && linkCheck.action === 'delete') {
-            await this.messageProcessor.handleLinkViolation(sender, userJid, msg, this.sock);
-            return;
-          }
-        }
-      }
-      
       const isTagged = this.messageProcessor.checkMentions(msg, text);
       
       if (text && text.startsWith(config.prefix)) {
@@ -79,41 +67,46 @@ class MessageHandler {
   }
   
   async handleChatbotResponses(msg, sender, userJid, text, isGroup, isReplyToBot, isTagged, stats) {
-    if (!text || !text.trim()) return;
+    // Chatbot must be ON for any of this
+    if (!global.chatbotState) return;
     
-    // 1. Auto-responses first — fire in any chat
-    const autoHandled = await this.messageProcessor.handleAutoResponses(msg, text, sender, this.sock);
-    if (autoHandled) {
-      if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
+    const isPrivateChat = !isGroup;
+    
+    // ---- Private chat ----
+    if (isPrivateChat) {
+      if (!text || !text.trim()) return;
+      
+      const chatbotResponse = await this.chatbotManager.generateResponse(text, userJid, sender);
+      if (chatbotResponse) {
+        await this.sock.sendMessage(sender, { text: chatbotResponse }, { quoted: msg });
+        if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
+      }
       return;
     }
     
-    // 2. Chatbot responses
-    if (global.chatbotState) {
-      const shouldRespond = this.chatbotManager.shouldRespondToMessage(
-        sender, userJid, text, isReplyToBot, isTagged
-      );
+    // ---- Group chat ----
+    // Only respond when tagged OR replying to bot
+    if (!isTagged && !isReplyToBot) return;
+    
+    // Handle bare tag: if tagged but no actual message beyond the mention
+    if (isTagged && !isReplyToBot) {
+      const strippedText = this.messageProcessor.stripMentions(text);
       
-      if (shouldRespond) {
-        const chatbotResponse = await this.chatbotManager.generateResponse(
-          text, userJid, sender
-        );
-        
-        if (chatbotResponse) {
-          await this.sock.sendMessage(sender, {
-            text: chatbotResponse
-          }, { quoted: msg });
-          
-          if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
-          return;
-        }
+      if (!strippedText || strippedText.length === 0) {
+        // Bare tag → fixed reply
+        await this.sock.sendMessage(sender, {
+          text: "Hey boss, how can I help you"
+        }, { quoted: msg });
+        if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
+        return;
       }
     }
     
-    // 3. Tagged but chatbot off → fallback reply
-    if (isTagged && isGroup) {
-      await this.messageProcessor.handleTaggedMessage(sender, userJid, msg, this.sock);
-      return;
+    // Tag with message OR reply to bot → chatbot takes over
+    const chatbotResponse = await this.chatbotManager.generateResponse(text, userJid, sender);
+    if (chatbotResponse) {
+      await this.sock.sendMessage(sender, { text: chatbotResponse }, { quoted: msg });
+      if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
     }
   }
   

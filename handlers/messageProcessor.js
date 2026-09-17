@@ -1,6 +1,7 @@
 const config = require('../config');
 const GameLogic = require('../utils/gameLogic');
 const CommandHelper = require('./commandHelper');
+const fs = require('fs');
 
 class MessageProcessor {
   constructor(sock) {
@@ -84,22 +85,44 @@ class MessageProcessor {
     }
   }
   
+  // ========== FIXED: LID-aware mention detection ==========
   checkMentions(msg, text) {
     let isTagged = false;
     
-    if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-      const mentionedJids = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-      const botUserId = global.botInstance?.botUserId;
-      
-      if (botUserId) {
-        isTagged = mentionedJids.some(mentionedJid => {
-          const mentionedClean = mentionedJid.split(':')[0];
-          const botClean = botUserId.split(':')[0];
-          return mentionedClean === botClean || mentionedJid.includes(botClean);
-        });
-      }
+    // Bot's phone number format (strip device suffix)
+    const botUserId = global.botInstance?.botUserId;
+    const botNumber = botUserId ? botUserId.split(':')[0].split('@')[0] : null;
+    
+    // Bot's LID — read from memory first, then auth creds file as fallback
+    let botLid = global.botInstance?.botLid || null;
+    
+    if (!botLid) {
+      try {
+        const credsPath = './auth_info/creds.json';
+        if (fs.existsSync(credsPath)) {
+          const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
+          if (creds?.me?.lid) {
+            botLid = creds.me.lid.split(':')[0].split('@')[0];
+            if (global.botInstance) global.botInstance.botLid = botLid;
+          }
+        }
+      } catch (e) {}
     }
     
+    // Check structured mentions (WhatsApp sends LID format here)
+    const mentionedJids = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
+    if (mentionedJids && mentionedJids.length > 0) {
+      isTagged = mentionedJids.some(mentionedJid => {
+        const mentionedClean = mentionedJid.split(':')[0].split('@')[0];
+        
+        if (botNumber && mentionedClean === botNumber) return true;
+        if (botLid && mentionedClean === botLid) return true;
+        
+        return false;
+      });
+    }
+    
+    // Fallback: text-based mentions
     if (!isTagged && text) {
       const textLower = text.toLowerCase();
       if (textLower.includes('@incognito') || textLower.includes('@bot') || 
@@ -109,22 +132,6 @@ class MessageProcessor {
     }
     
     return isTagged;
-  }
-  
-  async handleLinkViolation(sender, userJid, msg, sock) {
-    try {
-      await sock.sendMessage(sender, { delete: msg.key });
-      await sock.sendMessage(sender, {
-        text: `⚠️ *LINK PROTECTION*
-┌─⊶
-│ @${await this.getDisplayName(userJid)} sent a link.
-│ Only admins can send links.
-└─────────────⊶`,
-        mentions: [userJid]
-      }, { quoted: msg });
-    } catch (error) {
-      console.error('Error in handleLinkViolation:', error);
-    }
   }
   
   async handleTaggedMessage(sender, userJid, msg, sock) {
@@ -138,28 +145,15 @@ class MessageProcessor {
     await sock.sendMessage(sender, { text: response, mentions: [userJid] }, { quoted: msg });
   }
   
-  async handleAutoResponses(msg, text, sender, sock) {
-    if (!config.AUTO_RESPONSES) return false;
-    
-    const textLower = text.toLowerCase().trim();
-    
-    for (const [keyword, response] of Object.entries(config.AUTO_RESPONSES)) {
-      const keywordLower = keyword.toLowerCase();
-      
-      const isMatch = (
-        textLower === keywordLower ||
-        textLower.includes(` ${keywordLower} `) ||
-        textLower.startsWith(`${keywordLower} `) ||
-        textLower.endsWith(` ${keywordLower}`)
-      );
-      
-      if (isMatch) {
-        await sock.sendMessage(sender, { text: response }, { quoted: msg });
-        return true;
-      }
-    }
-    
-    return false;
+  // Extract text with the mention stripped out (for detecting bare tags)
+  stripMentions(text) {
+    if (!text) return '';
+    let cleaned = text;
+    // Remove @mentions (various formats)
+    cleaned = cleaned.replace(/@\d+/g, '');
+    cleaned = cleaned.replace(/@[\w\s]+?(?=\s|$)/gi, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    return cleaned;
   }
   
   async handleGameReplies(msg, text, sender, userJid, repliedToMessageId) {
