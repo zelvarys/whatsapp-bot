@@ -106,7 +106,7 @@ class UtilityCommands {
         
 ${summary}
 `
-      });
+      }, { quoted: msg });
       
     } catch (error) {
       console.error('Summary error:', error);

@@ -97,10 +97,9 @@ class PDFGenerator {
       
       await this.sock.sendMessage(sender, {
         document: pdfBuffer,
-        fileName: `school_notes_${timestamp}.pdf`,
-        mimetype: 'application/pdf',
-        caption: '✅ Image converted to PDF'
-      });
+        fileName: `image_${timestamp}.pdf`,
+        mimetype: 'application/pdf'
+      }, { quoted: msg });
       
     } catch (error) {
       console.error('Image to PDF error:', error);
@@ -191,9 +190,8 @@ class PDFGenerator {
       await this.sock.sendMessage(sender, {
         document: pdfBuffer,
         fileName: `text_${Date.now()}.pdf`,
-        mimetype: 'application/pdf',
-        caption: '✅ Text converted to PDF'
-      });
+        mimetype: 'application/pdf'
+      }, { quoted: msg });
       
       try {
         if (processingMsg && processingMsg.key) {

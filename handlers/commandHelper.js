@@ -309,7 +309,7 @@ class CommandHelper {
       }
       
       await sock.sendMessage(sender, {
-        text: 'Thank you for your feedback! I\'ve sent it to my developer. 💖'
+        text: 'Thank you for your feedback! I\'ve sent it to my developer team. 💖'
       }, { quoted: msg });
       
     } catch (error) {

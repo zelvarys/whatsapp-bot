@@ -202,15 +202,14 @@ class FileProcessor {
       }
       
       let resultMessage = `✅ *${isImage ? 'Image' : 'Video'} Compressed!*
-┌─⊶
-│ *Original:* ${this.formatBytes(originalSize)}
-│ *Final:* ${this.formatBytes(compressedSize)}
-└─────────────⊶`;
+
+*Original:* ${this.formatBytes(originalSize)}
+*Final size:* ${this.formatBytes(compressedSize)}`;
       
       await this.sock.sendMessage(sender, {
         [isImage ? 'image' : 'video']: compressedBuffer,
         caption: resultMessage
-      });
+      }, { quoted: msg });
       
     } catch (error) {
       console.error('Compression error:', error);
@@ -243,7 +242,7 @@ class FileProcessor {
         await this.sock.sendMessage(sender, {
           text: `✧ *REVEAL VIEW-ONCE*
 ┌─⊶
-│ Reply to a view-once image or video
+│ Reply to a view-once image/video
 │ with ${config.prefix}reveal or ${config.prefix}vv
 └─────────────⊶`
         }, { quoted: msg });
@@ -278,14 +277,12 @@ class FileProcessor {
       
       if (isViewOnceImage) {
         await this.sock.sendMessage(sender, {
-          image: mediaBuffer,
-          caption: '✅️ *View-Once Image Revealed*'
-        });
+          image: mediaBuffer
+        }, { quoted: msg });
       } else if (isViewOnceVideo) {
         await this.sock.sendMessage(sender, {
-          video: mediaBuffer,
-          caption: '✅️ *View-Once Video Revealed*'
-        });
+          video: mediaBuffer
+        }, { quoted: msg });
       }
       
       try {

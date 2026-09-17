@@ -34,8 +34,8 @@ class QRGenerator {
       
       await this.sock.sendMessage(sender, {
         image: qrBuffer,
-        caption: `✅ *QR Code Generated*\n▸ *Content:* ${fullText.substring(0, 100)}${fullText.length > 100 ? '...' : ''}`
-      });
+        caption: `*Content:* ${fullText.substring(0, 100)}${fullText.length > 100 ? '...' : ''}`
+      }, { quoted: msg });
       
       try {
         await this.sock.sendMessage(sender, { delete: processingMsg.key });
