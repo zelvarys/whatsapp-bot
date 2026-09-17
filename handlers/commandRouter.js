@@ -160,10 +160,6 @@ class CommandRouter {
         await this.userCommands.register(sender, userJid, msg, args);
         break;
         
-      case 'donate':
-        await this.userCommands.donate(sender, msg);
-        break;
-        
       case 'crypto':
       case 'price':
         await this.userCommands.cryptoPrice(sender, userJid, msg, args);

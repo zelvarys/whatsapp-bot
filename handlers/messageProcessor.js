@@ -121,7 +121,7 @@ class MessageProcessor {
 │ Only admins can send links.
 └─────────────⊶`,
         mentions: [userJid]
-      });
+      }, { quoted: msg });
     } catch (error) {
       console.error('Error in handleLinkViolation:', error);
     }
@@ -139,20 +139,27 @@ class MessageProcessor {
   }
   
   async handleAutoResponses(msg, text, sender, sock) {
-    if (!config.AUTO_RESPONSES) return;
+    if (!config.AUTO_RESPONSES) return false;
+    
+    const textLower = text.toLowerCase().trim();
     
     for (const [keyword, response] of Object.entries(config.AUTO_RESPONSES)) {
       const keywordLower = keyword.toLowerCase();
-      if (text === keywordLower ||
-          text.includes(` ${keywordLower} `) ||
-          text.startsWith(keywordLower) ||
-          text.endsWith(` ${keywordLower}`)) {
-        
-        const actualResponse = typeof response === 'function' ? response() : response;
-        await sock.sendMessage(sender, { text: actualResponse }, { quoted: msg });
-        return;
+      
+      const isMatch = (
+        textLower === keywordLower ||
+        textLower.includes(` ${keywordLower} `) ||
+        textLower.startsWith(`${keywordLower} `) ||
+        textLower.endsWith(` ${keywordLower}`)
+      );
+      
+      if (isMatch) {
+        await sock.sendMessage(sender, { text: response }, { quoted: msg });
+        return true;
       }
     }
+    
+    return false;
   }
   
   async handleGameReplies(msg, text, sender, userJid, repliedToMessageId) {

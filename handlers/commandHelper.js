@@ -517,7 +517,6 @@ class CommandHelper {
 │• profile
 │• leaderboard
 │• register [name]
-│• donate
 │• crypto [coin]
 │• feedback
 └────────────⊶

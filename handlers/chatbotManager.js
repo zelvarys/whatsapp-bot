@@ -85,17 +85,9 @@ class ChatbotManager {
     
     const isPrivateChat = !sender.endsWith('@g.us');
     
-    if (isPrivateChat) {
-      return true;
-    }
-    
-    if (isReplyToBot) {
-      return true;
-    }
-    
-    if (isTagged) {
-      return true;
-    }
+    if (isPrivateChat) return true;
+    if (isReplyToBot) return true;
+    if (isTagged) return true;
     
     return false;
   }

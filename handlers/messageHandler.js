@@ -79,53 +79,19 @@ class MessageHandler {
   }
   
   async handleChatbotResponses(msg, sender, userJid, text, isGroup, isReplyToBot, isTagged, stats) {
-    if (isGroup) {
-      if (isReplyToBot || isTagged) {
-        await this.processChatbotResponse(msg, sender, userJid, text, isReplyToBot, isTagged, stats);
-      }
-    } else {
-      await this.processPrivateChatbotResponse(msg, sender, userJid, text, stats);
-    }
-  }
-  
-  async processChatbotResponse(msg, sender, userJid, text, isReplyToBot, isTagged, stats) {
-    if (global.chatbotState) {
-      const shouldRespond = this.chatbotManager.shouldRespondToMessage(
-        sender, userJid, text, isReplyToBot, isTagged
-      );
-      
-      if (shouldRespond && text && text.trim()) {
-        const chatbotResponse = await this.chatbotManager.generateResponse(
-          text, userJid, sender
-        );
-        
-        if (chatbotResponse) {
-          await this.sock.sendMessage(sender, {
-            text: chatbotResponse
-          }, { quoted: msg });
-          
-          if (stats && stats.commandsExecuted !== undefined) {
-            stats.commandsExecuted++;
-          }
-          return;
-        }
-      }
-    }
+    if (!text || !text.trim()) return;
     
-    if (isTagged && text && !text.startsWith(config.prefix) && !global.chatbotState) {
-      await this.messageProcessor.handleTaggedMessage(sender, userJid, msg, this.sock);
+    // 1. Auto-responses first — fire in any chat
+    const autoHandled = await this.messageProcessor.handleAutoResponses(msg, text, sender, this.sock);
+    if (autoHandled) {
+      if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
       return;
     }
     
-    if (text && !isReplyToBot && !isTagged) {
-      await this.messageProcessor.handleAutoResponses(msg, text.toLowerCase(), sender, this.sock);
-    }
-  }
-  
-  async processPrivateChatbotResponse(msg, sender, userJid, text, stats) {
-    if (global.chatbotState && text && text.trim() && !text.startsWith(config.prefix)) {
+    // 2. Chatbot responses
+    if (global.chatbotState) {
       const shouldRespond = this.chatbotManager.shouldRespondToMessage(
-        sender, userJid, text, true, false
+        sender, userJid, text, isReplyToBot, isTagged
       );
       
       if (shouldRespond) {
@@ -138,12 +104,16 @@ class MessageHandler {
             text: chatbotResponse
           }, { quoted: msg });
           
-          if (stats && stats.commandsExecuted !== undefined) {
-            stats.commandsExecuted++;
-          }
+          if (stats && stats.commandsExecuted !== undefined) stats.commandsExecuted++;
           return;
         }
       }
+    }
+    
+    // 3. Tagged but chatbot off → fallback reply
+    if (isTagged && isGroup) {
+      await this.messageProcessor.handleTaggedMessage(sender, userJid, msg, this.sock);
+      return;
     }
   }
   
@@ -153,13 +123,6 @@ class MessageHandler {
         text: `❌ Bot is in Private mode!`
       }, { quoted: msg });
     }
-  }
-  
-  hasMedia(msg) {
-    return msg.message?.imageMessage ||
-           msg.message?.videoMessage ||
-           msg.message?.stickerMessage ||
-           msg.message?.audioMessage;
   }
   
   extractMessageText(msg) {
