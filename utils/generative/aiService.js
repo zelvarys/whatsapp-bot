@@ -95,16 +95,19 @@ class AIService {
               model: modelName,
               generationConfig: {
                 temperature: 0.9,
-                maxOutputTokens: 1200,
+                maxOutputTokens: 4096,
                 topP: 0.95,
                 topK: 40
+              },
+              thinkingConfig: {
+                thinkingBudget: 0
               }
             });
             
             const storyPrompt = `Write a short story based on this prompt: "${prompt}"
 
 Requirements:
-- Under 400 words
+- Under 600 words
 - Engaging and creative
 - Start directly with the story, no title, no intro like "Here's a story"
 - No markdown formatting
@@ -129,6 +132,30 @@ Requirements:
               continue;
             } else if (errorMsg.includes('permission denied') || errorMsg.includes('403')) {
               break;
+            } else if (errorMsg.includes('thinking')) {
+              console.log(`  ⚠️ thinkingConfig rejected for ${modelName}, retrying without it...`);
+              try {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const fallbackModel = genAI.getGenerativeModel({ 
+                  model: modelName,
+                  generationConfig: {
+                    temperature: 0.9,
+                    maxOutputTokens: 4096,
+                    topP: 0.95,
+                    topK: 40
+                  }
+                });
+                const fallbackResult = await fallbackModel.generateContent(storyPrompt);
+                const story = fallbackResult.response.text().trim();
+                if (story && story.length > 20) {
+                  result = { success: true, story: story };
+                  currentStoryKeyIndex = keyIndex;
+                  currentStoryModelIndex = modelIndex;
+                  break;
+                }
+              } catch (fallbackError) {
+                continue;
+              }
             } else {
               continue;
             }

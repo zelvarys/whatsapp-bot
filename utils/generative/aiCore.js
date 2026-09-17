@@ -48,6 +48,9 @@ class AICore {
               maxOutputTokens: 2048,
               topP: 0.95,
               topK: 40
+            },
+            thinkingConfig: {
+              thinkingBudget: 0
             }
           });
           
@@ -76,6 +79,27 @@ Response as ${config.botName}:`;
             break;
           } else if (errorMsg.includes('safety') || errorMsg.includes('blocked')) {
             return "⚠️ My safety settings prevented a response. Please try rephrasing.";
+          } else if (errorMsg.includes('thinking')) {
+            console.log(`  ⚠️ thinkingConfig rejected for ${modelName}, retrying without it...`);
+            try {
+              const genAI = new GoogleGenerativeAI(apiKey);
+              const fallbackModel = genAI.getGenerativeModel({ 
+                model: modelName,
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 2048,
+                  topP: 0.95,
+                  topK: 40
+                }
+              });
+              const fallbackResult = await fallbackModel.generateContent(prompt);
+              response = fallbackResult.response.text();
+              currentTextKeyIndex = keyIndex;
+              currentTextModelIndex = modelIndex;
+              break;
+            } catch (fallbackError) {
+              continue;
+            }
           } else {
             continue;
           }
@@ -86,7 +110,7 @@ Response as ${config.botName}:`;
     }
     
     if (!response) {
-      return this.getSmartFallback(question, false, false);
+      return this.getSmartFallback(question, false);
     }
     
     let cleanResponse = response.trim();
@@ -123,6 +147,9 @@ Response as ${config.botName}:`;
               maxOutputTokens: 2048,
               topP: 0.95,
               topK: 40
+            },
+            thinkingConfig: {
+              thinkingBudget: 0
             }
           });
           
@@ -146,6 +173,28 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
           if (errorMsg.includes('rate limit') || errorMsg.includes('429')) continue;
           if (errorMsg.includes('permission denied') || errorMsg.includes('403')) break;
           if (errorMsg.includes('safety') || errorMsg.includes('blocked')) return this.getChatbotFallback();
+          
+          if (errorMsg.includes('thinking')) {
+            try {
+              const genAI = new GoogleGenerativeAI(apiKey);
+              const fallbackModel = genAI.getGenerativeModel({ 
+                model: modelName,
+                generationConfig: {
+                  temperature: 0.8,
+                  maxOutputTokens: 2048,
+                  topP: 0.95,
+                  topK: 40
+                }
+              });
+              const fallbackResult = await fallbackModel.generateContent(prompt);
+              response = fallbackResult.response.text();
+              currentChatbotKeyIndex = keyIndex;
+              currentChatbotModelIndex = modelIndex;
+              break;
+            } catch (fallbackError) {
+              continue;
+            }
+          }
           continue;
         }
       }
@@ -164,19 +213,7 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
   }
   
   static getSmartFallback(question, isChatbot = false) {
-    const lowerQ = question.toLowerCase();
-    
     if (isChatbot) return this.getChatbotFallback();
-    
-    if (lowerQ.includes('your name')) {
-      return `I'm ${config.botName}, your friendly WhatsApp bot!`;
-    } else if (lowerQ.includes('who made you') || lowerQ.includes('created you')) {
-      return "Hehe, I was created by my awesome developer, Incognito! 🗿";
-    } else if (lowerQ.includes('weather')) {
-      return "I can't check real-time weather, but you can use weather apps for accurate forecasts!";
-    } else if (lowerQ.includes('love you')) {
-      return "Aww, I love you too! But as a bot, it's purely digital love 💖";
-    }
     
     const fallbacks = [
       "That's an interesting question! My AI brain is taking a break. Try asking something else!",
@@ -190,7 +227,7 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
     const fallbacks = [
       "Uh huh.. I've hit my limit, laterr",
       "Limit reached, let's chat some other time",
-      "Interesting! I'm going off soon btw"
+      "Interesting! I'm going off soon"
     ];
     
     return fallbacks[Math.floor(Math.random() * fallbacks.length)];
