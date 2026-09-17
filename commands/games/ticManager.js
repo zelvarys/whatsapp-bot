@@ -60,7 +60,7 @@ ${board}
 ▸ *Player X's turn!*
 ▸ Use numbers 1-9 to make your move`,
       mentions: [userJid, opponentJid]
-    });
+    }, { quoted: msg });
   }
   
   async startBotGame(sender, userJid, msg) {
@@ -90,7 +90,7 @@ ${botBoard}
 
 ▸ *Your turn!*
 ▸ Use numbers 1-9 to make your move`
-    });
+    }, { quoted: msg });
   }
   
   async endGame(sender, userJid, msg) {
@@ -107,44 +107,13 @@ ${botBoard}
       await this.sock.sendMessage(sender, {
         text: '❌ No active game found!'
       }, { quoted: msg });
-      return
+      return;
     }
     
     if (ended) {
       await this.sock.sendMessage(sender, {
         text: '✅ Game ended!'
       }, { quoted: msg });
-    } else {
-      await this.sock.sendMessage(sender, {
-        text: '❌ No active game found!'
-      }, { quoted: msg });
-    }
-  }
-  
-  async showBoard(sender, userJid, msg) {
-    let currentGame = null;
-    try {
-      for (const [gameId, game] of global.tictactoeGames.entries()) {
-        if ((game.player1 === userJid || game.player2 === userJid) && game.chatJid === sender) {
-          currentGame = game;
-          break;
-        }
-      }
-    } catch {
-      await this.sock.sendMessage(sender, {
-        text: '❌ No active game found!'
-      }, { quoted: msg });
-      return
-    }
-    
-    if (currentGame) {
-      const boardDisplay = this.formatTicTacToeBoard(currentGame.board);
-      const currentPlayerName = currentGame.currentPlayer === 'bot' ? 'Bot' : `@${currentGame.currentPlayer.split('@')[0]}`;
-      
-      await this.sock.sendMessage(sender, {
-        text: `❌️⭕️ *CURRENT GAME*\n\n${boardDisplay}\n\n▸ *${currentPlayerName}'s turn*`,
-        mentions: currentGame.currentPlayer !== 'bot' ? [currentGame.currentPlayer] : undefined
-      });
     } else {
       await this.sock.sendMessage(sender, {
         text: '❌ No active game found!'
