@@ -11,7 +11,7 @@ module.exports = {
   
   USER_DATA_PATH: './data/user_data.json',
   GAME_DATA_PATH: './data/game_data.json',
-  GROUP_SETTINGS_PATH: './data/group_settings.json',
+  BOT_STATE_PATH: './data/bot_state.json',
   CACHE_DATA_PATH: './data/command_cache.json',
   
   LINK_PATTERNS: [
@@ -36,28 +36,9 @@ module.exports = {
     "gemini-pro"
   ],
   
-  VISION_MODELS: [
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-pro-vision"
-  ],
-
-  IMAGE_APIS: {
-    REPLICATE: {
-      enabled: true,
-      model: "stability-ai/stable-diffusion"
-    },
-    POLLINATIONS: {
-      enabled: true,
-      baseUrl: "https://image.pollinations.ai/prompt"
-    }
-  },
-
-  MAX_AI_RESPONSE_LENGTH: 1500,
+  MAX_AI_RESPONSE_LENGTH: 4000,
   AI_COOLDOWN_TIME: 10000,
-  IMAGE_COOLDOWN_TIME: 30000,
   DAILY_AI_LIMIT: parseInt(process.env.DAILY_AI_LIMIT),
-  DAILY_IMAGE_LIMIT: parseInt(process.env.DAILY_IMAGE_LIMIT),
   
   CRYPTO_API_URL: "https://api.coingecko.com/api/v3/simple/price",
   SUPPORTED_CRYPTOS: ['bitcoin', 'ethereum', 'bnb', 'solana', 'cardano', 'ripple', 'dogecoin'],
@@ -117,11 +98,5 @@ module.exports = {
     's': 'sticker',
     'del': 'delete',
     'write': 'story'
-  },
-  
-  AUTO_RESPONSES: {
-    "hey bot":"Hey boss!, how can i help you?",
-    "who created you": "I was created by Incognito, a backend developer and machine learning enthusiast!",
-    "translate": "Reply to any message with !translate to convert it to English!"
   }
 };
