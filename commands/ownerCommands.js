@@ -128,7 +128,6 @@ ${message}`
         text: `✧ *EVAL RESULT*
 
 *Code:* ${code}
-
 *Result:* ${resultString}`
       }, { quoted: msg });
       
