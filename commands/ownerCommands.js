@@ -50,12 +50,8 @@ class OwnerCommands {
         try {
           await this.sock.sendMessage(groupId, {
             text: `✧ *BROADCAST MESSAGE*
-╒═══════════════════╕
 
-${message}
-
-╘═══════════════════╛
-_Message from ${source}_`
+${message}`
           });
           successCount++;
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -130,13 +126,10 @@ _Message from ${source}_`
       
       await this.sock.sendMessage(sender, {
         text: `✧ *EVAL RESULT*
-╒═══════════════════╕
 
-▸ *Code:* ${code}
+*Code:* ${code}
 
-▸ *Result:* ${resultString}
-
-╘═══════════════════╛`
+*Result:* ${resultString}`
       }, { quoted: msg });
       
     } catch (error) {
