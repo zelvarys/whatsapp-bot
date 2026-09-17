@@ -51,7 +51,7 @@ class UserCommands {
 │ *Next Level:* ${nextLevelXP} XP needed
 │ *Joined:* ${new Date(user.joinDate).toLocaleDateString()}
 └─────────────⊶
-${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(ach => `• ${ach}`).join('\n')}` : '▸  No achievements yet'}
+${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(ach => `• ${ach}`).join('\n')}` : ' ▸ *No achievements yet*'}
 
 ╘═══════════════════╛`;
     
@@ -79,8 +79,14 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
       else medal = `${index + 1}.`;
       
       leaderboardText += `${medal} *${user.username}*
-   Level ${user.level} • ${user.points} points • ${user.gamesWon} wins
-─────────────────\n`;
+   Level ${user.level} • ${user.points} points • ${user.gamesWon} wins`;
+      
+      // Add separator only if not the last user
+      if (index < users.length - 1) {
+        leaderboardText += '\n─────────────────\n';
+      } else {
+        leaderboardText += '\n';
+      }
     });
     
     leaderboardText += `\n╘═════════════════════╛
@@ -136,37 +142,6 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
     }, { quoted: msg });
   }
   
-  async donate(sender, msg) {
-    const donateText = `✧ *SUPPORT THE DEVELOPER*
-╒═══════════════════╕
-
-▸ If you enjoy using this bot, consider donating!
-
-┌─⊶ *DETAILS*
-│ *Account:* 9065168872 (Moniepoint)
-│ *Reference:* your_username
-└─────────────⊶
-
-┌─⊶ *IMPACT*
-│ • Keep the bot running 24/7
-│ • Add new features
-│ • Improve server performance
-│ • Support development work
-└─────────────⊶
-
-┌─⊶ *CONTACT*
-│ *Contact:* +234 906 516 8872
-│ *Email:* me.zelvarys@gmail.com
-└─────────────⊶
-
-╘═══════════════════╛
-▸ *Thank you for your support!*`;
-    
-    await this.sock.sendMessage(sender, {
-      text: donateText
-    }, { quoted: msg });
-  }
-  
   async cryptoPrice(sender, userJid, msg, args) {
     if (args.length === 0) {
       const cryptoList = config.SUPPORTED_CRYPTOS.join(', ');
@@ -189,7 +164,7 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
     try {
       const processingMsg = await this.sock.sendMessage(sender, {
         text: `🔄 *Fetching ${coin} price...*`
-      });
+      }, { quoted: msg });
       
       const cacheKey = `crypto_${coin}`;
       const now = Date.now();
@@ -201,7 +176,7 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
         if (now - cached.timestamp < 300000) {
           await this.sock.sendMessage(sender, {
             text: cached.data
-          });
+          }, { quoted: msg });
           
           try {
             if (processingMsg && processingMsg.key) {
@@ -227,16 +202,14 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
         const cryptoText = `✧ *${coin.toUpperCase()} PRICE*
 ╒═══════════════════╕
 
-┌─⊶ *PRICES*
-│ 💵 *USD:* ${priceUSD}
-│ 🇳🇬 *NGN:* ${priceNGN}
-│ ${changeEmoji} *24h Change:* ${change24h}%
-└─────────────⊶
+*Prices:*
+💵 *USD:* ${priceUSD}
+🇳🇬 *NGN:* ${priceNGN}
+${changeEmoji} *24h Change:* ${change24h}%
 
-┌─⊶ *MARKET INFO*
-│ 🏦 *Rank:* #${data.market_cap_rank || 'N/A'}
-│ ⏰ *Updated:* ${new Date().toLocaleTimeString()}
-└─────────────⊶
+*Market Info:*
+🏦 *Rank:* #${data.market_cap_rank || 'N/A'}
+⏰ *Updated:* ${new Date().toLocaleTimeString()}
 
 ╘═══════════════════╛
 ▸ _Data from CoinGecko API_`;
@@ -248,7 +221,7 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
         
         await this.sock.sendMessage(sender, {
           text: cryptoText
-        });
+        }, { quoted: msg });
       } else {
         throw new Error('No data received');
       }
