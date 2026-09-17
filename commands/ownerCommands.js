@@ -24,7 +24,7 @@ class OwnerCommands {
       const result = await this.broadcastMessage(message, 'Owner');
       
       await this.sock.sendMessage(ownerJid, {
-        text: `✅ *Broadcast Completed!*\n📤 Sent to: ${result.success} groups\n❌ Failed: ${result.failed}\n📊 Total: ${result.total}`
+        text: `✅ *Broadcast complete!*\nSuccessfully sent to ${result.success} groups}`
       });
     } catch (error) {
       await this.sock.sendMessage(ownerJid, {
