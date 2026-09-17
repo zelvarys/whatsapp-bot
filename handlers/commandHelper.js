@@ -267,30 +267,22 @@ class CommandHelper {
         const ownerJid = config.ownerNumber.includes('@') ? config.ownerNumber : config.ownerNumber + '@s.whatsapp.net';
         
         const feedbackMessage = `✧ *NEW FEEDBACK RECEIVED*
-╒═══════════════════╕
 
 ┌─⊶ *USER INFO*
 │ *Name:* ${userName}
 │ *User ID:* ${userJid}
-└─────────────⊶
-
-┌─⊶ *FEEDBACK*
-│ ${feedbackText}
-└─────────────⊶
-
-┌─⊶ *METADATA*
-│ *Time:* ${new Date().toLocaleString()}
 │ *Chat Type:* ${sender.endsWith('@g.us') ? 'Group' : 'Private'}
-│ *Group:* ${sender.endsWith('@g.us') ? sender : 'N/A'}
+│ *Time:* ${new Date().toLocaleString()}
 └─────────────⊶
 
-╘═══════════════════╛`;
+✧ *MESSAGE*
+${feedbackText}`;
         
         await sock.sendMessage(ownerJid, { text: feedbackMessage });
       }
       
       await sock.sendMessage(sender, {
-        text: 'Thank you for your feedback! I\'ve sent it to my developer. 💖'
+        text: 'Thank you for your feedback! It has been delivered to the developer team. 💖'
       }, { quoted: msg });
       
     } catch (error) {
