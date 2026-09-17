@@ -12,20 +12,20 @@ class GameCommands {
   }
   
   async showGames(sender, msg) {
-    const gamesList = `✧ *AVAILABLE GAMES* v${config.version}
+    const gamesList = `✧ *AVAILABLE GAMES*
 ╒═══════════════════╕
 
 ┌─⊶ *MAIN GAMES*
 │• game guess
 │• game trivia
-│• game scramble
 │• game riddle
 │• game flag
+│• game scramble
 └─────────────⊶
 
 ┌─⊶ *TIC TAC TOE*
 │• ttt start @friend
-│• ttt bot - Versus AI
+│• ttt bot - versus AI
 │• ttt end - End game
 └─────────────⊶
 
@@ -33,8 +33,7 @@ class GameCommands {
 │• rps [choice]
 └─────────────⊶
 
-╘═══════════════════╛
-▸ *Earn points by playing games!*`;
+╘═══════════════════╛`;
     
     await this.sock.sendMessage(sender, {
       text: gamesList
@@ -162,7 +161,7 @@ class GameCommands {
         text: `✧ *TIC TAC TOE*
 ┌─⊶
 │• ttt start @friend
-│• ttt bot - Versus AI
+│• ttt bot - versus AI
 │• ttt end - End game
 └─────────────⊶`
       }, { quoted: msg });

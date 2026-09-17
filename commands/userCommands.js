@@ -28,7 +28,7 @@ class UserCommands {
       progressBar += i < filledBars ? '█' : '░';
     }
     
-    const profileText = `✧ *USER PROFILE* v${config.version}
+    const profileText = `✧ *USER PROFILE*
 ╒═══════════════════╕
 
 ┌─⊶ *BASIC INFO*
@@ -66,7 +66,7 @@ ${user.achievements.length > 0 ? `\n  *Achievements:*\n${user.achievements.map(a
     
     const users = DataManager.getLeaderboard(limit);
     
-    let leaderboardText = `✧ *LEADERBOARD* v${config.version}
+    let leaderboardText = `✧ *LEADERBOARD*
 ╒═════════════════════╕
 
 `;
