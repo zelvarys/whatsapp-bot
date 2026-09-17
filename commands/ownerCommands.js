@@ -1,5 +1,4 @@
 const config = require('../config');
-const DataManager = require('../utils/dataManager');
 
 class OwnerCommands {
   constructor(sock) {
@@ -19,28 +18,19 @@ class OwnerCommands {
     }
     
     const message = fullText;
+    const ownerJid = config.ownerNumber.replace(/\D/g, '') + '@s.whatsapp.net';
     
-    const confirmMsg = await this.sock.sendMessage(sender, {
-      text: `✧ *CONFIRM BROADCAST*\n\nMessage: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}\n\nThis will be sent to all groups. Type "CONFIRM" to proceed or "CANCEL" to abort.`
-    });
-    
-    setTimeout(async () => {
-      try {
-        await this.sock.sendMessage(sender, { delete: confirmMsg.key });
-      } catch (e) {}
+    try {
+      const result = await this.broadcastMessage(message, 'Owner');
       
-      try {
-        const result = await this.broadcastMessage(message, 'Owner');
-        
-        await this.sock.sendMessage(sender, {
-          text: `✅ *Broadcast Completed!*\n📤 Sent to: ${result.success} groups`
-        });
-      } catch (error) {
-        await this.sock.sendMessage(sender, {
-          text: `❌ Broadcast failed: ${error.message}`
-        });
-      }
-    }, 10000);
+      await this.sock.sendMessage(ownerJid, {
+        text: `✅ *Broadcast Completed!*\n📤 Sent to: ${result.success} groups\n❌ Failed: ${result.failed}\n📊 Total: ${result.total}`
+      });
+    } catch (error) {
+      await this.sock.sendMessage(ownerJid, {
+        text: `❌ Broadcast failed: ${error.message}`
+      });
+    }
   }
   
   async broadcastMessage(message, source = 'owner') {
@@ -147,7 +137,7 @@ _Message from ${source}_`
 ▸ *Result:* ${resultString}
 
 ╘═══════════════════╛`
-      });
+      }, { quoted: msg });
       
     } catch (error) {
       console.error('Eval error:', error);
@@ -202,8 +192,11 @@ _Message from ${source}_`
             groupsList += `   ▸ *Active:* ${Math.floor(diffMin / 1440)} days ago\n`;
           }
         }
-
-        groupsList += '────────────────\n';
+        
+        // Separator between entries, not after the last one
+        if (i < groupKeys.length - 1) {
+          groupsList += '────────────────\n';
+        }
       }
       
       groupsList += `\n╘═══════════════════╛\n`;
@@ -218,38 +211,6 @@ _Message from ${source}_`
       console.error('Groups command error:', error);
       await this.sock.sendMessage(sender, {
         text: `❌ Error fetching groups: ${error.message}`
-      }, { quoted: msg });
-    }
-  }
-  
-  async linkProtect(sender, userJid, msg, args) {
-    if (args.length === 0) {
-      const settings = DataManager.getGroupSettings(sender);
-      const status = settings.linkProtect ? '✅ ACTIVE' : '❌ INACTIVE';
-      
-      await this.sock.sendMessage(sender, {
-        text: `✧ *LINK PROTECTION*
-┌─⊶
-│ *Status:* ${status}
-│ *Usage:* ${config.prefix}linkprotect [on/off]
-└─────────────⊶
-▸ Owner only`
-      }, { quoted: msg });
-      return;
-    }
-    
-    const action = args[0].toLowerCase();
-    
-    if (action === 'on' || action === 'off') {
-      const enabled = action === 'on';
-      DataManager.updateGroupSettings(sender, { linkProtect: enabled });
-      
-      await this.sock.sendMessage(sender, {
-        text: `Link protection is now ${enabled ? 'Active ✅' : 'Inactive ❌'}`
-      }, { quoted: msg });
-    } else {
-      await this.sock.sendMessage(sender, {
-        text: '❌ Invalid option!\nUse !linkprotect on/off'
       }, { quoted: msg });
     }
   }

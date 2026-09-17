@@ -212,10 +212,6 @@ class CommandRouter {
         await this.mediaCommands.downloadTikTok(sender, userJid, msg, fullText);
         break;
         
-      case 'linkprotect':
-        await this.ownerCommands.linkProtect(sender, userJid, msg, args);
-        break;
-        
       case 'owner':
       case 'dev':
       case 'info':

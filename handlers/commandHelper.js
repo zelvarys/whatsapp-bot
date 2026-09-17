@@ -30,8 +30,7 @@ class CommandHelper {
   
   async handleRepeatCommand(sender, userJid, msg, sock) {
     if (global.userLastCommand && global.userLastCommand.has(userJid)) {
-      const lastCommand = global.userLastCommand.get(userJid);
-      return lastCommand;
+      return global.userLastCommand.get(userJid);
     } else {
       await sock.sendMessage(sender, {
         text: '⚠️ No previous command to repeat!'
@@ -54,9 +53,7 @@ class CommandHelper {
     
     if (global.userCooldowns && global.userCooldowns.has(key)) {
       const lastUsed = global.userCooldowns.get(key);
-      if (now - lastUsed < cooldownTime) {
-        return true;
-      }
+      if (now - lastUsed < cooldownTime) return true;
     }
     
     if (!global.userCooldowns) global.userCooldowns = new Map();
@@ -100,8 +97,6 @@ class CommandHelper {
         const result = chatbotManager.setChatbotState(newState, userJid);
         
         if (result.success) {
-          global.chatbotState = result.enabled;
-          
           await this.sock.sendMessage(sender, {
             text: `${result.message}\n${result.enabled ? 'I\'ll start responding to chats!' : 'I\'ll stop responding to chats!'}`
           }, { quoted: msg });
@@ -141,17 +136,11 @@ class CommandHelper {
       
       let textToTranslate = '';
       
-      if (quotedMsg.conversation) {
-        textToTranslate = quotedMsg.conversation;
-      } else if (quotedMsg.extendedTextMessage?.text) {
-        textToTranslate = quotedMsg.extendedTextMessage.text;
-      } else if (quotedMsg.imageMessage?.caption) {
-        textToTranslate = quotedMsg.imageMessage.caption;
-      } else if (quotedMsg.videoMessage?.caption) {
-        textToTranslate = quotedMsg.videoMessage.caption;
-      } else if (quotedMsg.documentMessage?.caption) {
-        textToTranslate = quotedMsg.documentMessage.caption;
-      }
+      if (quotedMsg.conversation) textToTranslate = quotedMsg.conversation;
+      else if (quotedMsg.extendedTextMessage?.text) textToTranslate = quotedMsg.extendedTextMessage.text;
+      else if (quotedMsg.imageMessage?.caption) textToTranslate = quotedMsg.imageMessage.caption;
+      else if (quotedMsg.videoMessage?.caption) textToTranslate = quotedMsg.videoMessage.caption;
+      else if (quotedMsg.documentMessage?.caption) textToTranslate = quotedMsg.documentMessage.caption;
       
       if (!textToTranslate || textToTranslate.trim() === '') {
         await sock.sendMessage(sender, {
@@ -242,12 +231,8 @@ class CommandHelper {
       console.error('Song error:', error);
       
       let errorMsg = '❌ Could not download music.';
-      
-      if (error.message.includes('not found')) {
-        errorMsg = '❌ Song not found. Try different keywords.';
-      } else if (error.message.includes('timeout')) {
-        errorMsg = '❌ Download timed out. Try shorter song.';
-      }
+      if (error.message.includes('not found')) errorMsg = '❌ Song not found. Try different keywords.';
+      else if (error.message.includes('timeout')) errorMsg = '❌ Download timed out. Try shorter song.';
       
       await sock.sendMessage(sender, { text: errorMsg }, { quoted: msg });
     }
@@ -266,7 +251,7 @@ class CommandHelper {
         return;
       }
       
-      if (!fullText || fullText.trim().length < 5) {
+      if (fullText.trim().length < 5) {
         await sock.sendMessage(sender, {
           text: '❌ Feedback must be at least 5 characters long!'
         }, { quoted: msg });
@@ -274,9 +259,7 @@ class CommandHelper {
       }
       
       let feedbackText = fullText;
-      if (feedbackText.length > 500) {
-        feedbackText = feedbackText.substring(0, 500) + '...';
-      }
+      if (feedbackText.length > 500) feedbackText = feedbackText.substring(0, 500) + '...';
       
       const userName = await this.getDisplayName(userJid);
       
@@ -303,13 +286,11 @@ class CommandHelper {
 
 ╘═══════════════════╛`;
         
-        await sock.sendMessage(ownerJid, {
-          text: feedbackMessage
-        });
+        await sock.sendMessage(ownerJid, { text: feedbackMessage });
       }
       
       await sock.sendMessage(sender, {
-        text: 'Thank you for your feedback! I\'ve sent it to my developer team. 💖'
+        text: 'Thank you for your feedback! I\'ve sent it to my developer. 💖'
       }, { quoted: msg });
       
     } catch (error) {
@@ -343,23 +324,14 @@ class CommandHelper {
         return;
       }
       
-      const isOwnerUser = CommandHelper.isOwner(userJid, config);
-      
-      if (!isOwnerUser) {
+      if (!CommandHelper.isOwner(userJid, config)) {
         await sock.sendMessage(sender, {
           text: '❌ Only owner can delete bot messages!'
         }, { quoted: msg });
         return;
       }
       
-      const messageKey = {
-        remoteJid: sender,
-        fromMe: true,
-        id: repliedToId
-      };
-      
-      await sock.sendMessage(sender, { delete: messageKey });
-      
+      await sock.sendMessage(sender, { delete: { remoteJid: sender, fromMe: true, id: repliedToId } });
       await reactionManager.reactToMessage(sender, msg.key, '✅');
       
     } catch (error) {
@@ -407,26 +379,13 @@ class CommandHelper {
         return;
       }
       
-      const fs = require('fs');
-      const modeFilePath = './data/bot_mode.json';
-      const modeData = { mode: newMode };
+      DataManager.setBotMode(newMode);
       
-      try {
-        fs.writeFileSync(modeFilePath, JSON.stringify(modeData, null, 2));
-        global.botMode = newMode;
-        
-        await sock.sendMessage(sender, {
-          text: `✅ Bot mode changed to ${newMode.toUpperCase()}!`
-        }, { quoted: msg });
-        
-        await reactionManager.reactToMessage(sender, msg.key, '✅');
-        
-      } catch (error) {
-        console.error('Error saving bot mode:', error);
-        await sock.sendMessage(sender, {
-          text: '❌ Failed to save bot mode!'
-        }, { quoted: msg });
-      }
+      await sock.sendMessage(sender, {
+        text: `✅ Bot mode changed to ${newMode.toUpperCase()}!`
+      }, { quoted: msg });
+      
+      await reactionManager.reactToMessage(sender, msg.key, '✅');
       
     } catch (error) {
       console.error('Mode command error:', error);
@@ -471,10 +430,7 @@ class CommandHelper {
 ╘═══════════════════╛`;
 
     if (global.commandCache) {
-      global.commandCache.set('owner_info', {
-        response: ownerInfo,
-        timestamp: Date.now()
-      });
+      global.commandCache.set('owner_info', { response: ownerInfo, timestamp: Date.now() });
     }
     
     await sock.sendMessage(sender, { text: ownerInfo }, { quoted: msg });
@@ -534,7 +490,6 @@ class CommandHelper {
 │• eval [script]
 │• groups
 │• mode [args]
-│• linkprotect
 └────────────⊶
 
 ┌─⊶ *OTHERS*
@@ -574,10 +529,7 @@ class CommandHelper {
   
   async handlePingCommand(sender, msg, config, sock) {
     const startTime = Date.now();
-    
-    let status = "Excellent";
-    let emoji = "⚡";
-    let responseTime = 0;
+    let status = "Excellent", emoji = "⚡", responseTime = 0;
     
     try {
       const sentMsg = await sock.sendMessage(sender, {
@@ -586,16 +538,9 @@ class CommandHelper {
       
       responseTime = (Date.now() - startTime) - 200;
       
-      if (responseTime > 1000) {
-        status = "Slow";
-        emoji = "🐢";
-      } else if (responseTime > 500) {
-        status = "Moderate";
-        emoji = "⚠️";
-      } else if (responseTime > 200) {
-        status = "Good";
-        emoji = "✅";
-      }
+      if (responseTime > 1000) { status = "Slow"; emoji = "🐢"; }
+      else if (responseTime > 500) { status = "Moderate"; emoji = "⚠️"; }
+      else if (responseTime > 200) { status = "Good"; emoji = "✅"; }
       
       await sock.sendMessage(sender, {
         text: `┌─⊶📡 *BOT LATENCY*
@@ -604,11 +549,7 @@ class CommandHelper {
 └─────────────⊶`
       }, { quoted: msg });
       
-      try {
-        await sock.sendMessage(sender, { delete: sentMsg.key });
-      } catch (deleteError) {
-        console.log('Could not delete initial ping message');
-      }
+      try { await sock.sendMessage(sender, { delete: sentMsg.key }); } catch (e) {}
       
     } catch (error) {
       console.error('Error in ping command:', error);
@@ -623,8 +564,7 @@ class CommandHelper {
       'ask', 'story', 'chatbot', 'translate', 'tts', 'summary',
       'games', 'game', 'tictactoe', 'rps',
       'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
-      'profile', 'leaderboard', 'register', 'donate', 'owner', 'crypto', 'mode',
-      'linkprotect',
+      'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
       'download', 'song', 'tiktok', 'groups', 'instagram', 'youtube',
       'ping', 'stats', 'help', 'commands', 'menu'
     ];
@@ -641,12 +581,8 @@ class CommandHelper {
   
   levenshteinDistance(a, b) {
     const matrix = [];
-    for (let i = 0; i <= b.length; i++) {
-      matrix[i] = [i];
-    }
-    for (let j = 0; j <= a.length; j++) {
-      matrix[0][j] = j;
-    }
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
     for (let i = 1; i <= b.length; i++) {
       for (let j = 1; j <= a.length; j++) {
         if (b.charAt(i - 1) === a.charAt(j - 1)) {
@@ -666,19 +602,13 @@ class CommandHelper {
   extractPhoneNumber(jid) {
     const phoneWithCountryCode = jid.split('@')[0];
     const digitsOnly = phoneWithCountryCode.replace(/\D/g, '');
-    
-    if (digitsOnly.startsWith('234')) {
-      return '0' + digitsOnly.substring(3);
-    }
+    if (digitsOnly.startsWith('234')) return '0' + digitsOnly.substring(3);
     return digitsOnly;
   }
   
   async getDisplayName(jid) {
     try {
-      if (global.userData && global.userData[jid] && global.userData[jid].username) {
-        return global.userData[jid].username;
-      }
-      
+      if (global.userData?.[jid]?.username) return global.userData[jid].username;
       try {
         const contact = await this.sock.getContact(jid);
         return contact.pushname || contact.notify || contact.name || this.extractPhoneNumber(jid);
