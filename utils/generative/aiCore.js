@@ -45,7 +45,7 @@ class AICore {
             model: modelName,
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 1000,
+              maxOutputTokens: 2048,
               topP: 0.95,
               topK: 40
             }
@@ -53,7 +53,6 @@ class AICore {
           
           const prompt = `You are ${config.botName}, a friendly and helpful WhatsApp assistant created by Incognito.
 Answer the user's question in a clear and concise manner, no need for greetings.
-Keep your response under 150 words.
 If you cannot answer the question, say so.
 User's question: ${question}
 Response as ${config.botName}:`;
@@ -70,29 +69,20 @@ Response as ${config.botName}:`;
           const errorMsg = modelError.message || '';
           
           if (errorMsg.includes('model not found') || errorMsg.includes('not found') || errorMsg.includes('404')) {
-            console.log(`  ❌ Model ${modelName} not found for this key, trying next model...`);
             continue;
           } else if (errorMsg.includes('rate limit') || errorMsg.includes('quota') || errorMsg.includes('429')) {
-            console.log(`  ⚠️ Rate limit for model ${modelName}, trying next model...`);
             continue;
           } else if (errorMsg.includes('permission denied') || errorMsg.includes('403')) {
-            console.log(`  🔒 Permission denied for key ${keyIndex + 1}, trying next key...`);
             break;
           } else if (errorMsg.includes('safety') || errorMsg.includes('blocked')) {
-            console.log(`  🚫 Content blocked by safety settings for model ${modelName}`);
             return "⚠️ My safety settings prevented a response. Please try rephrasing.";
           } else {
-            console.log(`  ❌ Model ${modelName} failed: ${errorMsg.substring(0, 100)}`);
             continue;
           }
         }
       }
       
-      if (response) {
-        break;
-      }
-      
-      console.log(`❌ All models failed for key ${keyIndex + 1}, trying next key...`);
+      if (response) break;
     }
     
     if (!response) {
@@ -117,25 +107,20 @@ Response as ${config.botName}:`;
       const apiKey = config.GEMINI_API_KEYS[keyIndex];
       
       if (!apiKey || apiKey === "your_gemini_api_key") {
-        console.log(`🔑 Skipping key ${keyIndex + 1} (empty or placeholder)`);
         continue;
       }
-      
-      console.log(`🔑 Trying key ${keyIndex + 1} (${apiKey.substring(0, 15)}...) for chatbot`);
       
       for (let modelLoop = 0; modelLoop < CHATBOT_MODELS.length; modelLoop++) {
         const modelIndex = (currentChatbotModelIndex + modelLoop) % CHATBOT_MODELS.length;
         const modelName = CHATBOT_MODELS[modelIndex];
         
         try {
-          console.log(`  🧠 Trying model: ${modelName} (Key ${keyIndex + 1})`);
-          
           const genAI = new GoogleGenerativeAI(apiKey);
           const model = genAI.getGenerativeModel({ 
             model: modelName,
             generationConfig: {
               temperature: 0.8,
-              maxOutputTokens: 800,
+              maxOutputTokens: 2048,
               topP: 0.95,
               topK: 40
             }
@@ -153,35 +138,19 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
           currentChatbotKeyIndex = keyIndex;
           currentChatbotModelIndex = modelIndex;
           
-          console.log(`✅ Success with key ${keyIndex + 1}, model ${modelName}`);
           break;
         } catch (modelError) {
           const errorMsg = modelError.message || '';
           
-          if (errorMsg.includes('model not found') || errorMsg.includes('not found') || errorMsg.includes('404')) {
-            console.log(`  ❌ Model ${modelName} not found for this key, trying next model...`);
-            continue;
-          } else if (errorMsg.includes('rate limit') || errorMsg.includes('quota') || errorMsg.includes('429')) {
-            console.log(`  ⚠️ Rate limit for model ${modelName}, trying next model...`);
-            continue;
-          } else if (errorMsg.includes('permission denied') || errorMsg.includes('403')) {
-            console.log(`  🔒 Permission denied for key ${keyIndex + 1}, trying next key...`);
-            break;
-          } else if (errorMsg.includes('safety') || errorMsg.includes('blocked')) {
-            console.log(`  🚫 Content blocked by safety settings for model ${modelName}`);
-            return this.getChatbotFallback();
-          } else {
-            console.log(`  ❌ Model ${modelName} failed: ${errorMsg.substring(0, 100)}`);
-            continue;
-          }
+          if (errorMsg.includes('model not found') || errorMsg.includes('404')) continue;
+          if (errorMsg.includes('rate limit') || errorMsg.includes('429')) continue;
+          if (errorMsg.includes('permission denied') || errorMsg.includes('403')) break;
+          if (errorMsg.includes('safety') || errorMsg.includes('blocked')) return this.getChatbotFallback();
+          continue;
         }
       }
       
-      if (response) {
-        break;
-      }
-      
-      console.log(`❌ All models failed for key ${keyIndex + 1}, trying next key...`);
+      if (response) break;
     }
     
     if (!response) {
@@ -194,12 +163,10 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
     return cleanResponse;
   }
   
-  static getSmartFallback(question, isChatbot = false, isTranslation = false) {
+  static getSmartFallback(question, isChatbot = false) {
     const lowerQ = question.toLowerCase();
     
-    if (isChatbot) {
-      return this.getChatbotFallback();
-    }
+    if (isChatbot) return this.getChatbotFallback();
     
     if (lowerQ.includes('your name')) {
       return `I'm ${config.botName}, your friendly WhatsApp bot!`;
@@ -223,7 +190,7 @@ Respond naturally in 1-2 sentences. Keep it cool, light, and engaging.`;
     const fallbacks = [
       "Uh huh.. I've hit my limit, laterr",
       "Limit reached, let's chat some other time",
-      "Interesting! I'm going off soon"
+      "Interesting! I'm going off soon btw"
     ];
     
     return fallbacks[Math.floor(Math.random() * fallbacks.length)];
