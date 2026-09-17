@@ -115,7 +115,6 @@ class WhatsAppBot {
     try {
       if (state.creds?.me?.lid) {
         this.botLid = state.creds.me.lid.split(':')[0].split('@')[0];
-        console.log(`🤖 Bot LID: ${this.botLid}`);
       }
     } catch (e) {}
 
@@ -246,9 +245,9 @@ class WhatsAppBot {
       const code = await this.sock.requestPairingCode(this.phoneNumber);
       const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
 
-      console.log(`\n╔══════════════════════════════════╗`);
+      console.log(`\n════════════════════════════════`);
       console.log(`   Your Pairing Code: ${formatted}`);
-      console.log(`╚══════════════════════════════════╝`);
+      console.log(`════════════════════════════════`);
       console.log('1. Open WhatsApp on your phone');
       console.log('2. Settings → Linked Devices → Link a Device');
       console.log('3. Tap "Link with phone number instead"');
@@ -277,12 +276,10 @@ class WhatsAppBot {
     } catch (e) {}
 
     console.log(`\n✅ ${config.botName} is CONNECTED and ready!`);
-    console.log(`🤖 Bot User ID: ${this.botUserId}`);
-    console.log(`🆔 Bot LID: ${this.botLid || 'not yet available'}`);
-    console.log(`👥 Total users: ${Object.keys(global.userData).length}`);
-    console.log(`⏰ Online at: ${new Date(this.onlineSince).toLocaleTimeString()}`);
-    console.log(`🚀 Mode: ${global.botMode.toUpperCase()}`);
-    console.log(`💬 Chatbot: ${global.chatbotState ? 'ON' : 'OFF'}\n`);
+    console.log(`Bot User ID: ${this.botUserId}`);
+    console.log(`Bot LID: ${this.botLid || 'not yet available'}`);
+    console.log(`Total users: ${Object.keys(global.userData).length}`);
+    console.log(`Online at: ${new Date(this.onlineSince).toLocaleTimeString()}`);
 
     setTimeout(() => {
       this.sendOnlineNotification().catch(e => console.error('Online notify failed:', e.message));
