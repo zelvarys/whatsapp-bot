@@ -72,8 +72,6 @@ class GameLogic {
   static guessNumber(chatJid, bot) {
     if (!this.canStartGame(chatJid, 'guess')) {
       const activeGame = global.activeGames.get(chatJid);
-      const now = Date.now();
-      const timeLeft = Math.ceil((20000 - (now - activeGame.startTime)) / 1000);
       return `❌ A ${activeGame.type} game is already active!`;
     }
     
@@ -146,7 +144,6 @@ class GameLogic {
       };
     }
   
-    const remaining = game.maxAttempts - game.attempts;
     const hint = guessNum > game.number ? "📉 Too high!" : "📈 Too low!";
   
     return {
@@ -159,8 +156,6 @@ class GameLogic {
   static startTrivia(chatJid, bot) {
     if (!this.canStartGame(chatJid, 'trivia')) {
       const activeGame = global.activeGames.get(chatJid);
-      const now = Date.now();
-      const timeLeft = Math.ceil((20000 - (now - activeGame.startTime)) / 1000);
       return `❌ A ${activeGame.type} game is already active!`;
     }
     
@@ -205,15 +200,8 @@ ${question.options.join('\n')}
         mention: game.isGroup ? userJid : null
       };
     } else {
-      let feedback = "❌ *Wrong answer* Try again!";
-      
-      if (game.hintGiven !== userJid) {
-        game.hintGiven = userJid;
-        const options = ['A', 'B', 'C', 'D'];
-      }
-      
       return {
-        result: feedback,
+        result: "❌ *Wrong answer* Try again!",
         won: false,
         gameOver: false,
         mention: game.isGroup ? userJid : null
@@ -232,7 +220,7 @@ ${question.options.join('\n')}
     
     if (!choices.includes(userChoice)) {
       return {
-        result: "❌ Invalid subcommand!\n*Usage:* rps[rock/paper/scissors]", 
+        result: "❌ Invalid subcommand!\n*Usage:* rps [rock/paper/scissors]", 
         won: false,
         gameOver: true
       };
@@ -269,8 +257,6 @@ ${result}`,
   static startWordScramble(chatJid, bot) {
     if (!this.canStartGame(chatJid, 'wordScramble')) {
       const activeGame = global.activeGames.get(chatJid);
-      const now = Date.now();
-      const timeLeft = Math.ceil((20000 - (now - activeGame.startTime)) / 1000);
       return `❌ A ${activeGame.type} game is already active!`;
     }
     
@@ -340,8 +326,6 @@ ${result}`,
   static startRiddle(chatJid, bot) {
     if (!this.canStartGame(chatJid, 'riddle')) {
       const activeGame = global.activeGames.get(chatJid);
-      const now = Date.now();
-      const timeLeft = Math.ceil((20000 - (now - activeGame.startTime)) / 1000);
       return `❌ A ${activeGame.type} game is already active!`;
     }
     
@@ -354,6 +338,8 @@ ${result}`,
       type: 'riddle',
       question: riddle.question,
       answer: riddle.answer,
+      attempts: 0,
+      maxAttempts: 5,
       gameMessageId: null,
       lastMessageId: null,
       isGroup: chatJid.endsWith('@g.us')
@@ -363,7 +349,8 @@ ${result}`,
 
 ${riddle.question}
 
-▸ Reply with your answer!`;
+▸ Reply with your answer!
+▸ You have 5 attempts`;
   }
   
   static processRiddle(chatJid, userJid, guess) {
@@ -385,23 +372,32 @@ ${riddle.question}
         gameOver: true,
         mention: game.isGroup ? userJid : null
       };
-    } else {
-      let hint = "❌ *Wrong* Try again!";
-      
+    }
+    
+    game.attempts++;
+    
+    if (game.attempts >= game.maxAttempts) {
+      global.activeGames.delete(chatJid);
       return {
-        result: hint,
+        result: `❌ *Game Over!*\nNo one got it. The answer was *${game.answer}*\n\n▸ Play again: !game riddle`,
         won: false,
-        gameOver: false,
+        gameOver: true,
         mention: game.isGroup ? userJid : null
       };
     }
+    
+    const remaining = game.maxAttempts - game.attempts;
+    return {
+      result: `❌ *Wrong* Try again!\n${remaining} attempt${remaining > 1 ? 's' : ''} left.`,
+      won: false,
+      gameOver: false,
+      mention: game.isGroup ? userJid : null
+    };
   }
   
   static startFlagGame(chatJid, bot) {
     if (!this.canStartGame(chatJid, 'flag')) {
       const activeGame = global.activeGames.get(chatJid);
-      const now = Date.now();
-      const timeLeft = Math.ceil((20000 - (now - activeGame.startTime)) / 1000);
       return `❌ A ${activeGame.type} game is already active!`;
     }
     
@@ -435,7 +431,6 @@ ${riddle.question}
     game.attempts++;
     
     const userGuess = guess.trim().toLowerCase();
-    const correctCountry = game.country.toLowerCase();
     
     const isCorrect = this.isSimilarAnswer(userGuess, game.country);
     
