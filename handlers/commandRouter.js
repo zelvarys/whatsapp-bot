@@ -52,7 +52,6 @@ class CommandRouter {
       if (global.commandCache) {
         const cachedResponse = global.commandCache.get(cacheKey);
         if (cachedResponse && Date.now() - cachedResponse.timestamp < 300000) {
-          await this.reactionManager.reactToMessage(sender, msg.key, '⚡');
           await this.sock.sendMessage(sender, {
             text: cachedResponse.response
           }, { quoted: msg });
@@ -74,23 +73,32 @@ class CommandRouter {
       return;
     }
     
+    const emoji = this.reactionManager.getReactionForCommand(command);
+    let reactionApplied = false;
+    
     try {
-      const processingEmoji = this.reactionManager.getReactionForCommand(command, 'processing');
-      await this.reactionManager.reactToMessage(sender, msg.key, processingEmoji);
+      if (emoji) {
+        await this.reactionManager.reactToMessage(sender, msg.key, emoji);
+        reactionApplied = true;
+      }
       
       await this.routeToHandler(command, sender, userJid, msg, args, fullText, isGroup, bot);
-      
-      const successEmoji = this.reactionManager.getReactionForCommand(command, 'success');
-      await this.reactionManager.reactToMessage(sender, msg.key, successEmoji);
       
     } catch (error) {
       console.error(`Error executing command ${command}:`, error);
       
+      // Replace current reaction with ❌️ (single send = replace)
       await this.reactionManager.reactToMessage(sender, msg.key, '❌');
+      reactionApplied = false; // don't remove it in finally
       
       await this.sock.sendMessage(sender, {
         text: "❌ An error occurred while executing the command. Please try again later." 
       }, { quoted: msg });
+      
+    } finally {
+      if (reactionApplied) {
+        await this.reactionManager.removeReaction(sender, msg.key);
+      }
     }
   }
   

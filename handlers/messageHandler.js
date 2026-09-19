@@ -1,8 +1,8 @@
 const config = require('../config');
 const CommandRouter = require('./commandRouter');
-const GameLogic = require('../utils/gameLogic');
 const ChatbotManager = require('./chatbotManager');
 const MessageProcessor = require('./messageProcessor');
+const ReactionManager = require('../utils/reactionManager');
 
 class MessageHandler {
   constructor(sock, bot) {
@@ -11,6 +11,7 @@ class MessageHandler {
     this.commandRouter = new CommandRouter(sock);
     this.chatbotManager = new ChatbotManager();
     this.messageProcessor = new MessageProcessor(sock);
+    this.reactionManager = new ReactionManager(sock);
   }
   
   async handleMessage(msg, stats, isReplyToBot = false) {
@@ -43,7 +44,7 @@ class MessageHandler {
       }
       
       if (text) {
-        const gameHandled = await this.messageProcessor.handleGameReplies(msg, text, sender, userJid, repliedToMessageId);
+        const gameHandled = await this.handleGameRepliesWithReactions(msg, text, sender, userJid, repliedToMessageId);
         if (gameHandled) {
           if (stats && stats.commandsExecuted !== undefined) {
             stats.commandsExecuted++;
@@ -59,6 +60,44 @@ class MessageHandler {
     }
   }
   
+  // Wraps the game reply handler and adds ✅️/❌️ reactions for trivia, riddle, scramble
+  async handleGameRepliesWithReactions(msg, text, sender, userJid, repliedToMessageId) {
+    const activeGame = global.activeGames?.get(sender);
+    const gameType = activeGame?.type;
+    const isAnswerReactive = ['trivia', 'riddle', 'wordScramble'].includes(gameType);
+    
+    // Snapshot whether the game is still active so we can detect "the game ended"
+    const beforeActive = !!activeGame;
+    
+    const handled = await this.messageProcessor.handleGameReplies(msg, text, sender, userJid, repliedToMessageId);
+    
+    if (!handled) return false;
+    
+    if (isAnswerReactive) {
+      // Check the game result: if game no longer exists AND before it was active
+      // → the answer was correct (or game ended)
+      // If game still active → the answer was wrong
+      const stillActive = global.activeGames?.has(sender);
+      
+      if (!stillActive && beforeActive) {
+        // Game completed → correct
+        await this.reactionManager.reactToMessage(sender, msg.key, '✅');
+      } else if (stillActive) {
+        // Game still going → wrong answer (or non-answer input)
+        // Only react ❌️ if it was a valid-looking answer attempt
+        const trimmed = (text || '').trim();
+        const looksLikeAnswer =
+          gameType === 'trivia' ? /^[A-Da-d1-4]$/.test(trimmed) :
+          true; // scramble and riddle accept free text
+        if (looksLikeAnswer) {
+          await this.reactionManager.reactToMessage(sender, msg.key, '❌');
+        }
+      }
+    }
+    
+    return true;
+  }
+  
   async handleCommand(msg, text, sender, userJid, isGroup, stats) {
     if (stats && stats.commandsExecuted !== undefined) {
       stats.commandsExecuted++;
@@ -67,12 +106,10 @@ class MessageHandler {
   }
   
   async handleChatbotResponses(msg, sender, userJid, text, isGroup, isReplyToBot, isTagged, stats) {
-    // Chatbot must be ON for any of this
     if (!global.chatbotState) return;
     
     const isPrivateChat = !isGroup;
     
-    // ---- Private chat ----
     if (isPrivateChat) {
       if (!text || !text.trim()) return;
       
@@ -84,16 +121,12 @@ class MessageHandler {
       return;
     }
     
-    // ---- Group chat ----
-    // Only respond when tagged OR replying to bot
     if (!isTagged && !isReplyToBot) return;
     
-    // Handle bare tag: if tagged but no actual message beyond the mention
     if (isTagged && !isReplyToBot) {
       const strippedText = this.messageProcessor.stripMentions(text);
       
       if (!strippedText || strippedText.length === 0) {
-        // Bare tag → fixed reply
         await this.sock.sendMessage(sender, {
           text: "Hey boss, how can I help you"
         }, { quoted: msg });
@@ -102,7 +135,6 @@ class MessageHandler {
       }
     }
     
-    // Tag with message OR reply to bot → chatbot takes over
     const chatbotResponse = await this.chatbotManager.generateResponse(text, userJid, sender);
     if (chatbotResponse) {
       await this.sock.sendMessage(sender, { text: chatbotResponse }, { quoted: msg });
