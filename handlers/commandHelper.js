@@ -153,10 +153,6 @@ class CommandHelper {
         textToTranslate = textToTranslate.substring(0, 1000) + '...';
       }
       
-      const processingMsg = await sock.sendMessage(sender, {
-        text: '🌍 *Translating...*'
-      }, { quoted: msg });
-      
       const result = await chatbotManager.translateText(textToTranslate, userJid);
       
       if (result.success) {
@@ -168,12 +164,6 @@ class CommandHelper {
           text: `❌ Translation failed: ${result.error}`
         }, { quoted: msg });
       }
-      
-      try {
-        if (processingMsg && processingMsg.key) {
-          await sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {}
       
     } catch (error) {
       console.error('Translate command error:', error);
@@ -198,10 +188,6 @@ class CommandHelper {
     const query = fullText.trim();
     
     try {
-      const processingMsg = await sock.sendMessage(sender, {
-        text: `🎵 *Searching ${query.substring(0, 30)}...*`
-      }, { quoted: msg });
-      
       const MusicDownloader = require('../utils/musicDownloader');
       let result;
       
@@ -218,12 +204,6 @@ class CommandHelper {
           fileName: `${result.title.replace(/[^\w\s]/gi, '')}.mp3`,
           caption: `🎵 ${result.title}\n✅ Downloaded`
         }, { quoted: msg });
-        
-        try {
-          if (processingMsg && processingMsg.key) {
-            await sock.sendMessage(sender, { delete: processingMsg.key });
-          }
-        } catch (e) {}
       } else {
         throw new Error(result.error || 'Download failed');
       }
@@ -324,11 +304,9 @@ ${feedbackText}`;
       }
       
       await sock.sendMessage(sender, { delete: { remoteJid: sender, fromMe: true, id: repliedToId } });
-      await reactionManager.reactToMessage(sender, msg.key, '✅');
       
     } catch (error) {
       console.error('Delete command error:', error);
-      await reactionManager.reactToMessage(sender, msg.key, '❌');
       await sock.sendMessage(sender, {
         text: '❌ Failed to delete message.'
       }, { quoted: msg });
@@ -376,8 +354,6 @@ ${feedbackText}`;
       await sock.sendMessage(sender, {
         text: `✅ Bot mode changed to ${newMode.toUpperCase()}!`
       }, { quoted: msg });
-      
-      await reactionManager.reactToMessage(sender, msg.key, '✅');
       
     } catch (error) {
       console.error('Mode command error:', error);

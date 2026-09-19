@@ -33,10 +33,6 @@ class FileProcessor {
         return;
       }
       
-      const processingMsg = await this.sock.sendMessage(sender, {
-        text: '🎨 *Creating sticker...*'
-      });
-      
       const messageToDownload = { message: quotedMsg };
       const downloadedData = await this.sock.downloadMediaMessage(messageToDownload);
       
@@ -99,21 +95,8 @@ class FileProcessor {
         }
       }, { quoted: msg });
       
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {}
-      
     } catch (error) {
       console.error('Sticker creation error:', error);
-      
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {}
-      
       await this.sock.sendMessage(sender, {
         text: '❌ Failed to create sticker.'
       }, { quoted: msg });
@@ -121,7 +104,6 @@ class FileProcessor {
   }
   
   async compressFile(sender, userJid, msg, config) {
-    let processingMsg;
     try {
       const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       const hasMedia = msg.message?.imageMessage || 
@@ -142,10 +124,6 @@ class FileProcessor {
       
       const isImage = msg.message?.imageMessage || (quotedMsg && quotedMsg.imageMessage);
       const isVideo = msg.message?.videoMessage || (quotedMsg && quotedMsg.videoMessage);
-      
-      processingMsg = await this.sock.sendMessage(sender, {
-        text: `🗜️ *Compressing ${isImage ? 'image' : 'video'}...*`
-      });
       
       const messageToDownload = quotedMsg ? { message: quotedMsg } : msg;
       const downloadedData = await this.sock.downloadMediaMessage(messageToDownload);
@@ -191,9 +169,6 @@ class FileProcessor {
       compressedBuffer = fs.readFileSync(tempOutputPath);
       const compressedSize = compressedBuffer.length;
       
-      const savedBytes = originalSize - compressedSize;
-      const savedPercentage = ((savedBytes / originalSize) * 100).toFixed(1);
-      
       try {
         if (fs.existsSync(tempInputPath)) fs.unlinkSync(tempInputPath);
         if (fs.existsSync(tempOutputPath)) fs.unlinkSync(tempOutputPath);
@@ -221,15 +196,7 @@ class FileProcessor {
         errorMsg += `\nError: ${error.message}`;
       }
       
-      await this.sock.sendMessage(sender, { text: errorMsg });
-    } finally {
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {
-        console.error('Error deleting message:', e);
-      }
+      await this.sock.sendMessage(sender, { text: errorMsg }, { quoted: msg });
     }
   }
   
@@ -259,10 +226,6 @@ class FileProcessor {
         return;
       }
       
-      const processingMsg = await this.sock.sendMessage(sender, {
-        text: '🔍 *Revealing view-once media...*'
-      });
-      
       const mediaMsg = {
         message: quotedMsg,
         key: {
@@ -284,10 +247,6 @@ class FileProcessor {
           video: mediaBuffer
         }, { quoted: msg });
       }
-      
-      try {
-        await this.sock.sendMessage(sender, { delete: processingMsg.key });
-      } catch (e) {}
       
     } catch (error) {
       console.error('Reveal error:', error);

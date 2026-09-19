@@ -22,21 +22,9 @@ class AICommands {
       return;
     }
     
-    const thinkingMsg = await this.sock.sendMessage(sender, {
-      text: `🤔 *Thinking...*`
-    }, { quoted: msg });
-    
     try {
       const aiResponse = await AIService.getGeminiAIResponse(question, userJid);
-      
       await this.sock.sendMessage(sender, { text: aiResponse }, { quoted: msg });
-      
-      try {
-        if (thinkingMsg && thinkingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: thinkingMsg.key });
-        }
-      } catch (e) {}
-      
     } catch (error) {
       console.error('❌ Error in AI command:', error);
       await this.sock.sendMessage(sender, {
@@ -61,10 +49,6 @@ class AICommands {
       return;
     }
     
-    const processingMsg = await this.sock.sendMessage(sender, {
-      text: `✍️ *Writing your story...*`
-    }, { quoted: msg });
-    
     try {
       const result = await AIService.generateStory(prompt, userJid);
       
@@ -78,12 +62,6 @@ class AICommands {
       await this.sock.sendMessage(sender, {
         text: result.story
       }, { quoted: msg });
-      
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {}
       
     } catch (error) {
       console.error('❌ Error in story command:', error);

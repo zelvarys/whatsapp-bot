@@ -8,7 +8,6 @@ class PDFGenerator {
   }
   
   async imageToPdf(sender, userJid, msg, config) {
-    let processingMsg;
     try {
       const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       const hasImage = msg.message?.imageMessage || (quotedMsg && quotedMsg.imageMessage);
@@ -19,10 +18,6 @@ class PDFGenerator {
         }, { quoted: msg });
         return;
       }
-      
-      processingMsg = await this.sock.sendMessage(sender, {
-        text: '📄 *Converting image to PDF...*'
-      });
       
       const messageToDownload = quotedMsg ? { message: quotedMsg } : msg;
       const downloadedData = await this.sock.downloadMediaMessage(messageToDownload);
@@ -105,24 +100,12 @@ class PDFGenerator {
       console.error('Image to PDF error:', error);
       await this.sock.sendMessage(sender, {
         text: `❌ Conversion failed: ${error.message}`
-      });
-    } finally {
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {
-        console.error('Error deleting message:', e);
-      }
+      }, { quoted: msg });
     }
   }
   
   async textToPdf(sender, userJid, msg, text, config) {
     try {
-      const processingMsg = await this.sock.sendMessage(sender, {
-        text: '📄 *Creating PDF from text...*'
-      });
-      
       const doc = new PDFDocument({
         size: 'A4',
         margin: 50
@@ -193,17 +176,11 @@ class PDFGenerator {
         mimetype: 'application/pdf'
       }, { quoted: msg });
       
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {}
-      
     } catch (error) {
       console.error('Text to PDF error:', error);
       await this.sock.sendMessage(sender, {
-        text: `❌ Error creating PDF: ${error.message}\n\nTry with shorter text or check your input.`
-      });
+        text: `❌ Error creating PDF: ${error.message}`
+      }, { quoted: msg });
     }
   }
   

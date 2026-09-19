@@ -17,10 +17,6 @@ class MediaCommands {
     const url = fullText.trim();
     
     try {
-      const processingMsg = await this.sock.sendMessage(sender, {
-        text: '⏳ *Downloading media...*'
-      });
-      
       const result = await MediaDownloader.downloadMedia(url);
       
       if (!result.success) {
@@ -34,17 +30,13 @@ class MediaCommands {
 └─────────────⊶
 ▸ _Downloaded via ${config.botName}_`,
         mimetype: 'video/mp4'
-      });
-      
-      try {
-        await this.sock.sendMessage(sender, { delete: processingMsg.key });
-      } catch (e) {}
+      }, { quoted: msg });
       
     } catch (error) {
       console.error('Download error:', error);
       await this.sock.sendMessage(sender, {
         text: `❌ Download failed! Try a different link or platform.`
-      });
+      }, { quoted: msg });
     }
   }
   

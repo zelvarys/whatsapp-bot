@@ -27,7 +27,6 @@ class TTSService {
       return;
     }
     
-    let processingMsg;
     const tempDir = './temp';
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
     
@@ -36,10 +35,6 @@ class TTSService {
     const oggPath = path.join(tempDir, `tts_${timestamp}.ogg`);
     
     try {
-      processingMsg = await this.sock.sendMessage(sender, {
-        text: '🎤 *Generating speech...*'
-      }, { quoted: msg });
-      
       const encodedText = encodeURIComponent(fullText);
       const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-GB&ttsspeed=1&q=${encodedText}`;
       
@@ -59,7 +54,6 @@ class TTSService {
       
       fs.writeFileSync(mp3Path, Buffer.from(response.data));
       
-      // Convert MP3 → OGG/Opus for proper WhatsApp voice note support
       await new Promise((resolve, reject) => {
         ffmpeg(mp3Path)
           .audioCodec('libopus')
@@ -90,15 +84,8 @@ class TTSService {
         text: '❌ Failed to generate speech.'
       }, { quoted: msg });
     } finally {
-      // Clean up temp files
       try { if (fs.existsSync(mp3Path)) fs.unlinkSync(mp3Path); } catch {}
       try { if (fs.existsSync(oggPath)) fs.unlinkSync(oggPath); } catch {}
-      
-      try {
-        if (processingMsg && processingMsg.key) {
-          await this.sock.sendMessage(sender, { delete: processingMsg.key });
-        }
-      } catch (e) {}
     }
   }
 }

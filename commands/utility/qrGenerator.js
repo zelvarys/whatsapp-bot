@@ -19,10 +19,6 @@ class QRGenerator {
     }
     
     try {
-      const processingMsg = await this.sock.sendMessage(sender, {
-        text: '🔳 *Generating QR code...*'
-      });
-      
       const qrBuffer = await QRCode.toBuffer(fullText, {
         width: 300,
         margin: 2,
@@ -37,15 +33,11 @@ class QRGenerator {
         caption: `*Content:* ${fullText.substring(0, 100)}${fullText.length > 100 ? '...' : ''}`
       }, { quoted: msg });
       
-      try {
-        await this.sock.sendMessage(sender, { delete: processingMsg.key });
-      } catch (e) {}
-      
     } catch (error) {
       console.error('QR Code error:', error);
       await this.sock.sendMessage(sender, {
         text: '❌ Failed to generate QR code'
-      });
+      }, { quoted: msg });
     }
   }
 }
