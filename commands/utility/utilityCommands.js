@@ -75,7 +75,7 @@ class UtilityCommands {
   
   async summarizeMessages(sender, userJid, msg, args) {
     try {
-      let limit = args[0] ? parseInt(args[0]) : 30;
+      let limit = args[0] ? parseInt(args[0]) : 50;
       
       if (!global.chatHistory || !global.chatHistory[sender]) {
         await this.sock.sendMessage(sender, {

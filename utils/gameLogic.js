@@ -205,7 +205,7 @@ ${question.options.join('\n')}
         mention: game.isGroup ? userJid : null
       };
     } else {
-      let feedback = "❌ *Wrong answer* Try again!\n\n";
+      let feedback = "❌ *Wrong answer* Try again!";
       
       if (game.hintGiven !== userJid) {
         game.hintGiven = userJid;
