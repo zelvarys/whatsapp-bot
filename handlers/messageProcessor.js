@@ -10,10 +10,7 @@ class MessageProcessor {
   
   async getDisplayName(jid) {
     try {
-      if (global.userData?.[jid]?.username) {
-        return global.userData[jid].username;
-      }
-      
+      if (global.userData?.[jid]?.username) return global.userData[jid].username;
       try {
         const contact = await this.sock.getContact(jid);
         return contact.pushname || contact.notify || contact.name || this.extractPhoneNumber(jid);
@@ -28,10 +25,7 @@ class MessageProcessor {
   extractPhoneNumber(jid) {
     const phoneWithCountryCode = jid.split('@')[0];
     const digitsOnly = phoneWithCountryCode.replace(/\D/g, '');
-    
-    if (digitsOnly.startsWith('234')) {
-      return '0' + digitsOnly.substring(3);
-    }
+    if (digitsOnly.startsWith('234')) return '0' + digitsOnly.substring(3);
     return digitsOnly;
   }
   
@@ -110,10 +104,8 @@ class MessageProcessor {
     if (mentionedJids && mentionedJids.length > 0) {
       isTagged = mentionedJids.some(mentionedJid => {
         const mentionedClean = mentionedJid.split(':')[0].split('@')[0];
-        
         if (botNumber && mentionedClean === botNumber) return true;
         if (botLid && mentionedClean === botLid) return true;
-        
         return false;
       });
     }
@@ -135,7 +127,6 @@ class MessageProcessor {
       "I'm here! Need something?",
       `Hey @${await this.getDisplayName(userJid)}! Tagged me? 👋`,
     ];
-    
     const response = responses[Math.floor(Math.random() * responses.length)];
     await sock.sendMessage(sender, { text: response, mentions: [userJid] }, { quoted: msg });
   }
@@ -153,15 +144,11 @@ class MessageProcessor {
     try {
       if (text && /^[1-9]$/.test(text.trim())) {
         const tictactoeHandled = await this.handleTicTacToeReply(sender, userJid, text.trim(), msg, repliedToMessageId);
-        if (tictactoeHandled) return true;
+        if (tictactoeHandled) return { handled: true, reaction: null };
       }
       
-      // ===== Enforcement: must be a reply to the specific game message chain =====
       const activeGame = global.activeGames?.get(sender);
-      if (!activeGame) {
-        // No active game in this chat → no answer processing
-        return false;
-      }
+      if (!activeGame) return { handled: false, reaction: null };
       
       const gameMessageId = activeGame.gameMessageId;
       const lastMessageId = activeGame.lastMessageId;
@@ -171,17 +158,14 @@ class MessageProcessor {
         ((gameMessageId && repliedToMessageId === gameMessageId) ||
          (lastMessageId && repliedToMessageId === lastMessageId));
       
-      if (!isReplyToGame) {
-        // Not a reply to the game's message → ignore for game purposes
-        return false;
-      }
+      if (!isReplyToGame) return { handled: false, reaction: null };
       
       const gameReply = await this.handleGameReply(sender, userJid, text.trim(), msg, repliedToMessageId);
-      return gameReply.handled;
+      return gameReply;
       
     } catch (error) {
       console.error('Error handling game replies:', error);
-      return false;
+      return { handled: false, reaction: null };
     }
   }
   
@@ -189,7 +173,6 @@ class MessageProcessor {
     try {
       const game = this.findUserTicTacToeGame(userJid);
       if (!game) return false;
-      
       if (game.chatJid !== sender) return false;
       
       const TicTacToeCommands = require('../commands/games/gameCommands');
@@ -197,21 +180,15 @@ class MessageProcessor {
       
       await tictactoeCmd.makeMove(sender, userJid, msg, [text]);
       return true;
-      
     } catch (error) {
       return false;
     }
   }
   
   findUserTicTacToeGame(userJid) {
-    if (!global.tictactoeGames || global.tictactoeGames.size === 0) {
-      return null;
-    }
-    
+    if (!global.tictactoeGames || global.tictactoeGames.size === 0) return null;
     for (const [gameId, game] of global.tictactoeGames.entries()) {
-      if (game.player1 === userJid || game.player2 === userJid) {
-        return game;
-      }
+      if (game.player1 === userJid || game.player2 === userJid) return game;
     }
     return null;
   }
@@ -219,16 +196,19 @@ class MessageProcessor {
   async handleGameReply(sender, userJid, text, msg, repliedToMessageId) {
     try {
       const game = global.activeGames.get(sender);
-      if (!game) return { handled: false };
+      if (!game) return { handled: false, reaction: null };
+      
+      const gameType = game.type;
+      const isReactiveGame = ['trivia', 'riddle', 'wordScramble', 'flag'].includes(gameType);
       
       let result = null;
+      let attemptedAnswer = false;
       
-      switch (game.type) {
+      switch (gameType) {
         case 'guess': {
           const guessNum = parseInt(text);
-          if (isNaN(guessNum)) {
-            return { handled: true };
-          }
+          if (isNaN(guessNum)) return { handled: true, reaction: null };
+          attemptedAnswer = true;
           result = GameLogic.processGuess(sender, userJid, text);
           break;
         }
@@ -237,44 +217,60 @@ class MessageProcessor {
           const answerMap = { '1': 'A', '2': 'B', '3': 'C', '4': 'D' };
           const answer = answerMap[text] || text.toUpperCase();
           if (!(['A', 'B', 'C', 'D'].includes(answer) || /^[1-4]$/.test(text))) {
-            return { handled: true };
+            return { handled: true, reaction: null };
           }
+          attemptedAnswer = true;
           result = GameLogic.processTriviaAnswer(sender, userJid, answer);
           break;
         }
           
         case 'wordScramble':
+          attemptedAnswer = true;
           result = GameLogic.processWordScramble(sender, userJid, text);
           break;
           
         case 'riddle':
+          attemptedAnswer = true;
           result = GameLogic.processRiddle(sender, userJid, text);
           break;
           
         case 'flag':
+          attemptedAnswer = true;
           result = GameLogic.processFlagGuess(sender, userJid, text);
           break;
       }
       
-      if (result) {
-        const sent = await this.sock.sendMessage(sender, {
-          text: result.mention ? `${result.result}` : result.result,
-          mentions: result.mention ? [result.mention] : undefined
-        }, { quoted: msg });
-        
-        // If the game is still active, update lastMessageId so the user can
-        // reply to the newest bot hint/feedback message
-        const stillActive = global.activeGames.get(sender);
-        if (stillActive && sent?.key?.id) {
-          stillActive.lastMessageId = sent.key.id;
-        }
-        
-        return { handled: true };
+      if (!result) return { handled: false, reaction: null };
+      
+      const sent = await this.sock.sendMessage(sender, {
+        text: result.mention ? `${result.result}` : result.result,
+        mentions: result.mention ? [result.mention] : undefined
+      }, { quoted: msg });
+      
+      // Update lastMessageId so future replies can chain off the latest bot message
+      const stillActive = global.activeGames.get(sender);
+      if (stillActive && sent?.key?.id) {
+        stillActive.lastMessageId = sent.key.id;
       }
       
-      return { handled: false };
+      // Determine reaction — ONLY for the 4 reactive games
+      let reaction = null;
+      if (isReactiveGame && attemptedAnswer) {
+        if (result.won) {
+          reaction = '✅';
+        } else if (!result.gameOver) {
+          // Wrong but game continues
+          reaction = '❌';
+        }
+        // If gameOver but !won → game ended without a correct answer
+        // (e.g. flag ran out of attempts, riddle ran out of attempts).
+        // Don't react in that case — the reply text already says "Game Over".
+      }
+      
+      return { handled: true, reaction };
+      
     } catch (error) {
-      return { handled: false };
+      return { handled: false, reaction: null };
     }
   }
 }

@@ -44,8 +44,12 @@ class MessageHandler {
       }
       
       if (text) {
-        const gameHandled = await this.handleGameRepliesWithReactions(msg, text, sender, userJid, repliedToMessageId);
-        if (gameHandled) {
+        const gameResult = await this.messageProcessor.handleGameReplies(msg, text, sender, userJid, repliedToMessageId);
+        
+        if (gameResult.handled) {
+          if (gameResult.reaction) {
+            await this.reactionManager.reactToMessage(sender, msg.key, gameResult.reaction);
+          }
           if (stats && stats.commandsExecuted !== undefined) {
             stats.commandsExecuted++;
           }
@@ -58,37 +62,6 @@ class MessageHandler {
     } catch (error) {
       console.error('❌ Error in handleMessage:', error);
     }
-  }
-  
-  async handleGameRepliesWithReactions(msg, text, sender, userJid, repliedToMessageId) {
-    const activeGame = global.activeGames?.get(sender);
-    const gameType = activeGame?.type;
-    const isAnswerReactive = ['trivia', 'riddle', 'wordScramble'].includes(gameType);
-    
-    const beforeActive = !!activeGame;
-    
-    const handled = await this.messageProcessor.handleGameReplies(msg, text, sender, userJid, repliedToMessageId);
-    
-    if (!handled) return false;
-    
-    if (isAnswerReactive) {
-      const stillActive = global.activeGames?.has(sender);
-      
-      if (!stillActive && beforeActive) {
-        // Game completed → correct
-        await this.reactionManager.reactToMessage(sender, msg.key, '✅');
-      } else if (stillActive) {
-        const trimmed = (text || '').trim();
-        const looksLikeAnswer =
-          gameType === 'trivia' ? /^[A-Da-d1-4]$/.test(trimmed) :
-          true;
-        if (looksLikeAnswer) {
-          await this.reactionManager.reactToMessage(sender, msg.key, '❌');
-        }
-      }
-    }
-    
-    return true;
   }
   
   async handleCommand(msg, text, sender, userJid, isGroup, stats) {
@@ -105,7 +78,6 @@ class MessageHandler {
     
     if (isPrivateChat) {
       if (!text || !text.trim()) return;
-      
       const chatbotResponse = await this.chatbotManager.generateResponse(text, userJid, sender);
       if (chatbotResponse) {
         await this.sock.sendMessage(sender, { text: chatbotResponse }, { quoted: msg });
@@ -118,7 +90,6 @@ class MessageHandler {
     
     if (isTagged && !isReplyToBot) {
       const strippedText = this.messageProcessor.stripMentions(text);
-      
       if (!strippedText || strippedText.length === 0) {
         await this.sock.sendMessage(sender, {
           text: "Hey boss, how can I help you"
