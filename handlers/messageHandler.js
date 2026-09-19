@@ -60,13 +60,11 @@ class MessageHandler {
     }
   }
   
-  // Wraps the game reply handler and adds ✅️/❌️ reactions for trivia, riddle, scramble
   async handleGameRepliesWithReactions(msg, text, sender, userJid, repliedToMessageId) {
     const activeGame = global.activeGames?.get(sender);
     const gameType = activeGame?.type;
     const isAnswerReactive = ['trivia', 'riddle', 'wordScramble'].includes(gameType);
     
-    // Snapshot whether the game is still active so we can detect "the game ended"
     const beforeActive = !!activeGame;
     
     const handled = await this.messageProcessor.handleGameReplies(msg, text, sender, userJid, repliedToMessageId);
@@ -74,21 +72,16 @@ class MessageHandler {
     if (!handled) return false;
     
     if (isAnswerReactive) {
-      // Check the game result: if game no longer exists AND before it was active
-      // → the answer was correct (or game ended)
-      // If game still active → the answer was wrong
       const stillActive = global.activeGames?.has(sender);
       
       if (!stillActive && beforeActive) {
         // Game completed → correct
         await this.reactionManager.reactToMessage(sender, msg.key, '✅');
       } else if (stillActive) {
-        // Game still going → wrong answer (or non-answer input)
-        // Only react ❌️ if it was a valid-looking answer attempt
         const trimmed = (text || '').trim();
         const looksLikeAnswer =
           gameType === 'trivia' ? /^[A-Da-d1-4]$/.test(trimmed) :
-          true; // scramble and riddle accept free text
+          true;
         if (looksLikeAnswer) {
           await this.reactionManager.reactToMessage(sender, msg.key, '❌');
         }

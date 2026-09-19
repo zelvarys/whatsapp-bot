@@ -85,15 +85,12 @@ class MessageProcessor {
     }
   }
   
-  // ========== FIXED: LID-aware mention detection ==========
   checkMentions(msg, text) {
     let isTagged = false;
     
-    // Bot's phone number format (strip device suffix)
     const botUserId = global.botInstance?.botUserId;
     const botNumber = botUserId ? botUserId.split(':')[0].split('@')[0] : null;
     
-    // Bot's LID — read from memory first, then auth creds file as fallback
     let botLid = global.botInstance?.botLid || null;
     
     if (!botLid) {
@@ -109,7 +106,6 @@ class MessageProcessor {
       } catch (e) {}
     }
     
-    // Check structured mentions (WhatsApp sends LID format here)
     const mentionedJids = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
     if (mentionedJids && mentionedJids.length > 0) {
       isTagged = mentionedJids.some(mentionedJid => {
@@ -122,7 +118,6 @@ class MessageProcessor {
       });
     }
     
-    // Fallback: text-based mentions
     if (!isTagged && text) {
       const textLower = text.toLowerCase();
       if (textLower.includes('@incognito') || textLower.includes('@bot') || 
@@ -145,11 +140,9 @@ class MessageProcessor {
     await sock.sendMessage(sender, { text: response, mentions: [userJid] }, { quoted: msg });
   }
   
-  // Extract text with the mention stripped out (for detecting bare tags)
   stripMentions(text) {
     if (!text) return '';
     let cleaned = text;
-    // Remove @mentions (various formats)
     cleaned = cleaned.replace(/@\d+/g, '');
     cleaned = cleaned.replace(/@[\w\s]+?(?=\s|$)/gi, '');
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
@@ -161,6 +154,26 @@ class MessageProcessor {
       if (text && /^[1-9]$/.test(text.trim())) {
         const tictactoeHandled = await this.handleTicTacToeReply(sender, userJid, text.trim(), msg, repliedToMessageId);
         if (tictactoeHandled) return true;
+      }
+      
+      // ===== Enforcement: must be a reply to the specific game message chain =====
+      const activeGame = global.activeGames?.get(sender);
+      if (!activeGame) {
+        // No active game in this chat → no answer processing
+        return false;
+      }
+      
+      const gameMessageId = activeGame.gameMessageId;
+      const lastMessageId = activeGame.lastMessageId;
+      
+      const isReplyToGame =
+        repliedToMessageId &&
+        ((gameMessageId && repliedToMessageId === gameMessageId) ||
+         (lastMessageId && repliedToMessageId === lastMessageId));
+      
+      if (!isReplyToGame) {
+        // Not a reply to the game's message → ignore for game purposes
+        return false;
       }
       
       const gameReply = await this.handleGameReply(sender, userJid, text.trim(), msg, repliedToMessageId);
@@ -205,52 +218,58 @@ class MessageProcessor {
   
   async handleGameReply(sender, userJid, text, msg, repliedToMessageId) {
     try {
-      if (global.activeGames && global.activeGames.has(sender)) {
-        const game = global.activeGames.get(sender);
-        
-        let result = null;
-        
-        switch (game.type) {
-          case 'guess':
-            const guessNum = parseInt(text);
-            if (!isNaN(guessNum)) {
-              result = GameLogic.processGuess(sender, userJid, text);
-            } else {
-              return { handled: true };
-            }
-            break;
-            
-          case 'trivia':
-            const answerMap = {'1': 'A', '2': 'B', '3': 'C', '4': 'D'};
-            const answer = answerMap[text] || text.toUpperCase();
-            if (['A', 'B', 'C', 'D'].includes(answer) || /^[1-4]$/.test(text)) {
-              result = GameLogic.processTriviaAnswer(sender, userJid, answer);
-            } else {
-              return { handled: true };
-            }
-            break;
-            
-          case 'wordScramble':
-            result = GameLogic.processWordScramble(sender, userJid, text);
-            break;
-            
-          case 'riddle':
-            result = GameLogic.processRiddle(sender, userJid, text);
-            break;
-            
-          case 'flag':
-            result = GameLogic.processFlagGuess(sender, userJid, text);
-            break;
+      const game = global.activeGames.get(sender);
+      if (!game) return { handled: false };
+      
+      let result = null;
+      
+      switch (game.type) {
+        case 'guess': {
+          const guessNum = parseInt(text);
+          if (isNaN(guessNum)) {
+            return { handled: true };
+          }
+          result = GameLogic.processGuess(sender, userJid, text);
+          break;
         }
-        
-        if (result) {
-          await this.sock.sendMessage(sender, { 
-            text: result.mention ? `${result.result}` : result.result,
-            mentions: result.mention ? [result.mention] : undefined
-          }, { quoted: msg });
           
-          return { handled: true };
+        case 'trivia': {
+          const answerMap = { '1': 'A', '2': 'B', '3': 'C', '4': 'D' };
+          const answer = answerMap[text] || text.toUpperCase();
+          if (!(['A', 'B', 'C', 'D'].includes(answer) || /^[1-4]$/.test(text))) {
+            return { handled: true };
+          }
+          result = GameLogic.processTriviaAnswer(sender, userJid, answer);
+          break;
         }
+          
+        case 'wordScramble':
+          result = GameLogic.processWordScramble(sender, userJid, text);
+          break;
+          
+        case 'riddle':
+          result = GameLogic.processRiddle(sender, userJid, text);
+          break;
+          
+        case 'flag':
+          result = GameLogic.processFlagGuess(sender, userJid, text);
+          break;
+      }
+      
+      if (result) {
+        const sent = await this.sock.sendMessage(sender, {
+          text: result.mention ? `${result.result}` : result.result,
+          mentions: result.mention ? [result.mention] : undefined
+        }, { quoted: msg });
+        
+        // If the game is still active, update lastMessageId so the user can
+        // reply to the newest bot hint/feedback message
+        const stillActive = global.activeGames.get(sender);
+        if (stillActive && sent?.key?.id) {
+          stillActive.lastMessageId = sent.key.id;
+        }
+        
+        return { handled: true };
       }
       
       return { handled: false };

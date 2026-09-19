@@ -40,6 +40,15 @@ class GameCommands {
     }, { quoted: msg });
   }
   
+  // Helper: attach the sent message ID to the active game
+  attachGameMessageId(chatJid, sentMsg) {
+    if (!sentMsg?.key?.id) return;
+    const game = global.activeGames?.get(chatJid);
+    if (!game) return;
+    game.gameMessageId = sentMsg.key.id;
+    game.lastMessageId = sentMsg.key.id;
+  }
+  
   async startGame(sender, msg, args, bot) {
     if (args.length === 0) {
       await this.sock.sendMessage(sender, {
@@ -51,45 +60,55 @@ class GameCommands {
     const gameType = args[0].toLowerCase();
     
     switch (gameType) {
-      case 'guess':
+      case 'guess': {
         const guessGame = GameLogic.guessNumber(sender, bot);
-        await this.sock.sendMessage(sender, {
+        const sent = await this.sock.sendMessage(sender, {
           text: guessGame,
           context: { isGame: true }
         }, { quoted: msg });
+        this.attachGameMessageId(sender, sent);
         break;
+      }
         
-      case 'trivia':
+      case 'trivia': {
         const triviaGame = GameLogic.startTrivia(sender, bot);
-        await this.sock.sendMessage(sender, {
+        const sent = await this.sock.sendMessage(sender, {
           text: triviaGame,
           context: { isGame: true }
         }, { quoted: msg });
+        this.attachGameMessageId(sender, sent);
         break;
+      }
         
-      case 'scramble':
+      case 'scramble': {
         const scrambleGame = GameLogic.startWordScramble(sender, bot);
-        await this.sock.sendMessage(sender, {
+        const sent = await this.sock.sendMessage(sender, {
           text: scrambleGame,
           context: { isGame: true }
         }, { quoted: msg });
+        this.attachGameMessageId(sender, sent);
         break;
+      }
         
-      case 'riddle':
+      case 'riddle': {
         const riddleGame = GameLogic.startRiddle(sender, bot);
-        await this.sock.sendMessage(sender, {
+        const sent = await this.sock.sendMessage(sender, {
           text: riddleGame,
           context: { isGame: true }
         }, { quoted: msg });
+        this.attachGameMessageId(sender, sent);
         break;
+      }
         
-      case 'flag':
+      case 'flag': {
         const flagGame = GameLogic.startFlagGame(sender, bot);
-        await this.sock.sendMessage(sender, {
+        const sent = await this.sock.sendMessage(sender, {
           text: flagGame,
           context: { isGame: true }
         }, { quoted: msg });
+        this.attachGameMessageId(sender, sent);
         break;
+      }
         
       default:
         await this.sock.sendMessage(sender, {
