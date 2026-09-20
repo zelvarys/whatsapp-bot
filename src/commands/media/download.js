@@ -19,7 +19,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
     }
 
     const caption = `┌─⊶✧ *Downloaded Media*
-│ ${result.title ? `*Title:* ${result.title.slice(0, 20)}...\n` : ''}${result.author ? `*Author:* ${result.author}\n` : ''}
+│ ${result.title ? `*Title:* ${result.title.slice(0, 25)}...` : ''}
 └─────────────⊶
 ▸ _Downloaded via ${config.botName}_`;
 
