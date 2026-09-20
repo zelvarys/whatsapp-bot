@@ -1,6 +1,6 @@
 const youtubeDownloader = require('./youtubeDownloader');
-const instagramDownloader = require('./instagramDownloader');
 const tiktokDownloader = require('./tiktokDownloader');
+const facebookDownloader = require('./facebookDownloader');
 const config = require('../../config');
 
 // Picks the right platform downloader based on the URL.
@@ -11,17 +11,17 @@ async function download(url) {
     return youtubeDownloader.download(trimmed);
   }
 
-  if (config.instagramRegex.test(trimmed)) {
-    return instagramDownloader.download(trimmed);
-  }
-
   if (config.tiktokRegex.test(trimmed)) {
     return tiktokDownloader.download(trimmed);
   }
 
+  if (config.facebookRegex.test(trimmed)) {
+    return facebookDownloader.download(trimmed);
+  }
+
   return {
     success: false,
-    error: 'Unsupported platform. Use YouTube, Instagram, or TikTok.'
+    error: 'Unsupported platform. Use YouTube, TikTok, or Facebook.'
   };
 }
 

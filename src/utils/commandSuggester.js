@@ -6,7 +6,7 @@ const KNOWN_COMMANDS = [
   'games', 'game', 'tictactoe', 'rps',
   'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
   'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
-  'download', 'song', 'tiktok', 'groups', 'instagram', 'youtube',
+  'download', 'song', 'tiktok', 'groups', 'facebook', 'youtube',
   'ping', 'stats', 'help', 'commands', 'menu'
 ];
 

@@ -6,7 +6,7 @@ module.exports = {
   top: 'leaderboard',
   ttt: 'tictactoe',
   yt: 'youtube',
-  ig: 'instagram',
+  fb: 'facebook',
   tt: 'tiktok',
   h: 'help',
   vv: 'reveal',

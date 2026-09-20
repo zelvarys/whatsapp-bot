@@ -38,7 +38,7 @@ const statsCmd = require('../commands/utility/stats');
 const downloadCmd = require('../commands/media/download');
 const songCmd = require('../commands/media/song');
 const youtubeCmd = require('../commands/media/youtube');
-const instagramCmd = require('../commands/media/instagram');
+const facebookCmd = require('../commands/media/facebook');
 const tiktokCmd = require('../commands/media/tiktok');
 
 const broadcastCmd = require('../commands/owner/broadcast');
@@ -189,8 +189,8 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return songCmd.handle(sock, msg, sender, userJid, fullText);
     case 'youtube':
       return youtubeCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'instagram':
-      return instagramCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'facebook':
+      return facebookCmd.handle(sock, msg, sender, userJid, fullText);
     case 'tiktok':
       return tiktokCmd.handle(sock, msg, sender, userJid, fullText);
 

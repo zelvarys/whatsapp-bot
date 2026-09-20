@@ -14,7 +14,7 @@ const contentDir = path.join(__dirname, '../../content');
 const botImagePath = path.join(__dirname, '../../assets/bot_image.jpg');
 
 // Bot identity
-const botVersion = '1.3.0';
+const botVersion = '2.0.0';
 
 // AI limits and timings
 const maxAiResponseLength = 4000;
@@ -32,8 +32,8 @@ const messageIdTtl = 30 * 60 * 1000;
 
 // Media download platform regexes
 const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/;
-const instagramRegex = /(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/;
 const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com)\/@[^\/]+\/video\/(\d+)/;
+const facebookRegex = /(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.watch)\/.+/i;
 
 // Link detection (kept for future use)
 const linkPatterns = [
@@ -96,8 +96,8 @@ const commandReactions = {
   song: '🎵',
   download: '📥',
   youtube: '📥',
-  instagram: '📥',
   tiktok: '📥',
+  facebook: '📥',
 
   broadcast: '🔊',
   eval: null,
@@ -128,8 +128,8 @@ module.exports = {
   commandCacheTtl,
   messageIdTtl,
   youtubeRegex,
-  instagramRegex,
   tiktokRegex,
+  facebookRegex,
   linkPatterns,
   cryptoApiUrl,
   supportedCryptos,

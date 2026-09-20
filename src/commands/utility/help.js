@@ -50,7 +50,7 @@ function buildHelpText() {
 │• song [name/url]
 │• youtube
 │• tiktok
-│• instagram
+│• facebook
 └────────────⊶
 
 ┌─⊶ *OWNER ONLY*

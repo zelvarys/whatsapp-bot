@@ -16,9 +16,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
   const query = fullText.trim();
 
   try {
-    const result = query.includes('http')
-      ? await musicDownloader.downloadMusic(query)
-      : await musicDownloader.searchAndDownload(query);
+    const result = await musicDownloader.downloadMusic(query);
 
     if (!result.success) {
       throw new Error(result.error || 'Download failed');

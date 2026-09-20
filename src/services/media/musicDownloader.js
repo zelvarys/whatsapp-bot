@@ -1,120 +1,44 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
-const util = require('util');
+const ytdl = require('shadowx-ytdl');
 
-const execPromise = util.promisify(exec);
-const TEMP_DIR = path.join(__dirname, '../../../temp');
-const YTDLP_TIMEOUT_MS = 180000;
-const API_TIMEOUT_MS = 15000;
-
-async function hasYtDlp() {
+// Downloads YouTube audio as MP3. Pure JavaScript — no yt-dlp.
+async function downloadMusic(urlOrQuery) {
   try {
-    await execPromise('which yt-dlp');
-    return true;
-  } catch {
-    return false;
-  }
-}
+    let videoUrl = urlOrQuery;
 
-async function downloadWithYtDlp(query) {
-  if (!(await hasYtDlp())) throw new Error('yt-dlp not installed');
-  if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+    // If the input is not a URL, search YouTube for the first match.
+    if (!urlOrQuery.includes('http')) {
+      const search = await ytdl.searchYouTube(urlOrQuery);
 
-  const filePath = path.join(TEMP_DIR, `audio_${Date.now()}.mp3`);
-
-  const source = query.includes('http')
-    ? query
-    : `ytsearch1:${query}`;
-
-  const cmd = `yt-dlp -x --audio-format mp3 --audio-quality 128k -o "${filePath}" "${source}"`;
-  await execPromise(cmd, { timeout: YTDLP_TIMEOUT_MS });
-
-  if (!fs.existsSync(filePath)) throw new Error('No output file');
-
-  const buffer = fs.readFileSync(filePath);
-  fs.unlinkSync(filePath);
-
-  return {
-    success: true,
-    buffer,
-    title: query,
-    format: 'mp3'
-  };
-}
-
-async function trySimpleApis(query) {
-  const endpoints = [
-    `https://api.davidcyril.com/api/download/youtube?url=${encodeURIComponent(query)}`
-  ];
-
-  for (const api of endpoints) {
-    try {
-      const response = await axios.get(api, { timeout: API_TIMEOUT_MS });
-      const data = response.data;
-
-      let downloadUrl = null;
-      let title = 'Downloaded Music';
-
-      if (data.videoUrl) {
-        downloadUrl = data.videoUrl;
-        title = data.title || title;
-      } else if (data.link) {
-        downloadUrl = data.link;
-        title = data.title || title;
-      } else if (data.downloadUrl) {
-        downloadUrl = data.downloadUrl;
-        title = data.title || title;
+      if (!search || !search.results || !search.results.length) {
+        throw new Error('No search results');
       }
 
-      if (!downloadUrl) continue;
-
-      const audio = await axios.get(downloadUrl, {
-        responseType: 'arraybuffer',
-        timeout: 60000
-      });
-
-      return {
-        success: true,
-        buffer: Buffer.from(audio.data),
-        title,
-        format: 'mp3'
-      };
-    } catch (err) {
-      continue;
+      videoUrl = search.results[0].url;
     }
-  }
 
-  throw new Error('No API returned a download URL');
-}
+    const info = await ytdl.downloadAudio(videoUrl, 128);
 
-async function searchAndDownload(query) {
-  try {
-    return await downloadWithYtDlp(query);
-  } catch (err) {
-    console.log('yt-dlp failed, trying APIs:', err.message);
-  }
-
-  try {
-    return await trySimpleApis(query);
-  } catch (err) {
-    console.log('APIs failed:', err.message);
-  }
-
-  return { success: false, error: 'Download failed' };
-}
-
-async function downloadMusic(urlOrQuery) {
-  if (urlOrQuery.includes('http')) {
-    try {
-      return await downloadWithYtDlp(urlOrQuery);
-    } catch (err) {
-      console.log('Direct URL download failed:', err.message);
+    if (!info || !info.download || !info.download.downloadUrl) {
+      throw new Error('No download URL returned');
     }
-  }
 
-  return searchAndDownload(urlOrQuery);
+    const response = await fetch(info.download.downloadUrl);
+    if (!response.ok) {
+      throw new Error(`Fetch failed: ${response.status}`);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    return {
+      success: true,
+      buffer,
+      title: info.title || urlOrQuery,
+      format: 'mp3'
+    };
+  } catch (err) {
+    console.error('Music download error:', err.message);
+    return { success: false, error: 'Music download failed' };
+  }
 }
 
-module.exports = { downloadMusic, searchAndDownload };
+module.exports = { downloadMusic, searchAndDownload: downloadMusic };

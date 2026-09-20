@@ -1,4 +1,3 @@
-const youtubeDownloader = require('../../services/media/youtubeDownloader');
 const downloadCommand = require('./download');
 
 // !youtube <url> — alias for the universal downloader.
