@@ -4,26 +4,29 @@ const gameStatsModel = require('../models/gameStatsModel');
 const config = require('../config');
 
 // All game rules and state transitions live here.
+// Chat state is stored in global.activeGames (Map of chatJid → game object).
+//
+// Only one slot-holding game can run per chat at a time. rps and tictactoe
+// don't use global.activeGames at all, so they aren't gated here.
 
-const ANSWERABLE_GAMES = ['trivia', 'riddle', 'wordScramble', 'flag'];
-const COMPETITIVE_GAMES = ['trivia', 'riddle', 'flag', 'wordScramble'];
+const STALE_MS = 20 * 1000;
 
 function canStartGame(chatJid, gameType) {
   const activeGame = global.activeGames.get(chatJid);
   if (!activeGame) return true;
 
+  // Auto-expire games that haven't been touched in a while so a chat
+  // doesn't get permanently locked by an abandoned round.
   const age = Date.now() - (activeGame.startTime || 0);
-  if (age > 20000) return true;
-
-  if (activeGame.type === gameType) return false;
-
-  if (COMPETITIVE_GAMES.includes(gameType) && COMPETITIVE_GAMES.includes(activeGame.type)) {
-    return false;
+  if (age > STALE_MS) {
+    global.activeGames.delete(chatJid);
+    return true;
   }
 
-  return true;
+  return false;
 }
 
+// Loose matching so typos and partial answers are accepted.
 function isSimilarAnswer(userAnswer, correctAnswer) {
   const normalize = (str) =>
     String(str)
@@ -207,6 +210,7 @@ function startWordScramble(chatJid, bot) {
     hint: wordData.hint,
     attempts: 0,
     maxAttempts: config.gameSettings.scrambleMaxAttempts,
+    startTime: Date.now(),
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -289,6 +293,7 @@ function startRiddle(chatJid, bot) {
     answer: riddle.answer,
     attempts: 0,
     maxAttempts: config.gameSettings.riddleMaxAttempts,
+    startTime: Date.now(),
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -360,6 +365,7 @@ function startFlagQuiz(chatJid, bot) {
     flag: flagData.flag,
     attempts: 0,
     maxAttempts: config.gameSettings.flagMaxAttempts,
+    startTime: Date.now(),
     gameMessageId: null,
     lastMessageId: null
   });
@@ -460,6 +466,8 @@ ${outcome}`,
   };
 }
 
+// Attaches the sent message ID to an active game so answers can be
+// required to be replies to that message.
 function attachGameMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
   const game = global.activeGames.get(chatJid);
@@ -468,6 +476,8 @@ function attachGameMessageId(chatJid, sentMsg) {
   game.lastMessageId = sentMsg.key.id;
 }
 
+// After the bot sends a follow-up message (hint, wrong-answer feedback),
+// update the game's lastMessageId so future answers can chain off it.
 function updateLastMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
   const game = global.activeGames.get(chatJid);
@@ -476,8 +486,6 @@ function updateLastMessageId(chatJid, sentMsg) {
 }
 
 module.exports = {
-  ANSWERABLE_GAMES,
-  COMPETITIVE_GAMES,
   canStartGame,
   isSimilarAnswer,
   startGuessNumber,
