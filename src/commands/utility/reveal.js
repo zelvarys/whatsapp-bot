@@ -1,5 +1,6 @@
 const config = require('../../config');
-const viewOnceRevealer = require('../../services/media/viewOnceRevealer');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const pino = require('pino');
 
 // !reveal or !vv — reply to a view-once image/video.
 async function handle(sock, msg, sender) {
@@ -27,17 +28,34 @@ async function handle(sock, msg, sender) {
 
   try {
     const mediaMsg = {
-      message: quoted,
       key: {
         remoteJid: sender,
         fromMe: false,
-        id: ctx.stanzaId
-      }
+        id: ctx.stanzaId,
+        participant: ctx.participant
+      },
+      message: quoted
     };
 
-    const mediaBuffer = await sock.downloadMediaMessage(mediaMsg);
+    const mediaBuffer = await downloadMediaMessage(
+      mediaMsg,
+      'buffer',
+      {},
+      {
+        logger: pino({ level: 'silent' }),
+        reuploadRequest: sock.updateMediaMessage
+      }
+    );
 
-    await viewOnceRevealer.revealAndSend(sock, sender, mediaBuffer, !!isViewOnceVideo, msg);
+    if (!mediaBuffer || !mediaBuffer.length) {
+      throw new Error('Downloaded media is empty');
+    }
+
+    if (isViewOnceImage) {
+      await sock.sendMessage(sender, { image: mediaBuffer }, { quoted: msg });
+    } else {
+      await sock.sendMessage(sender, { video: mediaBuffer }, { quoted: msg });
+    }
   } catch (err) {
     console.error('Reveal command error:', err.message);
     await sock.sendMessage(sender, {

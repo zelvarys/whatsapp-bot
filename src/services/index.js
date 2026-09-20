@@ -15,7 +15,6 @@ module.exports = {
     sticker: require('./media/stickerProcessor'),
     compressor: require('./media/mediaCompressor'),
     pdf: require('./media/pdfConverter'),
-    viewOnce: require('./media/viewOnceRevealer')
   },
   external: {
     crypto: require('./external/coinGeckoClient'),
