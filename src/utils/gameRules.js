@@ -15,8 +15,6 @@ function canStartGame(chatJid, gameType) {
   const activeGame = global.activeGames.get(chatJid);
   if (!activeGame) return true;
 
-  // Auto-expire games that haven't been touched in a while so a chat
-  // doesn't get permanently locked by an abandoned round.
   const age = Date.now() - (activeGame.startTime || 0);
   if (age > STALE_MS) {
     global.activeGames.delete(chatJid);
@@ -26,7 +24,6 @@ function canStartGame(chatJid, gameType) {
   return false;
 }
 
-// Loose matching so typos and partial answers are accepted.
 function isSimilarAnswer(userAnswer, correctAnswer) {
   const normalize = (str) =>
     String(str)
@@ -466,18 +463,26 @@ ${outcome}`,
   };
 }
 
-// Attaches the sent message ID to an active game so answers can be
-// required to be replies to that message.
+// Attaches the sent message ID to a freshly created game.
+//
+// This is called by every start* command after sending the game's
+// initial message. It must NOT overwrite the tracked message IDs of an
+// already-running game — otherwise a rejected "already active" message
+// would clobber the original game's IDs and disable its answer routing.
 function attachGameMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
+
   const game = global.activeGames.get(chatJid);
   if (!game) return;
+
+  // Freshly started games have null gameMessageId. Games that were
+  // already running have it set — leave those alone.
+  if (game.gameMessageId) return;
+
   game.gameMessageId = sentMsg.key.id;
   game.lastMessageId = sentMsg.key.id;
 }
 
-// After the bot sends a follow-up message (hint, wrong-answer feedback),
-// update the game's lastMessageId so future answers can chain off it.
 function updateLastMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
   const game = global.activeGames.get(chatJid);
