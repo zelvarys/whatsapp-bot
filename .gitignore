@@ -20,3 +20,5 @@ logs/
 *.log
 .vscode/
 .idea/
+
+README.md
