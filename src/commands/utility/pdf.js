@@ -1,4 +1,6 @@
 const config = require('../../config');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const pino = require('pino');
 const pdfConverter = require('../../services/media/pdfConverter');
 
 // !pdf image — reply to an image
@@ -48,8 +50,40 @@ async function imageToPdf(sock, msg, sender) {
   }
 
   try {
-    const toDownload = quoted ? { message: quoted } : msg;
-    const imageBuffer = await sock.downloadMediaMessage(toDownload);
+    let imageBuffer;
+
+    if (quoted) {
+      imageBuffer = await downloadMediaMessage(
+        {
+          key: {
+            remoteJid: sender,
+            fromMe: false,
+            id: ctx.stanzaId,
+            participant: ctx.participant
+          },
+          message: quoted
+        },
+        'buffer',
+        {},
+        {
+          logger: pino({ level: 'silent' }),
+          reuploadRequest: sock.updateMediaMessage
+        }
+      );
+    } else {
+      imageBuffer = await downloadMediaMessage(
+        {
+          key: msg.key,
+          message: msg.message
+        },
+        'buffer',
+        {},
+        {
+          logger: pino({ level: 'silent' }),
+          reuploadRequest: sock.updateMediaMessage
+        }
+      );
+    }
 
     if (!imageBuffer || !imageBuffer.length) {
       throw new Error('Empty image');

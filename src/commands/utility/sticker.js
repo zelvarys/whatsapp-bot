@@ -1,4 +1,6 @@
 const config = require('../../config');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const pino = require('pino');
 const stickerProcessor = require('../../services/media/stickerProcessor');
 
 // !sticker or !s — reply to an image or video.
@@ -26,7 +28,23 @@ async function handle(sock, msg, sender) {
   }
 
   try {
-    const mediaBuffer = await sock.downloadMediaMessage({ message: quoted });
+    const mediaBuffer = await downloadMediaMessage(
+      {
+        key: {
+          remoteJid: sender,
+          fromMe: false,
+          id: ctx.stanzaId,
+          participant: ctx.participant
+        },
+        message: quoted
+      },
+      'buffer',
+      {},
+      {
+        logger: pino({ level: 'silent' }),
+        reuploadRequest: sock.updateMediaMessage
+      }
+    );
 
     if (!mediaBuffer || !mediaBuffer.length) {
       throw new Error('Empty media');

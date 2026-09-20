@@ -1,4 +1,6 @@
 const config = require('../../config');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const pino = require('pino');
 const compressor = require('../../services/media/mediaCompressor');
 const { formatBytes } = require('../../utils/byteFormatter');
 
@@ -27,8 +29,41 @@ async function handle(sock, msg, sender) {
   const isVideo = msg.message?.videoMessage || (quoted && quoted.videoMessage);
 
   try {
-    const toDownload = quoted ? { message: quoted } : msg;
-    const originalBuffer = await sock.downloadMediaMessage(toDownload);
+    let originalBuffer;
+
+    if (quoted) {
+      originalBuffer = await downloadMediaMessage(
+        {
+          key: {
+            remoteJid: sender,
+            fromMe: false,
+            id: ctx.stanzaId,
+            participant: ctx.participant
+          },
+          message: quoted
+        },
+        'buffer',
+        {},
+        {
+          logger: pino({ level: 'silent' }),
+          reuploadRequest: sock.updateMediaMessage
+        }
+      );
+    } else {
+      originalBuffer = await downloadMediaMessage(
+        {
+          key: msg.key,
+          message: msg.message
+        },
+        'buffer',
+        {},
+        {
+          logger: pino({ level: 'silent' }),
+          reuploadRequest: sock.updateMediaMessage
+        }
+      );
+    }
+
     const originalSize = originalBuffer.length;
 
     const compressedBuffer = isImage

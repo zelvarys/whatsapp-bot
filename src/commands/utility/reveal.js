@@ -27,18 +27,16 @@ async function handle(sock, msg, sender) {
   }
 
   try {
-    const mediaMsg = {
-      key: {
-        remoteJid: sender,
-        fromMe: false,
-        id: ctx.stanzaId,
-        participant: ctx.participant
-      },
-      message: quoted
-    };
-
     const mediaBuffer = await downloadMediaMessage(
-      mediaMsg,
+      {
+        key: {
+          remoteJid: sender,
+          fromMe: false,
+          id: ctx.stanzaId,
+          participant: ctx.participant
+        },
+        message: quoted
+      },
       'buffer',
       {},
       {
