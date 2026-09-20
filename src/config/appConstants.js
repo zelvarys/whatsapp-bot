@@ -14,7 +14,7 @@ const CONTENT_DIR = path.join(__dirname, '../../content');
 const BOT_IMAGE_PATH = path.join(__dirname, '../../assets/bot_image.jpg');
 
 // Bot identity
-const BOT_VERSION = '2.0.0';
+const BOT_VERSION = '1.3.0';
 
 // AI limits and timings
 const MAX_AI_RESPONSE_LENGTH = 4000;
