@@ -14,7 +14,7 @@ function trackBotMessage(messageId, chatJid, options) {
     global.botMessageIds.delete(messageId);
     global.gameMessageIds.delete(messageId);
     global.helpMessageIds.delete(messageId);
-  }, config.MESSAGE_ID_TTL);
+  }, config.messageIdTtl);
 }
 
 function isBotMessageId(messageId) {

@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 const config = require('../config');
 const globalState = require('./globalState');
 const socketConnection = require('./socketConnection');
@@ -23,13 +22,11 @@ class WhatsAppBot {
     this.botLid = null;
     this.stats = global.botStats;
 
-    // Pairing state.
     this.pairingRequested = false;
     this.pairingCodeShown = false;
     this.phoneNumber = null;
     this.reconnectAttempts = 0;
 
-    // Data loading happens once.
     this.dataLoaded = false;
   }
 
@@ -46,7 +43,6 @@ class WhatsAppBot {
       periodicCleanup.setupIntervals();
       await this.connect();
 
-      // Expose this instance for the rest of the codebase.
       global.botInstance = this;
     } catch (err) {
       console.error('❌ Startup error:', err.message);
@@ -56,9 +52,9 @@ class WhatsAppBot {
 
   printBanner() {
     console.log(`
-════════════════════════════
+═══════════════════════════
    ${config.botName} v${config.botVersion}
-════════════════════════════
+═══════════════════════════
 `);
   }
 
@@ -92,8 +88,6 @@ class WhatsAppBot {
     socketEvents.attach(sock, this, saveCreds);
   }
 
-  // Every sendMessage call is wrapped so we can track the IDs of
-  // messages we sent (needed for reply-to-bot detection).
   wrapSendMessage(sock) {
     const original = sock.sendMessage.bind(sock);
 
@@ -111,7 +105,6 @@ class WhatsAppBot {
     };
   }
 
-  // Called by the !stats command.
   async showStats(sender) {
     const systemStats = require('../system/systemStats');
     return systemStats.showStats(

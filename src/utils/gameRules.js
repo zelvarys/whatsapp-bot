@@ -4,9 +4,6 @@ const gameStatsModel = require('../models/gameStatsModel');
 const config = require('../config');
 
 // All game rules and state transitions live here.
-// Chat state is stored in global.activeGames (Map of chatJid → game object).
-// Each game object holds its own message IDs so we only accept answers
-// that are replies to that specific game's messages.
 
 const ANSWERABLE_GAMES = ['trivia', 'riddle', 'wordScramble', 'flag'];
 const COMPETITIVE_GAMES = ['trivia', 'riddle', 'flag', 'wordScramble'];
@@ -15,13 +12,11 @@ function canStartGame(chatJid, gameType) {
   const activeGame = global.activeGames.get(chatJid);
   if (!activeGame) return true;
 
-  // Games auto-expire after 20 seconds of inactivity at the start
   const age = Date.now() - (activeGame.startTime || 0);
   if (age > 20000) return true;
 
   if (activeGame.type === gameType) return false;
 
-  // Block starting a second competitive game while one is running
   if (COMPETITIVE_GAMES.includes(gameType) && COMPETITIVE_GAMES.includes(activeGame.type)) {
     return false;
   }
@@ -29,7 +24,6 @@ function canStartGame(chatJid, gameType) {
   return true;
 }
 
-// Loose matching so typos and partial answers are accepted.
 function isSimilarAnswer(userAnswer, correctAnswer) {
   const normalize = (str) =>
     String(str)
@@ -74,7 +68,7 @@ function startGuessNumber(chatJid, bot) {
     type: 'guess',
     number,
     attempts: 0,
-    maxAttempts: config.GAME_SETTINGS.guessMaxAttempts,
+    maxAttempts: config.gameSettings.guessMaxAttempts,
     startTime: Date.now(),
     gameMessageId: null,
     lastMessageId: null
@@ -83,7 +77,7 @@ function startGuessNumber(chatJid, bot) {
   return `✧ *NUMBER GUESSING*
 ┌─⊶
 │ Guess a number between 1 and 100.
-│ You have ${config.GAME_SETTINGS.guessMaxAttempts} attempts.
+│ You have ${config.gameSettings.guessMaxAttempts} attempts.
 └─────────────⊶
 ▸ Reply with a number (1-100) to play!`;
 }
@@ -105,7 +99,7 @@ function processGuess(chatJid, userJid, rawGuess) {
 
   if (guess === game.number) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 50, 'guess');
+    userModel.addPoints(userJid, 50);
     userModel.addWin(userJid);
     gameStatsModel.increment('guess', 50);
 
@@ -118,7 +112,7 @@ function processGuess(chatJid, userJid, rawGuess) {
 
   if (game.attempts >= game.maxAttempts) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 10, 'guess');
+    userModel.addPoints(userJid, 10);
     gameStatsModel.increment('guess', 10);
 
     return {
@@ -175,7 +169,7 @@ function processTriviaAnswer(chatJid, userJid, answer) {
 
   if (userAnswer === correct) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 20, 'trivia');
+    userModel.addPoints(userJid, 20);
     userModel.addWin(userJid);
     gameStatsModel.increment('trivia', 20);
 
@@ -212,7 +206,7 @@ function startWordScramble(chatJid, bot) {
     scrambled: wordData.scrambled,
     hint: wordData.hint,
     attempts: 0,
-    maxAttempts: config.GAME_SETTINGS.scrambleMaxAttempts,
+    maxAttempts: config.gameSettings.scrambleMaxAttempts,
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -235,7 +229,7 @@ function processWordScramble(chatJid, userJid, guess) {
 
   if (userGuess === correct) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 30, 'wordScramble');
+    userModel.addPoints(userJid, 30);
     userModel.addWin(userJid);
     gameStatsModel.increment('wordScramble', 30);
 
@@ -294,7 +288,7 @@ function startRiddle(chatJid, bot) {
     question: riddle.question,
     answer: riddle.answer,
     attempts: 0,
-    maxAttempts: config.GAME_SETTINGS.riddleMaxAttempts,
+    maxAttempts: config.gameSettings.riddleMaxAttempts,
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -305,7 +299,7 @@ function startRiddle(chatJid, bot) {
 ${riddle.question}
 
 ▸ Reply with your answer!
-▸ You have ${config.GAME_SETTINGS.riddleMaxAttempts} attempts`;
+▸ You have ${config.gameSettings.riddleMaxAttempts} attempts`;
 }
 
 function processRiddle(chatJid, userJid, guess) {
@@ -316,7 +310,7 @@ function processRiddle(chatJid, userJid, guess) {
 
   if (isCorrect) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 25, 'riddle');
+    userModel.addPoints(userJid, 25);
     userModel.addWin(userJid);
     gameStatsModel.increment('riddle', 25);
 
@@ -365,7 +359,7 @@ function startFlagQuiz(chatJid, bot) {
     country: flagData.country,
     flag: flagData.flag,
     attempts: 0,
-    maxAttempts: config.GAME_SETTINGS.flagMaxAttempts,
+    maxAttempts: config.gameSettings.flagMaxAttempts,
     gameMessageId: null,
     lastMessageId: null
   });
@@ -373,7 +367,7 @@ function startFlagQuiz(chatJid, bot) {
   return `✧ *FLAG QUIZ*
 ┌─⊶
 │ Guess the country: ${flagData.flag}
-│ You have ${config.GAME_SETTINGS.flagMaxAttempts} attempts!
+│ You have ${config.gameSettings.flagMaxAttempts} attempts!
 └─────────────⊶
 ▸ Reply with the country name!`;
 }
@@ -388,7 +382,7 @@ function processFlagGuess(chatJid, userJid, guess) {
 
   if (isCorrect) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 30, 'flag');
+    userModel.addPoints(userJid, 30);
     userModel.addWin(userJid);
     gameStatsModel.increment('flag', 30);
 
@@ -401,7 +395,7 @@ function processFlagGuess(chatJid, userJid, guess) {
 
   if (game.attempts >= game.maxAttempts) {
     global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 5, 'flag');
+    userModel.addPoints(userJid, 5);
     gameStatsModel.increment('flag', 5);
 
     return {
@@ -466,8 +460,6 @@ ${outcome}`,
   };
 }
 
-// Attaches the sent message ID to an active game so answers can be
-// required to be replies to that message.
 function attachGameMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
   const game = global.activeGames.get(chatJid);
@@ -476,8 +468,6 @@ function attachGameMessageId(chatJid, sentMsg) {
   game.lastMessageId = sentMsg.key.id;
 }
 
-// After the bot sends a follow-up message (hint, wrong-answer feedback),
-// update the game's lastMessageId so future answers can chain off it.
 function updateLastMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
   const game = global.activeGames.get(chatJid);

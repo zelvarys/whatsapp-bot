@@ -28,7 +28,7 @@ async function removeReaction(sock, chatId, messageKey) {
 // Returns the emoji configured for a command, or null.
 function getReactionForCommand(command) {
   if (!command) return null;
-  return config.COMMAND_REACTIONS[command] ?? null;
+  return config.commandReactions[command] ?? null;
 }
 
 module.exports = {

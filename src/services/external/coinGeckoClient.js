@@ -7,7 +7,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map();
 
 async function getPrice(coin) {
-  if (!config.SUPPORTED_CRYPTOS.includes(coin)) {
+  if (!config.supportedCryptos.includes(coin)) {
     return { success: false, error: 'Unsupported cryptocurrency' };
   }
 
@@ -17,7 +17,7 @@ async function getPrice(coin) {
   }
 
   try {
-    const url = `${config.CRYPTO_API_URL}?ids=${coin}&vs_currencies=usd,ngn&include_24hr_change=true`;
+    const url = `${config.cryptoApiUrl}?ids=${coin}&vs_currencies=usd,ngn&include_24hr_change=true`;
     const response = await axios.get(url, { timeout: 10000 });
 
     if (!response.data || !response.data[coin]) {

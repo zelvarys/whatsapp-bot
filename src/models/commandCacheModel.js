@@ -2,17 +2,15 @@ const config = require('../config');
 const repo = require('./jsonRepository');
 
 // Caches full responses for expensive commands.
-// Persisted to COMMAND_CACHE_PATH.
-// Shape: { "<key>": { response, timestamp } }
 
 function loadAll() {
-  const data = repo.readJson(config.COMMAND_CACHE_PATH, {});
+  const data = repo.readJson(config.commandCachePath, {});
   global.commandCache = new Map(Object.entries(data));
 }
 
 function saveAll() {
   const plain = Object.fromEntries(global.commandCache);
-  repo.writeJson(config.COMMAND_CACHE_PATH, plain);
+  repo.writeJson(config.commandCachePath, plain);
 }
 
 function set(key, response) {
@@ -21,19 +19,17 @@ function set(key, response) {
     timestamp: Date.now()
   });
 
-  // Cap size so the cache file doesn't grow forever.
   if (global.commandCache.size > 100) {
     const oldest = global.commandCache.keys().next().value;
     global.commandCache.delete(oldest);
   }
 }
 
-// Returns the cached response or null if missing or expired.
 function get(key) {
   if (!global.commandCache.has(key)) return null;
 
   const entry = global.commandCache.get(key);
-  if (Date.now() - entry.timestamp > config.COMMAND_CACHE_TTL) {
+  if (Date.now() - entry.timestamp > config.commandCacheTtl) {
     global.commandCache.delete(key);
     return null;
   }
@@ -41,7 +37,6 @@ function get(key) {
   return entry.response;
 }
 
-// Called by the periodic cleanup task.
 function pruneExpired() {
   const now = Date.now();
   let removed = 0;

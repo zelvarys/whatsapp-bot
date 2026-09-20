@@ -1,6 +1,5 @@
 const fs = require('fs');
 const config = require('../../config');
-const { BOT_IMAGE_PATH } = require('../../config/appConstants');
 
 // !help | !menu | !commands — displays the command menu.
 // Not quoted intentionally so it doesn't clutter chat.
@@ -76,8 +75,8 @@ async function handle(sock, sender) {
   const helpText = buildHelpText();
 
   try {
-    if (fs.existsSync(BOT_IMAGE_PATH)) {
-      const imageBuffer = fs.readFileSync(BOT_IMAGE_PATH);
+    if (fs.existsSync(config.botImagePath)) {
+      const imageBuffer = fs.readFileSync(config.botImagePath);
       await sock.sendMessage(sender, {
         image: imageBuffer,
         mimetype: 'image/jpeg',

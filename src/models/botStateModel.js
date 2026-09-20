@@ -2,12 +2,9 @@ const config = require('../config');
 const repo = require('./jsonRepository');
 
 // Combined bot state: public/private mode and chatbot on/off.
-// Persisted to BOT_SETTINGS_PATH.
-// Shape:
-//   { mode: 'public' | 'private', chatbot: boolean }
 
 function load() {
-  const data = repo.readJson(config.BOT_SETTINGS_PATH, null);
+  const data = repo.readJson(config.botSettingsPath, null);
 
   if (!data) {
     global.botMode = 'public';
@@ -21,7 +18,7 @@ function load() {
 }
 
 function save() {
-  repo.writeJson(config.BOT_SETTINGS_PATH, {
+  repo.writeJson(config.botSettingsPath, {
     mode: global.botMode,
     chatbot: global.chatbotState
   });

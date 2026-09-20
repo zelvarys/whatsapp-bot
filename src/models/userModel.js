@@ -1,27 +1,18 @@
 const config = require('../config');
 const repo = require('./jsonRepository');
 
-// In-memory store of all users. Persisted to USER_PROFILES_PATH.
-// Shape:
-//   {
-//     "<jid>": {
-//       username, points, xp, level, gamesPlayed, gamesWon,
-//       totalPoints, joinDate, lastActive, achievements[]
-//     }
-//   }
+// In-memory store of all users. Persisted to config.userProfilesPath.
 
 function loadAll() {
-  const data = repo.readJson(config.USER_PROFILES_PATH, {});
+  const data = repo.readJson(config.userProfilesPath, {});
   global.userData = data;
   return Object.keys(data).length;
 }
 
 function saveAll() {
-  repo.writeJson(config.USER_PROFILES_PATH, global.userData);
+  repo.writeJson(config.userProfilesPath, global.userData);
 }
 
-// Generates a stable default username from the JID so new users
-// get something nicer than a random number each time.
 function defaultUsername(jid) {
   const digits = jid.split('@')[0].split(':')[0];
   const hash = Math.abs(
@@ -58,8 +49,6 @@ function updateUser(jid, patch) {
   saveAll();
 }
 
-// Awards points and XP, recomputes level, checks achievements.
-// Returns { oldLevel, newLevel, leveledUp }.
 function addPoints(jid, points) {
   const user = getUser(jid);
   user.points += points;
@@ -87,7 +76,6 @@ function addWin(jid) {
   return user.gamesWon;
 }
 
-// Award achievements when thresholds are met. Each is awarded once.
 function checkAchievements(jid) {
   const user = getUser(jid);
   const gained = [];
@@ -119,7 +107,6 @@ function checkAchievements(jid) {
   return gained;
 }
 
-// Sorted list of the top N users by points.
 function getLeaderboard(limit = 10) {
   return Object.entries(global.userData)
     .map(([jid, data]) => ({ jid, ...data }))
@@ -127,7 +114,6 @@ function getLeaderboard(limit = 10) {
     .slice(0, limit);
 }
 
-// Global rank (1-based) of a user, or the total count + 1 if not ranked.
 function getUserRank(jid) {
   const sorted = Object.entries(global.userData)
     .sort((a, b) => b[1].points - a[1].points);

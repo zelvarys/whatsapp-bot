@@ -8,14 +8,14 @@ async function handle(sock, msg, sender, userJid, fullText) {
       text: `✧ *TEXT TO SPEECH*
 ┌─⊶
 │ *Usage:* ${config.prefix}tts [text]
-│ *Max:* ${config.TTS_MAX_LENGTH} characters
+│ *Max:* ${config.ttsMaxLength} characters
 └─────────────⊶`
     }, { quoted: msg });
   }
 
-  if (fullText.length > config.TTS_MAX_LENGTH) {
+  if (fullText.length > config.ttsMaxLength) {
     return sock.sendMessage(sender, {
-      text: `❌ Text too long! Keep it under ${config.TTS_MAX_LENGTH} characters.`
+      text: `❌ Text too long! Keep it under ${config.ttsMaxLength} characters.`
     }, { quoted: msg });
   }
 

@@ -5,15 +5,15 @@ const coinGecko = require('../../services/external/coinGeckoClient');
 async function handle(sock, msg, sender, userJid, args) {
   if (args.length === 0) {
     return sock.sendMessage(sender, {
-      text: `✧ *CRYPTO PRICES*\n\n*Usage:* ${config.prefix}crypto [coin]\n*Supported:* ${config.SUPPORTED_CRYPTOS.join(', ')}`
+      text: `✧ *CRYPTO PRICES*\n\n*Usage:* ${config.prefix}crypto [coin]\n*Supported:* ${config.supportedCryptos.join(', ')}`
     }, { quoted: msg });
   }
 
   const coin = args[0].toLowerCase();
 
-  if (!config.SUPPORTED_CRYPTOS.includes(coin)) {
+  if (!config.supportedCryptos.includes(coin)) {
     return sock.sendMessage(sender, {
-      text: `❌ Unsupported cryptocurrency!\n*Supported:* ${config.SUPPORTED_CRYPTOS.join(', ')}`
+      text: `❌ Unsupported cryptocurrency!\n*Supported:* ${config.supportedCryptos.join(', ')}`
     }, { quoted: msg });
   }
 

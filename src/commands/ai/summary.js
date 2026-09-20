@@ -2,9 +2,8 @@ const config = require('../../config');
 const geminiClient = require('../../services/ai/geminiClient');
 
 // !summary [count]
-// Summarizes the last N messages in the current chat.
 async function handle(sock, msg, sender, userJid, args) {
-  const limit = args[0] ? parseInt(args[0]) : config.SUMMARY_MAX_MESSAGES;
+  const limit = args[0] ? parseInt(args[0]) : config.summaryMaxMessages;
 
   if (!global.chatHistory || !global.chatHistory[sender]) {
     return sock.sendMessage(sender, {

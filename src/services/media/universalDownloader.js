@@ -7,15 +7,15 @@ const config = require('../../config');
 async function download(url) {
   const trimmed = url.trim();
 
-  if (config.YOUTUBE_REGEX.test(trimmed)) {
+  if (config.youtubeRegex.test(trimmed)) {
     return youtubeDownloader.download(trimmed);
   }
 
-  if (config.INSTAGRAM_REGEX.test(trimmed)) {
+  if (config.instagramRegex.test(trimmed)) {
     return instagramDownloader.download(trimmed);
   }
 
-  if (config.TIKTOK_REGEX.test(trimmed)) {
+  if (config.tiktokRegex.test(trimmed)) {
     return tiktokDownloader.download(trimmed);
   }
 

@@ -15,7 +15,6 @@ function collectSystemInfo() {
   };
 }
 
-// Called by the !stats command via the router.
 async function showStats(sender, sock, stats, isConnected, onlineSince) {
   const uptimeMs = Date.now() - stats.startTime;
   const sys = collectSystemInfo();
@@ -55,8 +54,6 @@ async function showStats(sender, sock, stats, isConnected, onlineSince) {
   await sock.sendMessage(sender, { text });
 }
 
-// Kept separate from showStats for future use by owner commands that
-// need to programmatically check health without replying in chat.
 function isHealthy(stats, isConnected) {
   if (!isConnected) return false;
   if (!stats) return false;

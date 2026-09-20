@@ -9,7 +9,7 @@ function checkCooldown(userJid, command) {
 
   if (global.userCooldowns.has(key)) {
     const lastUsed = global.userCooldowns.get(key);
-    if (now - lastUsed < config.COMMAND_COOLDOWN) {
+    if (now - lastUsed < config.commandCooldown) {
       return true;
     }
   }
