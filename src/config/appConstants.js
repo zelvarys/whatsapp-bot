@@ -32,7 +32,7 @@ const messageIdTtl = 30 * 60 * 1000;
 
 // Media download platform regexes
 const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/;
-const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com)\/@[^\/]+\/video\/(\d+)/;
+const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+/i;
 const facebookRegex = /(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.watch)\/.+/i;
 
 // Link detection (kept for future use)
