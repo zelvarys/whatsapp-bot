@@ -1,5 +1,6 @@
 const geminiClient = require('./geminiClient');
 const config = require('../../config');
+const userModel = require('../../models/userModel');
 
 // Per-chat chatbot conversation history. Each entry keeps the last
 // few messages as context so the bot stays on-topic within a chat.
@@ -16,11 +17,10 @@ function getHistory(chatJid) {
   return conversationHistory.get(chatJid);
 }
 
-function appendMessage(chatJid, role, content) {
+function appendMessage(chatJid, role, senderName, content) {
   const history = getHistory(chatJid);
-  history.push({ role, content, timestamp: Date.now() });
+  history.push({ role, senderName, content, timestamp: Date.now() });
 
-  // Trim old messages
   if (history.length > MAX_HISTORY) {
     history.splice(0, history.length - MAX_HISTORY);
   }
@@ -33,14 +33,14 @@ function buildContext(chatJid) {
   return history
     .slice(-CONTEXT_WINDOW)
     .map((entry) => {
-      return entry.role === 'user'
-        ? `User: ${entry.content}`
-        : `You: ${entry.content}`;
+      if (entry.role === 'user') {
+        return `${entry.senderName}: ${entry.content}`;
+      }
+      return `You: ${entry.content}`;
     })
     .join('\n');
 }
 
-// Strips assistant-style prefixes the model sometimes adds.
 function cleanResponse(text) {
   let cleaned = text.trim();
 
@@ -71,24 +71,30 @@ function getNaturalFallback() {
 
 async function generateResponse(text, userJid, chatJid) {
   try {
-    appendMessage(chatJid, 'user', text);
+    const senderName = userModel.getDisplayName(userJid) || userJid.split('@')[0];
+
+    appendMessage(chatJid, 'user', senderName, text);
 
     const context = buildContext(chatJid);
 
-    const prompt = context
-      ? `You are ${config.botName}, a WhatsApp bot. Keep responses short and casual. Have a high roastful and sarcastic personality, and self awareness.
+    const persona = `You are ${config.botName}, a WhatsApp chatbot. You have a cool, slightly roastful, and sarcastic personality. Be casual, fun, and conversational. Don't be overly formal.
 
-Previous chat:
+However, if the user asks a serious question — health, safety, technical help, factual information, emotional distress, or anything that clearly needs a straight answer — drop the sarcasm and respond normally and helpfully.
+
+In group chats, multiple people may be talking. Each message is prefixed with the sender's name so you can tell who is who. Address the current sender by their name when replying.`;
+
+    const prompt = context
+      ? `${persona}
+
+Conversation so far:
 ${context}
 
-Current message: ${text}
+Reply to the latest message from ${senderName}. Keep it short (1-2 sentences).`
+      : `${persona}
 
-Your short response:`
-      : `You are ${config.botName}, a friendly WhatsApp bot. Keep it short and casual.
+${senderName} said: ${text}
 
-Message: ${text}
-
-Your short, friendly response:`;
+Reply in 1-2 sentences.`;
 
     const response = await geminiClient.generateChatbotText(prompt);
 
@@ -100,7 +106,7 @@ Your short, friendly response:`;
 
     if (cleaned.length < 3) return getNaturalFallback();
 
-    appendMessage(chatJid, 'assistant', cleaned);
+    appendMessage(chatJid, 'assistant', 'You', cleaned);
     return cleaned;
   } catch (err) {
     console.error('Chatbot response error:', err.message);
@@ -112,7 +118,6 @@ function clearChat(chatJid) {
   return conversationHistory.delete(chatJid);
 }
 
-// Called by the periodic cleanup task.
 function pruneOldConversations() {
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
   let cleaned = 0;

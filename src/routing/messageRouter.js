@@ -22,11 +22,10 @@ async function routeMessage(sock, bot, msg, stats) {
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
   const repliedToMessageId = ctx?.stanzaId;
 
-  // Record the message for later summarization / history purposes.
   storeChatHistory(sender, userJid, text);
   if (isGroup) await updateGroupData(sock, sender);
 
-  // Private mode blocks non-owners from using any command.
+  // Private mode: only the owner gets any response at all.
   if (global.botMode === 'private') {
     if (!ownerChecker.isOwner(userJid)) {
       if (text && text.startsWith(config.prefix)) {
@@ -41,13 +40,11 @@ async function routeMessage(sock, bot, msg, stats) {
   const isTagged = mentionDetector.isBotMentioned(msg, text);
   const isReplyToBot = messageTracker.isReplyToBot(msg);
 
-  // 1. Commands
   if (text && text.startsWith(config.prefix)) {
     if (stats) stats.commandsExecuted++;
     return commandRouter.routeCommand(sock, bot, msg, text, sender, userJid, isGroup);
   }
 
-  // 2. Game answers
   if (text) {
     const handled = await gameRouter.routeGameAnswer(
       sock, msg, text, sender, userJid, repliedToMessageId
@@ -58,7 +55,6 @@ async function routeMessage(sock, bot, msg, stats) {
     }
   }
 
-  // 3. Chatbot / tag responses
   return chatbotRouter.routeChatbot(
     sock, msg, text, sender, userJid, isGroup, isReplyToBot, isTagged, stats
   );
@@ -84,7 +80,6 @@ function storeChatHistory(sender, userJid, text) {
     timestamp: Date.now()
   });
 
-  // Keep the last 50 messages per chat.
   if (global.chatHistory[sender].length > 50) {
     global.chatHistory[sender].shift();
   }
@@ -97,7 +92,8 @@ async function updateGroupData(sock, sender) {
       global.groupData[sender] = {
         name: meta.subject,
         participants: meta.participants,
-        lastActivity: new Date()
+        lastActivity: new Date(),
+        lastFetched: Date.now()
       };
     } else {
       global.groupData[sender].lastActivity = new Date();
@@ -107,7 +103,8 @@ async function updateGroupData(sock, sender) {
       global.groupData[sender] = {
         name: 'Unknown Group',
         participants: [],
-        lastActivity: new Date()
+        lastActivity: new Date(),
+        lastFetched: Date.now()
       };
     } else {
       global.groupData[sender].lastActivity = new Date();
