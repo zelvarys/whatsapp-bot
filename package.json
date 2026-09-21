@@ -14,8 +14,8 @@
   "dependencies": {
     "@google/generative-ai": "^0.1.3",
     "@hapi/boom": "^10.0.1",
-    "@renpwn/fb-downloader": "^1.0.3",
-    "@silent-tech-offc/ttdl": "^2.0.2",
+    "@renpwn/fb-downloader": "^1.0.16",
+    "@silent-tech-offc/ttdl": "^1.0.0",
     "@whiskeysockets/baileys": "^6.7.9",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
@@ -23,7 +23,7 @@
     "pdfkit": "^0.14.0",
     "pino": "^8.15.0",
     "qrcode": "^1.5.4",
-    "shadowx-ytdl": "^1.0.1"
+    "shadowx-ytdl": "^1.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
