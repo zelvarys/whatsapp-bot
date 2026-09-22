@@ -5,9 +5,6 @@ const config = require('../config');
 
 // All game rules and state transitions live here.
 // Chat state is stored in global.activeGames (Map of chatJid → game object).
-//
-// Only one slot-holding game can run per chat at a time. rps and tictactoe
-// don't use global.activeGames at all, so they aren't gated here.
 
 const STALE_MS = 20 * 1000;
 
@@ -53,6 +50,8 @@ function isSimilarAnswer(userAnswer, correctAnswer) {
 
   return false;
 }
+
+// ---------- Number guessing ----------
 
 function startGuessNumber(chatJid, bot) {
   if (!canStartGame(chatJid, 'guess')) {
@@ -131,6 +130,8 @@ function processGuess(chatJid, userJid, rawGuess) {
   };
 }
 
+// ---------- Trivia ----------
+
 function startTrivia(chatJid, bot) {
   if (!canStartGame(chatJid, 'trivia')) {
     const active = global.activeGames.get(chatJid);
@@ -188,6 +189,8 @@ function processTriviaAnswer(chatJid, userJid, answer) {
     mention: game.isGroup ? userJid : null
   };
 }
+
+// ---------- Word scramble ----------
 
 function startWordScramble(chatJid, bot) {
   if (!canStartGame(chatJid, 'wordScramble')) {
@@ -273,6 +276,8 @@ function processWordScramble(chatJid, userJid, guess) {
   };
 }
 
+// ---------- Riddle ----------
+
 function startRiddle(chatJid, bot) {
   if (!canStartGame(chatJid, 'riddle')) {
     const active = global.activeGames.get(chatJid);
@@ -344,6 +349,8 @@ function processRiddle(chatJid, userJid, guess) {
     mention: game.isGroup ? userJid : null
   };
 }
+
+// ---------- Flag quiz ----------
 
 function startFlagQuiz(chatJid, bot) {
   if (!canStartGame(chatJid, 'flag')) {
@@ -420,6 +427,134 @@ function processFlagGuess(chatJid, userJid, guess) {
   return { result: hint, won: false, gameOver: false };
 }
 
+// ---------- Hangman ----------
+
+function buildHangmanDisplay(game) {
+  const word = game.word.toUpperCase();
+  const guessed = new Set(game.guessedLetters);
+
+  const visible = word
+    .split('')
+    .map((ch) => (guessed.has(ch) ? ch : '_'))
+    .join(' ');
+
+  const wrong = game.wrongLetters.length
+    ? game.wrongLetters.join(' ')
+    : '—';
+
+  const remaining = game.maxWrong - game.wrongLetters.length;
+
+  return `✧ *HANGMAN* — ${game.category}
+
+${visible}
+
+Wrong: ${wrong}
+Attempts left: ${remaining}/${game.maxWrong}`;
+}
+
+function startHangman(chatJid, bot) {
+  if (!canStartGame(chatJid, 'hangman')) {
+    const active = global.activeGames.get(chatJid);
+    return `❌ A ${active.type} game is already active!`;
+  }
+
+  if (bot && bot.stats) bot.stats.gamesPlayed++;
+
+  const pool = load('hangman_words');
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+
+  global.activeGames.set(chatJid, {
+    type: 'hangman',
+    word: pick.word.toUpperCase(),
+    category: pick.category,
+    guessedLetters: [],
+    wrongLetters: [],
+    maxWrong: config.gameSettings.hangmanMaxWrong,
+    startTime: Date.now(),
+    gameMessageId: null,
+    lastMessageId: null,
+    isGroup: chatJid.endsWith('@g.us')
+  });
+
+  const game = global.activeGames.get(chatJid);
+  return `${buildHangmanDisplay(game)}
+
+▸ Reply with a single letter to guess.`;
+}
+
+function processHangmanGuess(chatJid, userJid, rawGuess) {
+  const game = global.activeGames.get(chatJid);
+  if (!game || game.type !== 'hangman') return null;
+
+  const letter = String(rawGuess).trim().toUpperCase();
+
+  if (!/^[A-Z]$/.test(letter)) {
+    return {
+      result: '❌ Send one letter at a time.',
+      won: false,
+      gameOver: false,
+      keepGame: true
+    };
+  }
+
+  if (game.guessedLetters.includes(letter)) {
+    return {
+      result: `❌ *${letter}* was already guessed.`,
+      won: false,
+      gameOver: false,
+      keepGame: true
+    };
+  }
+
+  game.guessedLetters.push(letter);
+
+  const isInWord = game.word.includes(letter);
+  if (!isInWord) {
+    game.wrongLetters.push(letter);
+  }
+
+  // Win check — every letter of the word is in guessedLetters
+  const won = game.word.split('').every((ch) => game.guessedLetters.includes(ch));
+
+  if (won) {
+    global.activeGames.delete(chatJid);
+    userModel.addPoints(userJid, 50);
+    userModel.addWin(userJid);
+    gameStatsModel.increment('hangman', 50);
+
+    return {
+      result: `🎉 *SOLVED!* +50 points\nThe word was *${game.word}*\n\n▸ Play again: !hangman`,
+      won: true,
+      gameOver: true,
+      mention: game.isGroup ? userJid : null
+    };
+  }
+
+  const lost = game.wrongLetters.length >= game.maxWrong;
+
+  if (lost) {
+    global.activeGames.delete(chatJid);
+    userModel.addPoints(userJid, 5);
+    gameStatsModel.increment('hangman', 5);
+
+    return {
+      result: `💀 *GAME OVER* +5 points\nThe word was *${game.word}*\n\n▸ Play again: !hangman`,
+      won: false,
+      gameOver: true,
+      mention: game.isGroup ? userJid : null
+    };
+  }
+
+  return {
+    result: buildHangmanDisplay(game),
+    won: false,
+    gameOver: false,
+    keepGame: true
+  };
+}
+
+// ---------- Rock paper scissors ----------
+
 function playRockPaperScissors(userChoice, bot) {
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
@@ -463,20 +598,15 @@ ${outcome}`,
   };
 }
 
-// Attaches the sent message ID to a freshly created game.
-//
-// This is called by every start* command after sending the game's
-// initial message. It must NOT overwrite the tracked message IDs of an
-// already-running game — otherwise a rejected "already active" message
-// would clobber the original game's IDs and disable its answer routing.
+// ---------- Shared helpers ----------
+
 function attachGameMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
 
   const game = global.activeGames.get(chatJid);
   if (!game) return;
 
-  // Freshly started games have null gameMessageId. Games that were
-  // already running have it set — leave those alone.
+  // Do not overwrite an existing game's tracked IDs on a duplicate start.
   if (game.gameMessageId) return;
 
   game.gameMessageId = sentMsg.key.id;
@@ -503,6 +633,8 @@ module.exports = {
   processRiddle,
   startFlagQuiz,
   processFlagGuess,
+  startHangman,
+  processHangmanGuess,
   playRockPaperScissors,
   attachGameMessageId,
   updateLastMessageId

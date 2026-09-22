@@ -6,6 +6,7 @@ function initialize() {
   global.userData = {};
   global.gameStats = {};
   global.commandCache = new Map();
+  global.afkUsers = new Map();
 
   // Bot runtime state.
   global.botMode = 'public';
