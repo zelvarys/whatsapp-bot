@@ -8,6 +8,8 @@ const ownerChecker = require('../utils/ownerChecker');
 
 // Top-level message handler.
 
+const GROUP_METADATA_TTL = 24 * 60 * 60 * 1000;
+
 async function routeMessage(sock, bot, msg, stats) {
   const sender = msg.key.remoteJid;
   const text = extractMessageText(msg);
@@ -18,7 +20,23 @@ async function routeMessage(sock, bot, msg, stats) {
   const repliedToMessageId = ctx?.stanzaId;
 
   storeChatHistory(sender, userJid, text);
-  if (isGroup) await updateGroupData(sock, sender);
+
+  // Update group activity timestamp only — never fetch metadata on the
+  // hot path. The hourly cleanup task refreshes participants.
+  if (isGroup) {
+    if (global.groupData[sender]) {
+      global.groupData[sender].lastActivity = new Date();
+    } else {
+      global.groupData[sender] = {
+        name: 'Unknown Group',
+        participants: [],
+        lastActivity: new Date(),
+        lastFetched: 0
+      };
+      // Fire-and-forget fetch so the handler isn't blocked.
+      fetchGroupMetadata(sock, sender).catch(() => {});
+    }
+  }
 
   if (global.botMode === 'private') {
     if (!ownerChecker.isOwner(userJid)) {
@@ -54,6 +72,20 @@ async function routeMessage(sock, bot, msg, stats) {
   );
 }
 
+async function fetchGroupMetadata(sock, jid) {
+  try {
+    const meta = await sock.groupMetadata(jid);
+    global.groupData[jid] = {
+      name: meta.subject,
+      participants: meta.participants,
+      lastActivity: new Date(),
+      lastFetched: Date.now()
+    };
+  } catch (err) {
+    // Leave the placeholder in place
+  }
+}
+
 function extractMessageText(msg) {
   if (msg.message?.conversation) return msg.message.conversation;
   if (msg.message?.extendedTextMessage?.text) return msg.message.extendedTextMessage.text;
@@ -76,33 +108,6 @@ function storeChatHistory(sender, userJid, text) {
 
   if (global.chatHistory[sender].length > 50) {
     global.chatHistory[sender].shift();
-  }
-}
-
-async function updateGroupData(sock, sender) {
-  try {
-    if (!global.groupData[sender]) {
-      const meta = await sock.groupMetadata(sender);
-      global.groupData[sender] = {
-        name: meta.subject,
-        participants: meta.participants,
-        lastActivity: new Date(),
-        lastFetched: Date.now()
-      };
-    } else {
-      global.groupData[sender].lastActivity = new Date();
-    }
-  } catch (err) {
-    if (!global.groupData[sender]) {
-      global.groupData[sender] = {
-        name: 'Unknown Group',
-        participants: [],
-        lastActivity: new Date(),
-        lastFetched: Date.now()
-      };
-    } else {
-      global.groupData[sender].lastActivity = new Date();
-    }
   }
 }
 

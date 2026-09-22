@@ -4,9 +4,6 @@ const botState = require('../models/botStateModel');
 const cache = require('../models/commandCacheModel');
 const chatbotConversation = require('../services/ai/chatbotConversation');
 
-// Runs periodic housekeeping: saves, prunes expired state, drops
-// stale games, refreshes group data, and clears old cooldowns.
-
 let intervals = [];
 
 const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
@@ -21,9 +18,7 @@ function setupIntervals() {
   }, 5 * 60 * 1000));
 
   intervals.push(setInterval(pruneActiveGames, 5 * 60 * 1000));
-
   intervals.push(setInterval(pruneUsageCounters, 60 * 60 * 1000));
-
   intervals.push(setInterval(pruneMessageIds, 30 * 60 * 1000));
 
   intervals.push(setInterval(() => {
@@ -37,7 +32,6 @@ function setupIntervals() {
   }, 60 * 60 * 1000));
 
   intervals.push(setInterval(pruneCooldowns, 5 * 60 * 1000));
-
   intervals.push(setInterval(refreshAllGroupData, 60 * 60 * 1000));
 }
 

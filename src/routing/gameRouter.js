@@ -2,10 +2,8 @@ const gameRules = require('../utils/gameRules');
 const tictactoeGame = require('../commands/games/tictactoe');
 const reactions = require('../utils/messageReactions');
 
-// Handles messages that might be answers to an active game.
-// Only accepts answers that are replies to the game's own message chain.
-
 const REACTIVE_GAMES = ['trivia', 'riddle', 'wordScramble', 'flag'];
+const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
 
 async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessageId) {
   if (/^[1-9]$/.test(text.trim())) {
@@ -18,11 +16,19 @@ async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessag
   const game = global.activeGames.get(sender);
   if (!game) return false;
 
-  const isReplyToGame =
+  const chainMatched =
     repliedToMessageId &&
     (repliedToMessageId === game.gameMessageId || repliedToMessageId === game.lastMessageId);
 
-  if (!isReplyToGame) return false;
+  // Strict reply-chain rule for fast games.
+  // Slow games accept a plain-text answer as long as the message matches
+  // the expected shape for that game.
+  const isSlow = SLOW_GAMES.includes(game.type);
+  const isShapedAnswer = matchesShape(game.type, text.trim());
+
+  if (!chainMatched && !(isSlow && isShapedAnswer)) {
+    return false;
+  }
 
   const result = processGameText(game.type, sender, userJid, text.trim());
   if (!result) return false;
@@ -46,6 +52,24 @@ async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessag
   }
 
   return true;
+}
+
+// Validates that the raw text could plausibly be an answer for the game type.
+function matchesShape(gameType, text) {
+  switch (gameType) {
+    case 'hangman':
+      return /^[A-Za-z]$/.test(text);
+    case 'guess':
+      return /^\d{1,3}$/.test(text);
+    case 'trivia':
+      return /^[A-Da-d1-4]$/.test(text);
+    case 'riddle':
+    case 'wordScramble':
+    case 'flag':
+      return text.length > 0 && text.length < 60;
+    default:
+      return false;
+  }
 }
 
 function processGameText(gameType, sender, userJid, text) {
