@@ -3,7 +3,7 @@ const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
 const cache = require('../models/commandCacheModel');
 const chatbotConversation = require('../services/ai/chatbotConversation');
-const config = require('../config');
+const afkTracker = require('../utils/afkTracker');
 
 // Runs periodic housekeeping: saves, prunes expired state, drops
 // stale games, refreshes group data, and clears old cooldowns.
@@ -16,6 +16,7 @@ function setupIntervals() {
     gameStatsModel.saveAll();
     botState.save();
     cache.saveAll();
+    afkTracker.saveAll();
     console.log('💾 Auto-saved all data');
   }, 5 * 60 * 1000));
 
@@ -38,6 +39,11 @@ function setupIntervals() {
   intervals.push(setInterval(pruneCooldowns, 5 * 60 * 1000));
 
   intervals.push(setInterval(refreshAllGroupData, 60 * 60 * 1000));
+
+  intervals.push(setInterval(() => {
+    const removed = afkTracker.pruneOldAfk();
+    if (removed > 0) console.log(`🧹 Cleared ${removed} stale AFK entries`);
+  }, 60 * 60 * 1000));
 }
 
 function pruneActiveGames() {
@@ -80,7 +86,6 @@ function pruneMessageIds() {
   }
 }
 
-// Removes cooldown entries older than 5 minutes so the map doesn't grow forever.
 function pruneCooldowns() {
   const cutoff = Date.now() - 5 * 60 * 1000;
   let removed = 0;
@@ -95,7 +100,6 @@ function pruneCooldowns() {
   if (removed > 0) console.log(`🧹 Cleared ${removed} expired cooldown entries`);
 }
 
-// Refreshes participant lists for all known groups once per hour.
 async function refreshAllGroupData() {
   const bot = global.botInstance;
   if (!bot || !bot.sock || !bot.isConnected) return;
@@ -125,6 +129,7 @@ function handleShutdown(signal) {
     gameStatsModel.saveAll();
     botState.save();
     cache.saveAll();
+    afkTracker.saveAll();
   } catch (err) {
     console.error('Save on shutdown failed:', err.message);
   }

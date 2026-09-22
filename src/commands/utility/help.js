@@ -19,21 +19,27 @@ function buildHelpText() {
 │• translate
 │• tts [text]
 │• summary [num]
+│• mood [type]
 └────────────⊶
 
 ┌─⊶ *GAMES & FUN*
 │• games
 │• game [type]
+│• hangman
 │• ttt start @friend
 │• rps [choice]
 └────────────⊶
 
 ┌─⊶ *UTILITY TOOLS*
-│• compress
+│• define [word]
+│• weather [city]
+│• time [city]
 │• qrcode [text]
+│• compress
 │• reveal
-│• sticker
+│• afk [reason]
 │• pdf [image/text]
+│• sticker
 │• delete
 └────────────⊶
 
@@ -58,6 +64,7 @@ function buildHelpText() {
 │• eval [script]
 │• groups
 │• mode [args]
+│• restart
 └────────────⊶
 
 ┌─⊶ *OTHERS*

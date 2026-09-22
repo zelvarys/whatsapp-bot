@@ -2,12 +2,13 @@
 // Uses Levenshtein distance plus prefix/substring matching.
 
 const KNOWN_COMMANDS = [
-  'ask', 'story', 'chatbot', 'translate', 'tts', 'summary',
-  'games', 'game', 'tictactoe', 'rps',
+  'ask', 'story', 'chatbot', 'translate', 'tts', 'summary', 'mood',
+  'games', 'game', 'hangman', 'tictactoe', 'rps',
+  'define', 'weather', 'time', 'afk',
   'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
   'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
   'download', 'song', 'tiktok', 'groups', 'facebook', 'youtube',
-  'ping', 'stats', 'help', 'commands', 'menu'
+  'ping', 'stats', 'help', 'commands', 'menu', 'restart'
 ];
 
 function levenshteinDistance(a, b) {
