@@ -38,39 +38,32 @@ function buildContext(chatJid) {
     .join('\n');
 }
 
-// Aggressive cleanup: strips any "Name:" prefix the model sneaks into its
-// output, plus common assistant preambles.
 function cleanResponse(text) {
   let cleaned = text.trim();
 
-  // Strip a leading "Word:" or "Word said:" prefix that mimics the context format.
   cleaned = cleaned.replace(/^[A-Za-z_][A-Za-z0-9_]*\s+said:?\s*/i, '');
   cleaned = cleaned.replace(/^[A-Za-z_][A-Za-z0-9_]{0,30}:?\s+/, (match) => {
-    const name = match.replace(/:?\s+$/, '');
+    const name = match.replace(/:?\s+$/, '').toLowerCase();
     if (
-      name.toLowerCase() === 'you' ||
-      name.toLowerCase() === 'assistant' ||
-      name.toLowerCase() === 'bot' ||
-      name.toLowerCase() === 'ai' ||
-      name.toLowerCase() === config.botName.toLowerCase()
+      name === 'you' ||
+      name === 'assistant' ||
+      name === 'bot' ||
+      name === 'ai' ||
+      name === config.botName.toLowerCase()
     ) {
       return '';
     }
-    // Only strip if the name looks like a bot-generated label
-    // (no spaces, capitalised word followed by a colon).
     if (/^[A-Z][a-z]+\s*:$/.test(match.trim()) || /^[A-Z][a-zA-Z0-9_]+:$/.test(match.trim())) {
       return '';
     }
     return match;
   });
 
-  // Strip generic assistant preambles.
   cleaned = cleaned.replace(
     /^(Sure!|Of course!|Certainly!|Alright!|Okay!|Well,|Ah,|Ah yes,|Hmm,)\s*/i,
     ''
   );
 
-  // Strip wrapping quotes.
   cleaned = cleaned.replace(/^["'](.+)["']$/, '$1');
 
   return cleaned.trim();
@@ -85,7 +78,6 @@ function getNaturalFallback() {
   return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 }
 
-// Rejects empty, one-word, or filler responses.
 function isUsableReply(text) {
   if (!text) return false;
   if (text.length < 15) return false;
@@ -107,19 +99,18 @@ async function generateResponse(text, userJid, chatJid) {
     const context = buildContext(chatJid);
     const persona = moodPrompts.getPersona(mood);
 
-    const contextBlock = context
-      ? `Below is the recent chat for context. Each line is "Name: message". Do NOT copy this format in your reply. Do NOT prefix your reply with a name.
+    // Short instruction. Long instruction blocks get echoed back by Gemini.
+    const instruction = `Reply to ${senderName}. 2 sentences max. No name prefix. No filler.`;
+
+    const prompt = context
+      ? `${persona}
 
 ${context}
 
-The most recent message is from ${senderName}.`
-      : `The most recent message is from ${senderName}.`;
+${instruction}`
+      : `${persona}
 
-    const instruction = `Reply to ${senderName}'s latest message in 2 sentences, 3 at most. Be conversational. Never respond with a single word or a filler like "okay" or "acknowledged". Do not include your name, "You:", "${senderName}:", or any similar prefix at the start of your reply. Output only the reply text.`;
-
-    const prompt = `${persona}
-
-${contextBlock}
+${senderName}: ${text}
 
 ${instruction}`;
 

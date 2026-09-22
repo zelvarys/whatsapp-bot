@@ -1,7 +1,7 @@
 const config = require('../../config');
 const userModel = require('../../models/userModel');
 
-// !mood [roast|neutral|nice]
+// !mood [roast|chill]
 async function handle(sock, msg, sender, userJid, args) {
   if (!args.length) {
     const current = userModel.getMood(userJid);
@@ -11,11 +11,10 @@ async function handle(sock, msg, sender, userJid, args) {
 │ *Current:* ${describe(current)}
 │
 │ *Options:*
-│ • roast — sarcastic and roastful
-│ • neutral — plain factual answers
-│ • nice — warm and supportive
+│ • roast — sharp and sarcastic
+│ • chill — laid-back and friendly
 │
-│ *Usage:* ${config.prefix}mood [roast/neutral/nice]
+│ *Usage:* ${config.prefix}mood [roast/chill]
 └─────────────⊶`
     }, { quoted: msg });
   }
@@ -31,14 +30,13 @@ async function handle(sock, msg, sender, userJid, args) {
   userModel.setMood(userJid, mood);
 
   await sock.sendMessage(sender, {
-    text: `✅ Personal AI mood set to ${describe(mood)}`
+    text: `✅ AI mood set to ${describe(mood)}`
   }, { quoted: msg });
 }
 
 function describe(mood) {
-  if (mood === 'roast') return 'Roastful 🔥';
-  if (mood === 'nice') return 'Nice 💚';
-  return 'Neutral ⚪';
+  if (mood === 'roast') return '*Roastful*';
+  return '*Chill*';
 }
 
 module.exports = { handle };

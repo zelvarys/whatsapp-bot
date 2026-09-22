@@ -40,9 +40,11 @@ function getUser(jid) {
     saveAll();
   }
 
-  // Backfill missing fields on older records.
+  // Backfill missing or invalid fields on older records.
   const user = global.userData[jid];
-  if (!user.mood) user.mood = config.defaultMood;
+  if (!config.moods.includes(user.mood)) {
+    user.mood = config.defaultMood;
+  }
 
   return user;
 }

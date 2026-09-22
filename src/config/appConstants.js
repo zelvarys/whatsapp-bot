@@ -69,8 +69,8 @@ const tiers = [
   { name: 'Rookie', minLevel: 1 }
 ];
 
-const moods = ['roast', 'neutral', 'nice'];
-const defaultMood = 'neutral';
+const moods = ['roast', 'chill'];
+const defaultMood = 'chill';
 
 const commandReactions = {
   ask: '💬',
