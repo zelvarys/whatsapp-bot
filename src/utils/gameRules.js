@@ -7,8 +7,8 @@ const config = require('../config');
 // Chat state is stored in global.activeGames (Map of chatJid → game object).
 
 // Games that expect long turns between answers don't auto-expire as fast.
-// Fast games (guess, trivia, flag) expire after 20 seconds.
-// Slow games (hangman, riddle, wordScramble) get 2 minutes.
+// Fast games (guess, trivia, flag) expire after 20 seconds of inactivity.
+// Slow games (hangman, riddle, wordScramble) get 2 minutes of inactivity.
 const FAST_STALE_MS = 20 * 1000;
 const SLOW_STALE_MS = 2 * 60 * 1000;
 const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
@@ -17,12 +17,20 @@ function isSlowGame(type) {
   return SLOW_GAMES.includes(type);
 }
 
+function lastSeen(game) {
+  return game.lastActivity || game.startTime || 0;
+}
+
+function touchGame(game) {
+  if (game) game.lastActivity = Date.now();
+}
+
 function canStartGame(chatJid, gameType) {
   const activeGame = global.activeGames.get(chatJid);
   if (!activeGame) return true;
 
   const staleMs = isSlowGame(activeGame.type) ? SLOW_STALE_MS : FAST_STALE_MS;
-  const age = Date.now() - (activeGame.startTime || 0);
+  const age = Date.now() - lastSeen(activeGame);
 
   if (age > staleMs) {
     global.activeGames.delete(chatJid);
@@ -32,7 +40,6 @@ function canStartGame(chatJid, gameType) {
   return false;
 }
 
-// Human-readable label for a game type, used in rejection messages.
 function gameLabel(type) {
   const labels = {
     guess: 'number guessing',
@@ -83,6 +90,7 @@ function startGuessNumber(chatJid, bot) {
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
+  const now = Date.now();
   const number = Math.floor(Math.random() * 100) + 1;
 
   global.activeGames.set(chatJid, {
@@ -90,7 +98,8 @@ function startGuessNumber(chatJid, bot) {
     number,
     attempts: 0,
     maxAttempts: config.gameSettings.guessMaxAttempts,
-    startTime: Date.now(),
+    startTime: now,
+    lastActivity: now,
     gameMessageId: null,
     lastMessageId: null
   });
@@ -106,6 +115,8 @@ function startGuessNumber(chatJid, bot) {
 function processGuess(chatJid, userJid, rawGuess) {
   const game = global.activeGames.get(chatJid);
   if (!game || game.type !== 'guess') return null;
+
+  touchGame(game);
 
   const guess = parseInt(rawGuess);
   if (isNaN(guess)) {
@@ -160,13 +171,15 @@ function startTrivia(chatJid, bot) {
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
+  const now = Date.now();
   const questions = load('trivia');
   const question = questions[Math.floor(Math.random() * questions.length)];
 
   global.activeGames.set(chatJid, {
     type: 'trivia',
     question,
-    startTime: Date.now(),
+    startTime: now,
+    lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -184,6 +197,8 @@ ${question.options.join('\n')}
 function processTriviaAnswer(chatJid, userJid, answer) {
   const game = global.activeGames.get(chatJid);
   if (!game || game.type !== 'trivia') return null;
+
+  touchGame(game);
 
   const userAnswer = String(answer).trim().toUpperCase();
   const correct = game.question.answer;
@@ -218,6 +233,7 @@ function startWordScramble(chatJid, bot) {
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
+  const now = Date.now();
   const words = load('word_scramble');
   const wordData = words[Math.floor(Math.random() * words.length)];
 
@@ -228,7 +244,8 @@ function startWordScramble(chatJid, bot) {
     hint: wordData.hint,
     attempts: 0,
     maxAttempts: config.gameSettings.scrambleMaxAttempts,
-    startTime: Date.now(),
+    startTime: now,
+    lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -245,6 +262,8 @@ function startWordScramble(chatJid, bot) {
 function processWordScramble(chatJid, userJid, guess) {
   const game = global.activeGames.get(chatJid);
   if (!game || game.type !== 'wordScramble') return null;
+
+  touchGame(game);
 
   const userGuess = String(guess).trim().toUpperCase();
   const correct = game.word.toUpperCase();
@@ -302,6 +321,7 @@ function startRiddle(chatJid, bot) {
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
+  const now = Date.now();
   const riddles = load('riddles');
   const riddle = riddles[Math.floor(Math.random() * riddles.length)];
 
@@ -311,7 +331,8 @@ function startRiddle(chatJid, bot) {
     answer: riddle.answer,
     attempts: 0,
     maxAttempts: config.gameSettings.riddleMaxAttempts,
-    startTime: Date.now(),
+    startTime: now,
+    lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -328,6 +349,8 @@ ${riddle.question}
 function processRiddle(chatJid, userJid, guess) {
   const game = global.activeGames.get(chatJid);
   if (!game || game.type !== 'riddle') return null;
+
+  touchGame(game);
 
   const isCorrect = isSimilarAnswer(guess, game.answer);
 
@@ -374,6 +397,7 @@ function startFlagQuiz(chatJid, bot) {
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
+  const now = Date.now();
   const flags = load('country_flags');
   const flagData = flags[Math.floor(Math.random() * flags.length)];
 
@@ -383,7 +407,8 @@ function startFlagQuiz(chatJid, bot) {
     flag: flagData.flag,
     attempts: 0,
     maxAttempts: config.gameSettings.flagMaxAttempts,
-    startTime: Date.now(),
+    startTime: now,
+    lastActivity: now,
     gameMessageId: null,
     lastMessageId: null
   });
@@ -399,6 +424,8 @@ function startFlagQuiz(chatJid, bot) {
 function processFlagGuess(chatJid, userJid, guess) {
   const game = global.activeGames.get(chatJid);
   if (!game || game.type !== 'flag') return null;
+
+  touchGame(game);
 
   game.attempts++;
 
@@ -472,6 +499,7 @@ function startHangman(chatJid, bot) {
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
+  const now = Date.now();
   const pool = load('hangman_words');
   const pick = pool[Math.floor(Math.random() * pool.length)];
 
@@ -482,7 +510,8 @@ function startHangman(chatJid, bot) {
     guessedLetters: [],
     wrongLetters: [],
     maxWrong: config.gameSettings.hangmanMaxWrong,
-    startTime: Date.now(),
+    startTime: now,
+    lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
@@ -497,6 +526,8 @@ function startHangman(chatJid, bot) {
 function processHangmanGuess(chatJid, userJid, rawGuess) {
   const game = global.activeGames.get(chatJid);
   if (!game || game.type !== 'hangman') return null;
+
+  touchGame(game);
 
   const letter = String(rawGuess).trim().toUpperCase();
 
@@ -624,6 +655,7 @@ function updateLastMessageId(chatJid, sentMsg) {
   const game = global.activeGames.get(chatJid);
   if (!game) return;
   game.lastMessageId = sentMsg.key.id;
+  touchGame(game);
 }
 
 module.exports = {
