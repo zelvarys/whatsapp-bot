@@ -31,14 +31,14 @@ async function handle(sock, msg, sender, userJid, args) {
   userModel.setMood(userJid, mood);
 
   await sock.sendMessage(sender, {
-    text: `✅ AI mood set to ${describe(mood)}`
+    text: `✅ Personal AI mood set to ${describe(mood)}`
   }, { quoted: msg });
 }
 
 function describe(mood) {
-  if (mood === 'roast') return '🔥 Roastful';
-  if (mood === 'nice') return '💚 Nice';
-  return '⚪ Neutral';
+  if (mood === 'roast') return 'Roastful 🔥';
+  if (mood === 'nice') return 'Nice 💚';
+  return 'Neutral ⚪';
 }
 
 module.exports = { handle };

@@ -6,14 +6,25 @@ const config = require('../config');
 // All game rules and state transitions live here.
 // Chat state is stored in global.activeGames (Map of chatJid → game object).
 
-const STALE_MS = 20 * 1000;
+// Games that expect long turns between answers don't auto-expire as fast.
+// Fast games (guess, trivia, flag) expire after 20 seconds.
+// Slow games (hangman, riddle, wordScramble) get 2 minutes.
+const FAST_STALE_MS = 20 * 1000;
+const SLOW_STALE_MS = 2 * 60 * 1000;
+const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
+
+function isSlowGame(type) {
+  return SLOW_GAMES.includes(type);
+}
 
 function canStartGame(chatJid, gameType) {
   const activeGame = global.activeGames.get(chatJid);
   if (!activeGame) return true;
 
+  const staleMs = isSlowGame(activeGame.type) ? SLOW_STALE_MS : FAST_STALE_MS;
   const age = Date.now() - (activeGame.startTime || 0);
-  if (age > STALE_MS) {
+
+  if (age > staleMs) {
     global.activeGames.delete(chatJid);
     return true;
   }
