@@ -1,6 +1,6 @@
 const config = require('../../config');
 const ownerChecker = require('../../utils/ownerChecker');
-const messageTracker = require('../../utils/messageTracker');
+const state = require('../../utils/stateHelpers');
 
 // !delete — reply to a bot message to delete it. Owner only.
 async function handle(sock, msg, sender, userJid) {
@@ -13,7 +13,7 @@ async function handle(sock, msg, sender, userJid) {
     }, { quoted: msg });
   }
 
-  if (!messageTracker.isBotMessageId(repliedToId)) {
+  if (!state.isBotMessageId(repliedToId)) {
     return sock.sendMessage(sender, {
       text: '❌ You can only delete messages sent by the bot!'
     }, { quoted: msg });

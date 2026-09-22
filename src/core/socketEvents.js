@@ -3,12 +3,9 @@ const { DisconnectReason } = require('@whiskeysockets/baileys');
 const readline = require('readline');
 const config = require('../config');
 const messageRouter = require('../routing/messageRouter');
-const messageTracker = require('../utils/messageTracker');
+const state = require('../utils/stateHelpers');
 
-// Wires all socket-level events:
-//   - creds.update → persist credentials
-//   - connection.update → handle pairing, reconnects, and lifecycle logs
-//   - messages.upsert → hand off incoming messages to the router
+// Wires all socket-level events.
 
 function attach(sock, bot, saveCreds) {
   sock.ev.on('creds.update', saveCreds);
@@ -47,12 +44,11 @@ function onConnectionOpen(sock, bot) {
   bot.pairingCodeShown = true;
   bot.reconnectAttempts = 0;
 
-  // Capture the bot's LID from credentials — used for mention detection.
   try {
     const lid = sock.authState?.creds?.me?.lid;
     if (lid) bot.botLid = lid.split(':')[0].split('@')[0];
   } catch (err) {
-    // Non-fatal — mention detection will fall back to phone-number matching.
+    // Non-fatal
   }
 
   console.log(`\n✅ ${config.botName} is CONNECTED and ready!`);
@@ -61,8 +57,6 @@ function onConnectionOpen(sock, bot) {
   console.log(`Total users: ${Object.keys(global.userData).length}`);
   console.log(`Online at: ${new Date(bot.onlineSince).toLocaleTimeString()}`);
 
-  // Delay first outbound message — WhatsApp anti-abuse is aggressive
-  // on freshly paired devices.
   setTimeout(() => {
     sendOnlineNotification(sock).catch((err) => {
       console.error('Online notification failed:', err.message);
@@ -89,8 +83,6 @@ function handleConnectionClose(sock, bot, lastDisconnect) {
 
   const alreadyRegistered = sock.authState.creds.registered;
 
-  // During pairing, 515 fires normally after the code is issued. Reconnect
-  // quietly and wait for the user to enter the code on their phone.
   if (!alreadyRegistered && bot.pairingCodeShown) {
     console.log('🔄 Reconnecting (waiting for pairing code)...');
     setTimeout(() => bot.connect(), 3000);
@@ -163,9 +155,6 @@ async function sendOnlineNotification(sock) {
 async function handleMessagesUpsert(sock, bot, { messages }) {
   const msg = messages[0];
   if (!msg.message || msg.key.fromMe) return;
-
-  // Skip messages that predate the current connection — those are
-  // history replays, not real-time traffic.
   if (!messageSentWhileOnline(msg, bot)) return;
 
   bot.stats.messagesReceived++;
