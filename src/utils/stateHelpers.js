@@ -1,7 +1,30 @@
+// In-memory state tracking: last command, cooldowns, and sent-message IDs.
+
 const config = require('../config');
 
-// Tracks message IDs that the bot itself sent, so we can detect
-// when a user is replying to a bot message.
+function storeLastCommand(userJid, text, prefix) {
+  if (text.startsWith(`${prefix}!!`)) return;
+  global.userLastCommand.set(userJid, text);
+}
+
+function getLastCommand(userJid) {
+  return global.userLastCommand.get(userJid) || null;
+}
+
+function checkCooldown(userJid, command) {
+  const key = `${userJid}_${command}`;
+  const now = Date.now();
+
+  if (global.userCooldowns.has(key)) {
+    const lastUsed = global.userCooldowns.get(key);
+    if (now - lastUsed < config.commandCooldown) {
+      return true;
+    }
+  }
+
+  global.userCooldowns.set(key, now);
+  return false;
+}
 
 function trackBotMessage(messageId, chatJid, options) {
   global.botMessageIds.add(messageId);
@@ -25,13 +48,10 @@ function isBotMessageId(messageId) {
   );
 }
 
-// Returns true when the message is a direct reply to a bot-authored message.
 function isReplyToBot(msg) {
   if (!global.botInstance || !global.botInstance.botUserId) return false;
 
   const chatJid = msg.key.remoteJid;
-
-  // Any message in a private chat is considered a reply to the bot.
   if (!chatJid.endsWith('@g.us')) return true;
 
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
@@ -41,6 +61,9 @@ function isReplyToBot(msg) {
 }
 
 module.exports = {
+  storeLastCommand,
+  getLastCommand,
+  checkCooldown,
   trackBotMessage,
   isBotMessageId,
   isReplyToBot

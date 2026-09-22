@@ -1,8 +1,5 @@
-// WhatsApp JID parsing and formatting utilities.
+// JID parsing and mention-stripping helpers.
 
-// Extracts the phone number portion of a JID.
-// Handles the @s.whatsapp.net, @lid, and :device suffixes.
-// Returns a human-readable number with a leading zero when the country code is Nigerian.
 function jidToPhoneNumber(jid) {
   if (!jid || typeof jid !== 'string') return '';
 
@@ -16,27 +13,35 @@ function jidToPhoneNumber(jid) {
   return digitsOnly;
 }
 
-// Strips the device suffix (`:12`) and the @domain from a JID.
-// Returns just the identifier portion.
 function jidToIdentifier(jid) {
   if (!jid || typeof jid !== 'string') return '';
   return jid.split('@')[0].split(':')[0];
 }
 
-// Returns true if the JID belongs to a group chat.
 function isGroupJid(jid) {
   return typeof jid === 'string' && jid.endsWith('@g.us');
 }
 
-// Builds a DM JID from a raw phone number.
 function phoneToUserJid(phoneNumber) {
   const digits = String(phoneNumber).replace(/\D/g, '');
   return `${digits}@s.whatsapp.net`;
+}
+
+function stripMentions(text) {
+  if (!text) return '';
+
+  let cleaned = text;
+  cleaned = cleaned.replace(/@\d+/g, '');
+  cleaned = cleaned.replace(/@[\w\s]+?(?=\s|$)/gi, '');
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+  return cleaned;
 }
 
 module.exports = {
   jidToPhoneNumber,
   jidToIdentifier,
   isGroupJid,
-  phoneToUserJid
+  phoneToUserJid,
+  stripMentions
 };

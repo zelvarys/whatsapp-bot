@@ -2,16 +2,11 @@ module.exports = {
   logger: require('./consoleLogger'),
   owner: require('./ownerChecker'),
   jid: require('./jidHelpers'),
-  byte: require('./byteFormatter'),
-  uptime: require('./uptimeFormatter'),
-  cooldowns: require('./userCooldowns'),
-  lastCommand: require('./lastCommandTracker'),
-  suggester: require('./commandSuggester'),
-  mentions: require('./mentionDetector'),
-  mentionStrip: require('./mentionStripper'),
+  format: require('./formatHelpers'),
+  state: require('./stateHelpers'),
+  suggestions: require('./suggestionHelpers'),
+  mentions: require('./mentionHelpers'),
   reactions: require('./messageReactions'),
-  tracker: require('./messageTracker'),
   content: require('./contentLoader'),
-  gameRules: require('./gameRules'),
-  tiers: require('./tierCalculator')
+  gameRules: require('./gameRules')
 };

@@ -1,5 +1,4 @@
 // Suggests likely command names when the user mistypes one.
-// Uses Levenshtein distance plus prefix/substring matching.
 
 const KNOWN_COMMANDS = [
   'ask', 'story', 'chatbot', 'translate', 'tts', 'summary', 'mood',
