@@ -1,5 +1,6 @@
 const config = require('../../config');
 const userModel = require('../../models/userModel');
+const { getTierName } = require('../../utils/tierCalculator');
 
 // !leaderboard [limit]
 async function handle(sock, msg, sender, args) {
@@ -14,12 +15,14 @@ async function handle(sock, msg, sender, args) {
 `;
 
   users.forEach((user, index) => {
-    let medal = `${index + 1}.`;
-    if (index === 0) medal = '🥇';
-    else if (index === 1) medal = '🥈';
-    else if (index === 2) medal = '🥉';
+    let medal = `#${index + 1}`;
+    if (index === 0) medal = '🥇 #1';
+    else if (index === 1) medal = '🥈 #2';
+    else if (index === 2) medal = '🥉 #3';
 
-    text += `${medal} *${user.username}*\n   Level ${user.level} • ${user.points} points • ${user.gamesWon} wins`;
+    const tier = getTierName(user.level);
+
+    text += `${medal} ${user.username}\n   Level ${user.level} • ${user.points} points • ${tier}`;
 
     if (index < users.length - 1) {
       text += '\n─────────────────\n';

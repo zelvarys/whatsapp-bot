@@ -6,6 +6,7 @@ const riddleGame = require('./riddle');
 const flagGame = require('./flag');
 const rpsGame = require('./rps');
 const tictactoeGame = require('./tictactoe');
+const hangmanGame = require('./hangman');
 
 // !games — lists available games.
 async function showGames(sock, msg, sender) {
@@ -18,6 +19,7 @@ async function showGames(sock, msg, sender) {
 │• game riddle
 │• game flag
 │• game scramble
+│• hangman
 └─────────────⊶
 
 ┌─⊶ *TIC TAC TOE*
@@ -58,6 +60,11 @@ async function startGame(sock, msg, sender, args, bot) {
   }
 }
 
+// !hangman — starts hangman directly.
+async function hangman(sock, msg, sender, bot) {
+  return hangmanGame.start(sock, msg, sender, bot);
+}
+
 // !ttt — dispatches subcommands.
 async function tictactoe(sock, msg, sender, userJid, args) {
   if (!args.length) {
@@ -87,6 +94,7 @@ async function tictactoe(sock, msg, sender, userJid, args) {
 module.exports = {
   showGames,
   startGame,
+  hangman,
   tictactoe,
   guess: guessGame.guess,
   answer: triviaGame.answer,

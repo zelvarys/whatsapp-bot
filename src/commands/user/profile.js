@@ -1,24 +1,17 @@
 const config = require('../../config');
 const userModel = require('../../models/userModel');
+const { getTierName, getLevelProgress } = require('../../utils/tierCalculator');
 
-// !profile
+// !profile [@user]
 async function handle(sock, msg, sender, userJid) {
-  const user = userModel.getUser(userJid);
-  const rank = userModel.getUserRank(userJid);
-  const levelProgress = user.xp % 100;
+  // If the message mentions someone, show their profile instead.
+  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
+  const targetJid = mentioned && mentioned.length ? mentioned[0] : userJid;
 
-  let tier = 'Newbie';
-  if (user.level >= 50) tier = 'Legend';
-  else if (user.level >= 30) tier = 'Master';
-  else if (user.level >= 20) tier = 'Expert';
-  else if (user.level >= 10) tier = 'Advanced';
-  else if (user.level >= 5) tier = 'Veteran';
-
-  const nextLevelXP = 100 - (user.xp % 100);
-  const bars = 16;
-  const filledBars = Math.floor((levelProgress / 100) * bars);
-  let progressBar = '';
-  for (let i = 0; i < bars; i++) progressBar += i < filledBars ? '█' : '░';
+  const user = userModel.getUser(targetJid);
+  const rank = userModel.getUserRank(targetJid);
+  const tier = getTierName(user.level);
+  const { progress, nextLevelXp, bar } = getLevelProgress(user.xp);
 
   const achievementsBlock = user.achievements.length > 0
     ? `\n  *Achievements:*\n${user.achievements.map((a) => `• ${a}`).join('\n')}`
@@ -31,9 +24,9 @@ async function handle(sock, msg, sender, userJid) {
 │ *Name:* ${user.username}
 │ *Tier:* ${tier}
 │ *Global Rank:* #${rank}
-│ *Level:* ${user.level} (${levelProgress}% to next)
+│ *Level:* ${user.level} (${progress}% to next)
 │
-│ ${progressBar}
+│ ${bar}
 └─────────────⊶
 
 ┌─⊶ *STATISTICS*
@@ -44,7 +37,7 @@ async function handle(sock, msg, sender, userJid) {
 
 ┌─⊶ *PROGRESS*
 │ *XP:* ${user.xp}
-│ *Next Level:* ${nextLevelXP} XP needed
+│ *Next Level:* ${nextLevelXp} XP needed
 │ *Joined:* ${new Date(user.joinDate).toLocaleDateString()}
 └─────────────⊶
 ${achievementsBlock}
