@@ -6,19 +6,13 @@ module.exports = {
     translation: require('./ai/translationEngine')
   },
   media: {
-    youtube: require('./media/youtubeDownloader'),
-    tiktok: require('./media/tiktokDownloader'),
-    facebook: require('./media/facebookDownloader'),
-    universal: require('./media/universalDownloader'),
+    video: require('./media/videoDownloaders'),
     music: require('./media/musicDownloader'),
-    tts: require('./media/textToSpeechEngine'),
-    sticker: require('./media/stickerProcessor'),
-    compressor: require('./media/mediaCompressor'),
-    pdf: require('./media/pdfConverter')
+    processing: require('./media/mediaProcessing'),
+    tts: require('./media/textToSpeechEngine')
   },
   external: {
-    crypto: require('./external/coinGeckoClient'),
-    qrcode: require('./external/qrCodeGenerator'),
+    crypto: require('./external/cryptoClient'),
     dictionary: require('./external/dictionaryClient'),
     weather: require('./external/weatherClient')
   }
