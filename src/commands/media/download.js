@@ -18,9 +18,8 @@ async function handle(sock, msg, sender, userJid, fullText) {
     }
 
     const caption = `┌─⊶✧ *Downloaded Media*
-│ ${result.title ? `*Title:* ${result.title.slice(0, 40)}\n` : ''}${result.author ? `*Author:* ${result.author}\n` : ''}
-└─────────────⊶
-▸ _Downloaded via ${config.botName}_`;
+│ ${result.title ? `*Title:* ${result.title.slice(0, 40)}` : ''}${result.author ? `\n│ *Author:* ${result.author}` : ''}
+└─────────────⊶`;
 
     await sock.sendMessage(sender, {
       video: result.buffer,

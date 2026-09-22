@@ -37,8 +37,7 @@ function buildHelpText() {
 │• qrcode [text]
 │• compress
 │• reveal
-│• pdf [image/text]
-│• delete
+│• pdf [format]
 └────────────⊶
 
 ┌─⊶ *USER SYSTEM*
