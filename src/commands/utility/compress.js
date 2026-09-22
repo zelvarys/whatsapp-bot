@@ -1,10 +1,9 @@
 const config = require('../../config');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const compressor = require('../../services/media/mediaCompressor');
-const { formatBytes } = require('../../utils/byteFormatter');
+const mediaProcessing = require('../../services/media/mediaProcessing');
+const { formatBytes } = require('../../utils/formatHelpers');
 
-// !compress — reply to an image or video to compress it.
 async function handle(sock, msg, sender) {
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
   const quoted = ctx?.quotedMessage;
@@ -44,31 +43,22 @@ async function handle(sock, msg, sender) {
         },
         'buffer',
         {},
-        {
-          logger: pino({ level: 'silent' }),
-          reuploadRequest: sock.updateMediaMessage
-        }
+        { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
       );
     } else {
       originalBuffer = await downloadMediaMessage(
-        {
-          key: msg.key,
-          message: msg.message
-        },
+        { key: msg.key, message: msg.message },
         'buffer',
         {},
-        {
-          logger: pino({ level: 'silent' }),
-          reuploadRequest: sock.updateMediaMessage
-        }
+        { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
       );
     }
 
     const originalSize = originalBuffer.length;
 
     const compressedBuffer = isImage
-      ? await compressor.compressImage(originalBuffer)
-      : await compressor.compressVideo(originalBuffer);
+      ? await mediaProcessing.compressImage(originalBuffer)
+      : await mediaProcessing.compressVideo(originalBuffer);
 
     const compressedSize = compressedBuffer.length;
 
@@ -84,9 +74,7 @@ async function handle(sock, msg, sender) {
   } catch (err) {
     console.error('Compress command error:', err.message);
 
-    const hint = err.message.includes('ffmpeg')
-      ? '\n*Install FFmpeg in Termux*'
-      : '';
+    const hint = err.message.includes('ffmpeg') ? '\n*Install FFmpeg in Termux*' : '';
 
     await sock.sendMessage(sender, {
       text: `❌ Compression failed!${hint}`

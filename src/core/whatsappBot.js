@@ -8,7 +8,7 @@ const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
 const cacheModel = require('../models/commandCacheModel');
 const periodicCleanup = require('../system/periodicCleanup');
-const messageTracker = require('../utils/messageTracker');
+const state = require('../utils/stateHelpers');
 
 class WhatsAppBot {
   constructor() {
@@ -49,9 +49,9 @@ class WhatsAppBot {
 
   printBanner() {
     console.log(`
-════════════════════════
+═════════════════════════
    ${config.botName} v${config.botVersion}
-════════════════════════
+═════════════════════════
 `);
   }
 
@@ -92,7 +92,7 @@ class WhatsAppBot {
       try {
         const sent = await original(jid, content, options);
         if (sent && sent.key && sent.key.id) {
-          messageTracker.trackBotMessage(sent.key.id, jid, options);
+          state.trackBotMessage(sent.key.id, jid, options);
         }
         return sent;
       } catch (err) {

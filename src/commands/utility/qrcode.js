@@ -1,7 +1,6 @@
 const config = require('../../config');
-const qrCodeGenerator = require('../../services/external/qrCodeGenerator');
+const mediaProcessing = require('../../services/media/mediaProcessing');
 
-// !qrcode <text>
 async function handle(sock, msg, sender, userJid, fullText) {
   if (!fullText) {
     return sock.sendMessage(sender, {
@@ -15,7 +14,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
   }
 
   try {
-    const qrBuffer = await qrCodeGenerator.generate(fullText);
+    const qrBuffer = await mediaProcessing.generateQrCode(fullText);
 
     await sock.sendMessage(sender, {
       image: qrBuffer,

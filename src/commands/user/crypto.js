@@ -1,7 +1,6 @@
 const config = require('../../config');
-const coinGecko = require('../../services/external/coinGeckoClient');
+const cryptoClient = require('../../services/external/cryptoClient');
 
-// !crypto <coin>
 async function handle(sock, msg, sender, userJid, args) {
   if (args.length === 0) {
     return sock.sendMessage(sender, {
@@ -17,7 +16,7 @@ async function handle(sock, msg, sender, userJid, args) {
     }, { quoted: msg });
   }
 
-  const result = await coinGecko.getPrice(coin);
+  const result = await cryptoClient.getPrice(coin);
 
   if (!result.success) {
     return sock.sendMessage(sender, { text: `❌ ${result.error}` }, { quoted: msg });
@@ -41,8 +40,7 @@ ${changeEmoji} *24h Change:* ${change}%
 🏦 *Rank:* #${data.market_cap_rank || 'N/A'}
 ⏰ *Updated:* ${new Date().toLocaleTimeString()}
 
-╘═══════════════════╛
-▸ _Data from CoinGecko API_`;
+╘═══════════════════╛`;
 
   await sock.sendMessage(sender, { text }, { quoted: msg });
 }

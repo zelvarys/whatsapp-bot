@@ -1,10 +1,8 @@
 const config = require('../../config');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const pdfConverter = require('../../services/media/pdfConverter');
+const mediaProcessing = require('../../services/media/mediaProcessing');
 
-// !pdf image — reply to an image
-// !pdf text <content> — convert plain text
 async function handle(sock, msg, sender, userJid, args) {
   if (!args.length) {
     return sock.sendMessage(sender, {
@@ -18,9 +16,7 @@ async function handle(sock, msg, sender, userJid, args) {
 
   const type = args[0].toLowerCase();
 
-  if (type === 'image') {
-    return imageToPdf(sock, msg, sender);
-  }
+  if (type === 'image') return imageToPdf(sock, msg, sender);
 
   if (type === 'text') {
     const text = args.slice(1).join(' ');
@@ -65,31 +61,20 @@ async function imageToPdf(sock, msg, sender) {
         },
         'buffer',
         {},
-        {
-          logger: pino({ level: 'silent' }),
-          reuploadRequest: sock.updateMediaMessage
-        }
+        { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
       );
     } else {
       imageBuffer = await downloadMediaMessage(
-        {
-          key: msg.key,
-          message: msg.message
-        },
+        { key: msg.key, message: msg.message },
         'buffer',
         {},
-        {
-          logger: pino({ level: 'silent' }),
-          reuploadRequest: sock.updateMediaMessage
-        }
+        { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
       );
     }
 
-    if (!imageBuffer || !imageBuffer.length) {
-      throw new Error('Empty image');
-    }
+    if (!imageBuffer || !imageBuffer.length) throw new Error('Empty image');
 
-    const pdfBuffer = await pdfConverter.imageToPdf(imageBuffer);
+    const pdfBuffer = await mediaProcessing.imageToPdf(imageBuffer);
 
     await sock.sendMessage(sender, {
       document: pdfBuffer,
@@ -106,7 +91,7 @@ async function imageToPdf(sock, msg, sender) {
 
 async function textToPdf(sock, msg, sender, text) {
   try {
-    const pdfBuffer = await pdfConverter.textToPdf(text);
+    const pdfBuffer = await mediaProcessing.textToPdf(text);
 
     await sock.sendMessage(sender, {
       document: pdfBuffer,

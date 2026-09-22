@@ -2,11 +2,9 @@ const config = require('../config');
 const commandRouter = require('./commandRouter');
 const gameRouter = require('./gameRouter');
 const chatbotRouter = require('./chatbotRouter');
-const mentionDetector = require('../utils/mentionDetector');
-const messageTracker = require('../utils/messageTracker');
+const mentions = require('../utils/mentionHelpers');
+const state = require('../utils/stateHelpers');
 const ownerChecker = require('../utils/ownerChecker');
-
-// Top-level message handler.
 
 const GROUP_METADATA_TTL = 24 * 60 * 60 * 1000;
 
@@ -21,8 +19,6 @@ async function routeMessage(sock, bot, msg, stats) {
 
   storeChatHistory(sender, userJid, text);
 
-  // Update group activity timestamp only — never fetch metadata on the
-  // hot path. The hourly cleanup task refreshes participants.
   if (isGroup) {
     if (global.groupData[sender]) {
       global.groupData[sender].lastActivity = new Date();
@@ -33,7 +29,6 @@ async function routeMessage(sock, bot, msg, stats) {
         lastActivity: new Date(),
         lastFetched: 0
       };
-      // Fire-and-forget fetch so the handler isn't blocked.
       fetchGroupMetadata(sock, sender).catch(() => {});
     }
   }
@@ -49,8 +44,8 @@ async function routeMessage(sock, bot, msg, stats) {
     }
   }
 
-  const isTagged = mentionDetector.isBotMentioned(msg, text);
-  const isReplyToBot = messageTracker.isReplyToBot(msg);
+  const isTagged = mentions.isBotMentioned(msg, text);
+  const isReplyToBot = state.isReplyToBot(msg);
 
   if (text && text.startsWith(config.prefix)) {
     if (stats) stats.commandsExecuted++;
@@ -82,7 +77,7 @@ async function fetchGroupMetadata(sock, jid) {
       lastFetched: Date.now()
     };
   } catch (err) {
-    // Leave the placeholder in place
+    // Leave placeholder
   }
 }
 

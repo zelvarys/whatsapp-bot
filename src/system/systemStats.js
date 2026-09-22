@@ -1,8 +1,6 @@
 const os = require('os');
 const config = require('../config');
-const { formatUptime } = require('../utils/uptimeFormatter');
-
-// Collects and formats runtime statistics.
+const { formatUptime } = require('../utils/formatHelpers');
 
 function collectSystemInfo() {
   return {
@@ -60,8 +58,4 @@ function isHealthy(stats, isConnected) {
   return true;
 }
 
-module.exports = {
-  showStats,
-  isHealthy,
-  collectSystemInfo
-};
+module.exports = { showStats, isHealthy, collectSystemInfo };

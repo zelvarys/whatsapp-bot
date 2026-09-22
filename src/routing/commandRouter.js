@@ -2,9 +2,8 @@ const config = require('../config');
 const fs = require('fs');
 
 const ownerChecker = require('../utils/ownerChecker');
-const cooldowns = require('../utils/userCooldowns');
-const lastCommand = require('../utils/lastCommandTracker');
-const suggester = require('../utils/commandSuggester');
+const state = require('../utils/stateHelpers');
+const suggestions = require('../utils/suggestionHelpers');
 const reactions = require('../utils/messageReactions');
 const cache = require('../models/commandCacheModel');
 
@@ -53,7 +52,7 @@ const CACHEABLE = ['profile', 'games', 'help', 'owner'];
 
 async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
   if (text === `${config.prefix}!!` || text === '!!') {
-    const repeated = lastCommand.getLastCommand(userJid);
+    const repeated = state.getLastCommand(userJid);
     if (!repeated) {
       return sock.sendMessage(sender, {
         text: '⚠️ No previous command to repeat!'
@@ -62,7 +61,7 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
     text = repeated;
   }
 
-  lastCommand.storeLastCommand(userJid, text, config.prefix);
+  state.storeLastCommand(userJid, text, config.prefix);
 
   const args = text.slice(config.prefix.length).trim().split(/ +/);
   let command = args.shift().toLowerCase();
@@ -80,7 +79,7 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
     }
   }
 
-  if (cooldowns.checkCooldown(userJid, command)) return;
+  if (state.checkCooldown(userJid, command)) return;
 
   const emoji = reactions.getReactionForCommand(command);
   let reactionApplied = false;
@@ -221,10 +220,10 @@ async function dispatchOwner(sock, command, msg, sender, userJid, args, fullText
 }
 
 async function handleUnknown(sock, msg, sender, command) {
-  const suggestions = suggester.suggestCommand(command, config.prefix) || '!help';
+  const suggestionText = suggestions.suggestCommand(command, config.prefix) || '!help';
 
   await sock.sendMessage(sender, {
-    text: `❌ Unknown command!\nType ${config.prefix}menu to view all available commands.\n\n▸ Did you mean: ${suggestions}`
+    text: `❌ Unknown command!\nType ${config.prefix}menu to view all available commands.\n\n▸ Did you mean: ${suggestionText}`
   }, { quoted: msg });
 }
 

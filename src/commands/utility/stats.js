@@ -1,6 +1,3 @@
-// !stats — handled by systemStats via the router.
-// Kept as a thin wrapper so the router has a consistent interface.
-
 const systemStats = require('../../system/systemStats');
 
 async function handle(sock, sender) {

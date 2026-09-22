@@ -1,7 +1,6 @@
 const config = require('../../config');
-const universalDownloader = require('../../services/media/universalDownloader');
+const video = require('../../services/media/videoDownloaders');
 
-// !download <url> — auto-detects platform and downloads.
 async function handle(sock, msg, sender, userJid, fullText) {
   if (!fullText) {
     return sock.sendMessage(sender, {
@@ -12,15 +11,16 @@ async function handle(sock, msg, sender, userJid, fullText) {
   const url = fullText.trim();
 
   try {
-    const result = await universalDownloader.download(url);
+    const result = await video.universal(url);
 
     if (!result.success) {
       throw new Error(result.error || 'Download failed');
     }
 
     const caption = `┌─⊶✧ *Downloaded Media*
-│ ${result.title ? `*Title:* ${result.title.slice(0, 25)}...` : ''}
-└─────────────⊶`;
+│ ${result.title ? `*Title:* ${result.title.slice(0, 40)}\n` : ''}${result.author ? `*Author:* ${result.author}\n` : ''}
+└─────────────⊶
+▸ _Downloaded via ${config.botName}_`;
 
     await sock.sendMessage(sender, {
       video: result.buffer,

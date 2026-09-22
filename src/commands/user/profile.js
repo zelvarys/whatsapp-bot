@@ -1,10 +1,8 @@
 const config = require('../../config');
 const userModel = require('../../models/userModel');
-const { getTierName, getLevelProgress } = require('../../utils/tierCalculator');
+const { getTierName, getLevelProgress } = require('../../utils/formatHelpers');
 
-// !profile [@user]
 async function handle(sock, msg, sender, userJid) {
-  // If the message mentions someone, show their profile instead.
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
   const targetJid = mentioned && mentioned.length ? mentioned[0] : userJid;
 

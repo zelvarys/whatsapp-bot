@@ -1,8 +1,7 @@
 const config = require('../../config');
 const userModel = require('../../models/userModel');
-const { getTierName } = require('../../utils/tierCalculator');
+const { getTierName } = require('../../utils/formatHelpers');
 
-// !leaderboard [limit]
 async function handle(sock, msg, sender, args) {
   let limit = args[0] ? parseInt(args[0]) : 10;
   if (limit > 100) limit = 100;
