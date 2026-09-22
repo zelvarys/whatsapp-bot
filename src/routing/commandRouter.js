@@ -8,7 +8,6 @@ const suggester = require('../utils/commandSuggester');
 const reactions = require('../utils/messageReactions');
 const cache = require('../models/commandCacheModel');
 
-// Command modules
 const askCmd = require('../commands/ai/ask');
 const storyCmd = require('../commands/ai/story');
 const translateCmd = require('../commands/ai/translate');
@@ -21,6 +20,7 @@ const leaderboardCmd = require('../commands/user/leaderboard');
 const registerCmd = require('../commands/user/register');
 const cryptoCmd = require('../commands/user/crypto');
 const feedbackCmd = require('../commands/user/feedback');
+const moodCmd = require('../commands/user/mood');
 
 const gameRegistry = require('../commands/games/registry');
 
@@ -34,23 +34,26 @@ const pingCmd = require('../commands/utility/ping');
 const helpCmd = require('../commands/utility/help');
 const ownerInfoCmd = require('../commands/utility/owner-info');
 const statsCmd = require('../commands/utility/stats');
+const defineCmd = require('../commands/utility/define');
+const weatherCmd = require('../commands/utility/weather');
+const timeCmd = require('../commands/utility/time');
+const afkCmd = require('../commands/utility/afk');
 
 const downloadCmd = require('../commands/media/download');
 const songCmd = require('../commands/media/song');
 const youtubeCmd = require('../commands/media/youtube');
-const facebookCmd = require('../commands/media/facebook');
 const tiktokCmd = require('../commands/media/tiktok');
+const facebookCmd = require('../commands/media/facebook');
 
 const broadcastCmd = require('../commands/owner/broadcast');
 const evalCmd = require('../commands/owner/eval');
 const groupsCmd = require('../commands/owner/groups');
 const modeCmd = require('../commands/owner/mode');
+const restartCmd = require('../commands/owner/restart');
 
-// Commands whose responses are cached briefly.
 const CACHEABLE = ['profile', 'games', 'help', 'owner'];
 
 async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
-  // !!
   if (text === `${config.prefix}!!` || text === '!!') {
     const repeated = lastCommand.getLastCommand(userJid);
     if (!repeated) {
@@ -67,12 +70,10 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
   let command = args.shift().toLowerCase();
   const fullText = text.slice(config.prefix.length + command.length).trim();
 
-  // Resolve aliases.
   if (config.commandAliases[command]) {
     command = config.commandAliases[command];
   }
 
-  // Cache hit path.
   if (CACHEABLE.includes(command)) {
     const key = `${command}_${args.join('_')}`;
     const cached = cache.get(key);
@@ -81,7 +82,6 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
     }
   }
 
-  // Cooldown gate.
   if (cooldowns.checkCooldown(userJid, command)) return;
 
   const emoji = reactions.getReactionForCommand(command);
@@ -97,7 +97,6 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
   } catch (err) {
     console.error(`Command "${command}" failed:`, err.message);
 
-    // Replace the processing emoji with ❌️ on uncaught errors.
     await reactions.applyReaction(sock, sender, msg.key, '❌');
     reactionApplied = false;
 
@@ -105,7 +104,6 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
       text: '❌ An error occurred while executing the command. Please try again later.'
     }, { quoted: msg });
   } finally {
-    // Remove the processing emoji after success (not after an error).
     if (reactionApplied) {
       await reactions.removeReaction(sock, sender, msg.key);
     }
@@ -127,12 +125,16 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return summaryCmd.handle(sock, msg, sender, userJid, args);
     case 'chatbot':
       return chatbotCmd.handle(sock, msg, sender, userJid, args);
+    case 'mood':
+      return moodCmd.handle(sock, msg, sender, userJid, args);
 
     // Games
     case 'games':
       return gameRegistry.showGames(sock, msg, sender);
     case 'game':
       return gameRegistry.startGame(sock, msg, sender, args, bot);
+    case 'hangman':
+      return gameRegistry.hangman(sock, msg, sender, bot);
     case 'tictactoe':
       return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
     case 'rps':
@@ -181,6 +183,14 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return ownerInfoCmd.handle(sock, msg, sender);
     case 'stats':
       return statsCmd.handle(sock, sender);
+    case 'define':
+      return defineCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'weather':
+      return weatherCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'time':
+      return timeCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'afk':
+      return afkCmd.handle(sock, msg, sender, userJid, fullText);
 
     // Media
     case 'download':
@@ -189,16 +199,17 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return songCmd.handle(sock, msg, sender, userJid, fullText);
     case 'youtube':
       return youtubeCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'facebook':
-      return facebookCmd.handle(sock, msg, sender, userJid, fullText);
     case 'tiktok':
       return tiktokCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'facebook':
+      return facebookCmd.handle(sock, msg, sender, userJid, fullText);
 
     // Owner
     case 'broadcast':
     case 'eval':
     case 'groups':
     case 'mode':
+    case 'restart':
       if (!ownerChecker.isOwner(userJid)) {
         return sock.sendMessage(sender, {
           text: '❌ This command is only available to the bot owner!'
@@ -217,6 +228,7 @@ async function dispatchOwner(sock, command, msg, sender, userJid, args, fullText
     case 'eval':      return evalCmd.handle(sock, msg, sender, userJid, args, fullText);
     case 'groups':    return groupsCmd.handle(sock, msg, sender);
     case 'mode':      return modeCmd.handle(sock, msg, sender, userJid, args);
+    case 'restart':   return restartCmd.handle(sock, msg, sender);
   }
 }
 

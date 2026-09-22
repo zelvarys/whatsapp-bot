@@ -1,6 +1,6 @@
 const geminiClient = require('./geminiClient');
 const config = require('../../config');
-const { load: loadContent } = require('../../utils/contentLoader');
+const userModel = require('../../models/userModel');
 
 // Generates short stories from a prompt. Handles daily-limit checks
 // and cooldowns through the usage tracker.
@@ -10,7 +10,6 @@ function getTodayKey(userId) {
   return `${userId}_${today}`;
 }
 
-// Returns true if the user has AI quota remaining today.
 function canUse(userId) {
   const key = getTodayKey(userId);
   const used = global.aiUsage.get(key) || 0;
@@ -29,6 +28,8 @@ async function generateStory(prompt, userId) {
     };
   }
 
+  const mood = userModel.getMood(userId);
+
   const storyPrompt = `Write a short story based on this prompt: "${prompt}"
 
 Requirements:
@@ -39,10 +40,11 @@ Requirements:
 - End with a satisfying conclusion`;
 
   try {
-    const text = await geminiClient.generateText(storyPrompt, {
-      temperature: 0.9,
-      maxOutputTokens: 4096
-    });
+    const text = await geminiClient.generateText(
+      storyPrompt,
+      { temperature: 0.9, maxOutputTokens: 4096 },
+      mood
+    );
 
     if (!text || text.length < 20) {
       return { success: false, error: 'Story generation failed. Try again later.' };

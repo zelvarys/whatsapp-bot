@@ -5,13 +5,9 @@ const chatbotRouter = require('./chatbotRouter');
 const mentionDetector = require('../utils/mentionDetector');
 const messageTracker = require('../utils/messageTracker');
 const ownerChecker = require('../utils/ownerChecker');
+const afkTracker = require('../utils/afkTracker');
 
-// Top-level message handler. Decides what to do with each incoming message:
-//   1. If it starts with the command prefix → commandRouter
-//   2. Otherwise, if it's a game answer → gameRouter
-//   3. Otherwise → chatbotRouter (tag / reply / private chat)
-//
-// Private-mode gate happens here so it applies to every path uniformly.
+// Top-level message handler.
 
 async function routeMessage(sock, bot, msg, stats) {
   const sender = msg.key.remoteJid;
@@ -22,10 +18,14 @@ async function routeMessage(sock, bot, msg, stats) {
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
   const repliedToMessageId = ctx?.stanzaId;
 
+  // AFK auto-clear: any incoming message from an AFK user clears their status.
+  if (afkTracker.isAfk(userJid)) {
+    afkTracker.clearAfk(userJid);
+  }
+
   storeChatHistory(sender, userJid, text);
   if (isGroup) await updateGroupData(sock, sender);
 
-  // Private mode: only the owner gets any response at all.
   if (global.botMode === 'private') {
     if (!ownerChecker.isOwner(userJid)) {
       if (text && text.startsWith(config.prefix)) {
@@ -39,6 +39,21 @@ async function routeMessage(sock, bot, msg, stats) {
 
   const isTagged = mentionDetector.isBotMentioned(msg, text);
   const isReplyToBot = messageTracker.isReplyToBot(msg);
+
+  // AFK notice: if the message mentions an AFK user, notify the chat.
+  if (isGroup && ctx?.mentionedJid?.length) {
+    for (const mentioned of ctx.mentionedJid) {
+      if (afkTracker.isAfk(mentioned)) {
+        const notice = afkTracker.formatAfkNotice(mentioned);
+        if (notice) {
+          await sock.sendMessage(sender, {
+            text: notice,
+            mentions: [mentioned]
+          });
+        }
+      }
+    }
+  }
 
   if (text && text.startsWith(config.prefix)) {
     if (stats) stats.commandsExecuted++;

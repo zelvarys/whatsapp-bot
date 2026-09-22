@@ -1,6 +1,7 @@
 const config = require('../../config');
 const geminiClient = require('../../services/ai/geminiClient');
 const storyGenerator = require('../../services/ai/storyGenerator');
+const userModel = require('../../models/userModel');
 
 // !ask <question>
 async function handle(sock, msg, sender, userJid, fullText) {
@@ -23,7 +24,9 @@ async function handle(sock, msg, sender, userJid, fullText) {
   }
 
   try {
-    const aiResponse = await geminiClient.generateText(fullText);
+    const mood = userModel.getMood(userJid);
+    const aiResponse = await geminiClient.generateText(fullText, {}, mood);
+
     await sock.sendMessage(sender, {
       text: aiResponse || "I couldn't come up with a response."
     }, { quoted: msg });

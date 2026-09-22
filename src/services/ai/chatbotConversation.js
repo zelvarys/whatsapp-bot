@@ -1,6 +1,7 @@
 const geminiClient = require('./geminiClient');
 const config = require('../../config');
 const userModel = require('../../models/userModel');
+const moodPrompts = require('./moodPrompts');
 
 // Per-chat chatbot conversation history. Each entry keeps the last
 // few messages as context so the bot stays on-topic within a chat.
@@ -72,14 +73,13 @@ function getNaturalFallback() {
 async function generateResponse(text, userJid, chatJid) {
   try {
     const senderName = userModel.getDisplayName(userJid) || userJid.split('@')[0];
+    const mood = userModel.getMood(userJid);
 
     appendMessage(chatJid, 'user', senderName, text);
 
     const context = buildContext(chatJid);
 
-    const persona = `You are ${config.botName}, a WhatsApp chatbot. You have a cool, slightly roastful, and sarcastic personality. Be casual, fun, and conversational. Don't be overly formal.
-
-However, if the user asks a serious question — health, safety, technical help, factual information, emotional distress, or anything that clearly needs a straight answer — drop the sarcasm and respond normally and helpfully.
+    const persona = `${moodPrompts.getPersona(mood)}
 
 In group chats, multiple people may be talking. Each message is prefixed with the sender's name so you can tell who is who. Address the current sender by their name when replying.`;
 

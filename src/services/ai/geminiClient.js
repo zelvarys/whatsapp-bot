@@ -1,9 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../../config');
-
-// Rotates through API keys and models on failure.
-// Two independent rotation cursors so text and chatbot calls don't
-// interfere with each other's position.
+const moodPrompts = require('./moodPrompts');
 
 let textKeyIndex = 0;
 let textModelIndex = 0;
@@ -22,8 +19,6 @@ const CHATBOT_MODELS = [
   'gemini-pro'
 ];
 
-// Builds the model config with thinking disabled. Thinking mode eats
-// the output budget on 2.5 models, so we turn it off everywhere.
 function baseGenerationConfig(overrides = {}) {
   return {
     temperature: 0.7,
@@ -34,7 +29,6 @@ function baseGenerationConfig(overrides = {}) {
   };
 }
 
-// Attempts the request once with a given key/model. Throws on failure.
 async function tryGenerate(apiKey, modelName, prompt, generationConfig) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -47,7 +41,6 @@ async function tryGenerate(apiKey, modelName, prompt, generationConfig) {
   return result.response.text();
 }
 
-// Fallback when the model rejects thinkingConfig (older gemini-pro).
 async function tryGenerateWithoutThinking(apiKey, modelName, prompt, generationConfig) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -59,7 +52,6 @@ async function tryGenerateWithoutThinking(apiKey, modelName, prompt, generationC
   return result.response.text();
 }
 
-// Shared iteration over keys × models. Returns the response text or null.
 async function runWithRotation(prompt, generationConfig, models, startKey, startModel) {
   let currentKey = startKey;
   let currentModel = startModel;
@@ -85,7 +77,6 @@ async function runWithRotation(prompt, generationConfig, models, startKey, start
           return { text: null, blocked: true };
         }
 
-        // Older models reject thinkingConfig — retry without it.
         if (msg.includes('thinking')) {
           try {
             const text = await tryGenerateWithoutThinking(apiKey, modelName, prompt, generationConfig);
@@ -103,9 +94,15 @@ async function runWithRotation(prompt, generationConfig, models, startKey, start
   return { text: null };
 }
 
-async function generateText(prompt, generationConfig = {}) {
+// Generic text generation. Accepts an optional `mood` used to prepend
+// a persona to the prompt when the caller wants it.
+async function generateText(prompt, generationConfig = {}, mood = null) {
+  const finalPrompt = mood
+    ? `${moodPrompts.getPersona(mood)}\n\n${prompt}`
+    : prompt;
+
   const result = await runWithRotation(
-    prompt,
+    finalPrompt,
     baseGenerationConfig(generationConfig),
     TEXT_MODELS,
     textKeyIndex,
@@ -124,6 +121,8 @@ async function generateText(prompt, generationConfig = {}) {
   return result.text;
 }
 
+// Chatbot path. Persona is always applied by the caller (chatbotConversation
+// passes the mood-specific prompt), so no injection here.
 async function generateChatbotText(prompt, generationConfig = {}) {
   const result = await runWithRotation(
     prompt,

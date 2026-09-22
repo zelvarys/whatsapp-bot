@@ -3,8 +3,8 @@ const geminiClient = require('./geminiClient');
 
 // Translates text to English. Primary path is Gemini, with a
 // Google Translate fallback if Gemini fails or returns junk.
+// No mood is injected — translation is a pure transformation.
 
-// Strips prefixes the model sometimes adds to translations.
 function stripTranslationPrefixes(text) {
   let cleaned = text.trim();
 
@@ -24,7 +24,6 @@ function stripTranslationPrefixes(text) {
   return cleaned.split('\n')[0].trim();
 }
 
-// Direct call to Google Translate's unofficial endpoint.
 async function googleTranslateFallback(text) {
   try {
     const encoded = encodeURIComponent(text.substring(0, 500));
@@ -41,7 +40,7 @@ async function googleTranslateFallback(text) {
       return response.data[0][0][0];
     }
   } catch (err) {
-    // Ignore — caller handles null
+    // Fall through to null
   }
 
   return null;
@@ -59,6 +58,7 @@ async function translateToEnglish(text, userId) {
 "${trimmed}"`;
 
   try {
+    // No mood passed — translation must not be stylized.
     const result = await geminiClient.generateText(prompt, {
       temperature: 0.1,
       maxOutputTokens: 500
@@ -81,7 +81,7 @@ async function translateToEnglish(text, userId) {
     return { success: true, translation: fallback };
   }
 
-  return { success: false, error: 'Translation service unavailable' };
+  return { success: false, translation: null, error: 'Translation service unavailable' };
 }
 
 module.exports = { translateToEnglish };
