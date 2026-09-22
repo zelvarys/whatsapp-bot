@@ -115,7 +115,7 @@ ${context}
 The most recent message is from ${senderName}.`
       : `The most recent message is from ${senderName}.`;
 
-    const instruction = `Reply to ${senderName}'s latest message in 2-3 sentences. Be conversational. Never respond with a single word or a filler like "okay" or "acknowledged". Do not include your name, "You:", "${senderName}:", or any similar prefix at the start of your reply. Output only the reply text.`;
+    const instruction = `Reply to ${senderName}'s latest message in 2 sentences, 3 at most. Be conversational. Never respond with a single word or a filler like "okay" or "acknowledged". Do not include your name, "You:", "${senderName}:", or any similar prefix at the start of your reply. Output only the reply text.`;
 
     const prompt = `${persona}
 
