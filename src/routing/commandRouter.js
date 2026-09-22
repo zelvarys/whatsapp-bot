@@ -36,8 +36,6 @@ const ownerInfoCmd = require('../commands/utility/owner-info');
 const statsCmd = require('../commands/utility/stats');
 const defineCmd = require('../commands/utility/define');
 const weatherCmd = require('../commands/utility/weather');
-const timeCmd = require('../commands/utility/time');
-const afkCmd = require('../commands/utility/afk');
 
 const downloadCmd = require('../commands/media/download');
 const songCmd = require('../commands/media/song');
@@ -112,7 +110,6 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
 
 async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText, isGroup) {
   switch (command) {
-    // AI
     case 'ask':
       return askCmd.handle(sock, msg, sender, userJid, fullText);
     case 'story':
@@ -128,7 +125,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
     case 'mood':
       return moodCmd.handle(sock, msg, sender, userJid, args);
 
-    // Games
     case 'games':
       return gameRegistry.showGames(sock, msg, sender);
     case 'game':
@@ -150,7 +146,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
     case 'flag':
       return gameRegistry.flag(sock, msg, sender, userJid, args);
 
-    // User
     case 'profile':
       return profileCmd.handle(sock, msg, sender, userJid);
     case 'leaderboard':
@@ -162,7 +157,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
     case 'feedback':
       return feedbackCmd.handle(sock, msg, sender, userJid, fullText);
 
-    // Utility
     case 'sticker':
       return stickerCmd.handle(sock, msg, sender);
     case 'compress':
@@ -187,12 +181,7 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return defineCmd.handle(sock, msg, sender, userJid, fullText);
     case 'weather':
       return weatherCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'time':
-      return timeCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'afk':
-      return afkCmd.handle(sock, msg, sender, userJid, fullText);
 
-    // Media
     case 'download':
       return downloadCmd.handle(sock, msg, sender, userJid, fullText);
     case 'song':
@@ -204,7 +193,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
     case 'facebook':
       return facebookCmd.handle(sock, msg, sender, userJid, fullText);
 
-    // Owner
     case 'broadcast':
     case 'eval':
     case 'groups':

@@ -4,7 +4,7 @@
 const KNOWN_COMMANDS = [
   'ask', 'story', 'chatbot', 'translate', 'tts', 'summary', 'mood',
   'games', 'game', 'hangman', 'tictactoe', 'rps',
-  'define', 'weather', 'time', 'afk',
+  'define', 'weather',
   'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
   'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
   'download', 'song', 'tiktok', 'groups', 'facebook', 'youtube',

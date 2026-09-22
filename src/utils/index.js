@@ -12,5 +12,6 @@ module.exports = {
   reactions: require('./messageReactions'),
   tracker: require('./messageTracker'),
   content: require('./contentLoader'),
-  gameRules: require('./gameRules')
+  gameRules: require('./gameRules'),
+  tiers: require('./tierCalculator')
 };

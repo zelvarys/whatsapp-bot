@@ -3,10 +3,6 @@ const config = require('../../config');
 const userModel = require('../../models/userModel');
 const moodPrompts = require('./moodPrompts');
 
-// Per-chat chatbot conversation history. Each entry keeps the last
-// few messages as context so the bot stays on-topic within a chat.
-// History is kept in memory only and cleaned up hourly.
-
 const conversationHistory = new Map();
 const MAX_HISTORY = 10;
 const CONTEXT_WINDOW = 4;
@@ -81,7 +77,7 @@ async function generateResponse(text, userJid, chatJid) {
 
     const persona = `${moodPrompts.getPersona(mood)}
 
-In group chats, multiple people may be talking. Each message is prefixed with the sender's name so you can tell who is who. Address the current sender by their name when replying.`;
+In group chats, multiple people may be talking. Each message is prefixed with the sender's name so you can tell who is who.`;
 
     const prompt = context
       ? `${persona}
@@ -89,7 +85,7 @@ In group chats, multiple people may be talking. Each message is prefixed with th
 Conversation so far:
 ${context}
 
-Reply to the latest message from ${senderName}. Keep it short (1-2 sentences).`
+Reply to the latest message. Keep it short (1-2 sentences).`
       : `${persona}
 
 ${senderName} said: ${text}

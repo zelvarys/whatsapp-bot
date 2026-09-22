@@ -33,13 +33,11 @@ function buildHelpText() {
 ┌─⊶ *UTILITY TOOLS*
 │• define [word]
 │• weather [city]
-│• time [city]
+│• sticker
 │• qrcode [text]
 │• compress
 │• reveal
-│• afk [reason]
 │• pdf [image/text]
-│• sticker
 │• delete
 └────────────⊶
 

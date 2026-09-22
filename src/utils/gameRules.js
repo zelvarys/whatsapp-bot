@@ -21,6 +21,19 @@ function canStartGame(chatJid, gameType) {
   return false;
 }
 
+// Human-readable label for a game type, used in rejection messages.
+function gameLabel(type) {
+  const labels = {
+    guess: 'number guessing',
+    trivia: 'trivia',
+    wordScramble: 'word scramble',
+    riddle: 'riddle',
+    flag: 'flag quiz',
+    hangman: 'hangman'
+  };
+  return labels[type] || type;
+}
+
 function isSimilarAnswer(userAnswer, correctAnswer) {
   const normalize = (str) =>
     String(str)
@@ -51,12 +64,10 @@ function isSimilarAnswer(userAnswer, correctAnswer) {
   return false;
 }
 
-// ---------- Number guessing ----------
-
 function startGuessNumber(chatJid, bot) {
   if (!canStartGame(chatJid, 'guess')) {
     const active = global.activeGames.get(chatJid);
-    return `❌ A ${active.type} game is already active!`;
+    return `❌ A ${gameLabel(active.type)} game is already active!`;
   }
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -130,12 +141,10 @@ function processGuess(chatJid, userJid, rawGuess) {
   };
 }
 
-// ---------- Trivia ----------
-
 function startTrivia(chatJid, bot) {
   if (!canStartGame(chatJid, 'trivia')) {
     const active = global.activeGames.get(chatJid);
-    return `❌ A ${active.type} game is already active!`;
+    return `❌ A ${gameLabel(active.type)} game is already active!`;
   }
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -190,12 +199,10 @@ function processTriviaAnswer(chatJid, userJid, answer) {
   };
 }
 
-// ---------- Word scramble ----------
-
 function startWordScramble(chatJid, bot) {
   if (!canStartGame(chatJid, 'wordScramble')) {
     const active = global.activeGames.get(chatJid);
-    return `❌ A ${active.type} game is already active!`;
+    return `❌ A ${gameLabel(active.type)} game is already active!`;
   }
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -276,12 +283,10 @@ function processWordScramble(chatJid, userJid, guess) {
   };
 }
 
-// ---------- Riddle ----------
-
 function startRiddle(chatJid, bot) {
   if (!canStartGame(chatJid, 'riddle')) {
     const active = global.activeGames.get(chatJid);
-    return `❌ A ${active.type} game is already active!`;
+    return `❌ A ${gameLabel(active.type)} game is already active!`;
   }
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -350,12 +355,10 @@ function processRiddle(chatJid, userJid, guess) {
   };
 }
 
-// ---------- Flag quiz ----------
-
 function startFlagQuiz(chatJid, bot) {
   if (!canStartGame(chatJid, 'flag')) {
     const active = global.activeGames.get(chatJid);
-    return `❌ A ${active.type} game is already active!`;
+    return `❌ A ${gameLabel(active.type)} game is already active!`;
   }
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -427,8 +430,6 @@ function processFlagGuess(chatJid, userJid, guess) {
   return { result: hint, won: false, gameOver: false };
 }
 
-// ---------- Hangman ----------
-
 function buildHangmanDisplay(game) {
   const word = game.word.toUpperCase();
   const guessed = new Set(game.guessedLetters);
@@ -455,7 +456,7 @@ Attempts left: ${remaining}/${game.maxWrong}`;
 function startHangman(chatJid, bot) {
   if (!canStartGame(chatJid, 'hangman')) {
     const active = global.activeGames.get(chatJid);
-    return `❌ A ${active.type} game is already active!`;
+    return `❌ A ${gameLabel(active.type)} game is already active!`;
   }
 
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -513,7 +514,6 @@ function processHangmanGuess(chatJid, userJid, rawGuess) {
     game.wrongLetters.push(letter);
   }
 
-  // Win check — every letter of the word is in guessedLetters
   const won = game.word.split('').every((ch) => game.guessedLetters.includes(ch));
 
   if (won) {
@@ -552,8 +552,6 @@ function processHangmanGuess(chatJid, userJid, rawGuess) {
     keepGame: true
   };
 }
-
-// ---------- Rock paper scissors ----------
 
 function playRockPaperScissors(userChoice, bot) {
   if (bot && bot.stats) bot.stats.gamesPlayed++;
@@ -598,15 +596,12 @@ ${outcome}`,
   };
 }
 
-// ---------- Shared helpers ----------
-
 function attachGameMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
 
   const game = global.activeGames.get(chatJid);
   if (!game) return;
 
-  // Do not overwrite an existing game's tracked IDs on a duplicate start.
   if (game.gameMessageId) return;
 
   game.gameMessageId = sentMsg.key.id;

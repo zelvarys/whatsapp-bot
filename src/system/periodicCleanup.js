@@ -3,10 +3,6 @@ const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
 const cache = require('../models/commandCacheModel');
 const chatbotConversation = require('../services/ai/chatbotConversation');
-const afkTracker = require('../utils/afkTracker');
-
-// Runs periodic housekeeping: saves, prunes expired state, drops
-// stale games, refreshes group data, and clears old cooldowns.
 
 let intervals = [];
 
@@ -16,14 +12,11 @@ function setupIntervals() {
     gameStatsModel.saveAll();
     botState.save();
     cache.saveAll();
-    afkTracker.saveAll();
     console.log('💾 Auto-saved all data');
   }, 5 * 60 * 1000));
 
   intervals.push(setInterval(pruneActiveGames, 5 * 60 * 1000));
-
   intervals.push(setInterval(pruneUsageCounters, 60 * 60 * 1000));
-
   intervals.push(setInterval(pruneMessageIds, 30 * 60 * 1000));
 
   intervals.push(setInterval(() => {
@@ -37,13 +30,7 @@ function setupIntervals() {
   }, 60 * 60 * 1000));
 
   intervals.push(setInterval(pruneCooldowns, 5 * 60 * 1000));
-
   intervals.push(setInterval(refreshAllGroupData, 60 * 60 * 1000));
-
-  intervals.push(setInterval(() => {
-    const removed = afkTracker.pruneOldAfk();
-    if (removed > 0) console.log(`🧹 Cleared ${removed} stale AFK entries`);
-  }, 60 * 60 * 1000));
 }
 
 function pruneActiveGames() {
@@ -129,7 +116,6 @@ function handleShutdown(signal) {
     gameStatsModel.saveAll();
     botState.save();
     cache.saveAll();
-    afkTracker.saveAll();
   } catch (err) {
     console.error('Save on shutdown failed:', err.message);
   }

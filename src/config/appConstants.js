@@ -6,7 +6,6 @@ const userProfilesPath = path.join(dataDir, 'user_profiles.json');
 const gameStatisticsPath = path.join(dataDir, 'game_statistics.json');
 const botSettingsPath = path.join(dataDir, 'bot_settings.json');
 const commandCachePath = path.join(dataDir, 'command_cache.json');
-const afkStatePath = path.join(dataDir, 'afk.json');
 
 // Content files (static, committed)
 const contentDir = path.join(__dirname, '../../content');
@@ -24,19 +23,14 @@ const summaryMaxMessages = 50;
 const ttsMaxLength = 200;
 const maxFileSize = 15 * 1024 * 1024;
 
-// Command cooldown (ms) applied per user per command
 const commandCooldown = 2000;
-// How long command cache entries stay valid (ms)
 const commandCacheTtl = 300000;
-// How long sent-message IDs stay tracked (ms)
 const messageIdTtl = 30 * 60 * 1000;
 
-// Media download platform regexes
 const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/;
 const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+/i;
 const facebookRegex = /(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.watch)\/.+/i;
 
-// Link detection (kept for future use)
 const linkPatterns = [
   /https?:\/\/(?:www\.)?[^\s]+\.[a-z]{2,}(?:\/[^\s]*)?/gi,
   /www\.[^\s]+\.[a-z]{2,}(?:\/[^\s]*)?/gi,
@@ -45,7 +39,6 @@ const linkPatterns = [
   /wa\.me\/[^\s]+/gi
 ];
 
-// Crypto
 const cryptoApiUrl = 'https://api.coingecko.com/api/v3/simple/price';
 const supportedCryptos = [
   'bitcoin',
@@ -57,7 +50,6 @@ const supportedCryptos = [
   'dogecoin'
 ];
 
-// Games
 const gameSettings = {
   guessMaxAttempts: 7,
   triviaMaxAttempts: 5,
@@ -68,8 +60,6 @@ const gameSettings = {
   tictactoeTimeLimit: 120
 };
 
-// Tier thresholds — used by profile and leaderboard.
-// Order matters; first matching range wins.
 const tiers = [
   { name: 'Legend', minLevel: 50 },
   { name: 'Champion', minLevel: 30 },
@@ -79,11 +69,9 @@ const tiers = [
   { name: 'Rookie', minLevel: 1 }
 ];
 
-// AI mood presets. User-scoped, stored in user_profiles.json.
 const moods = ['roast', 'neutral', 'nice'];
 const defaultMood = 'neutral';
 
-// Reaction per command. `null` means no reaction.
 const commandReactions = {
   ask: '💬',
   story: '✍️',
@@ -101,8 +89,6 @@ const commandReactions = {
   delete: null,
   define: null,
   weather: null,
-  time: null,
-  afk: null,
 
   profile: null,
   leaderboard: null,
@@ -140,7 +126,6 @@ module.exports = {
   gameStatisticsPath,
   botSettingsPath,
   commandCachePath,
-  afkStatePath,
   contentDir,
   botImagePath,
   botVersion,

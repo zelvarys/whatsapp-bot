@@ -7,12 +7,8 @@ const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
 const cacheModel = require('../models/commandCacheModel');
-const afkTracker = require('../utils/afkTracker');
 const periodicCleanup = require('../system/periodicCleanup');
 const messageTracker = require('../utils/messageTracker');
-
-// Main bot class. Owns the socket, tracks connection state, and
-// exposes the small API surface the rest of the code needs.
 
 class WhatsAppBot {
   constructor() {
@@ -53,9 +49,9 @@ class WhatsAppBot {
 
   printBanner() {
     console.log(`
-══════════════════════════
+════════════════════════
    ${config.botName} v${config.botVersion}
-══════════════════════════
+════════════════════════
 `);
   }
 
@@ -74,7 +70,6 @@ class WhatsAppBot {
     gameStatsModel.loadAll();
     botState.load();
     cacheModel.loadAll();
-    afkTracker.loadAll();
 
     console.log(`Loaded user data for ${userCount} users ✅`);
     console.log(`Bot mode: ${global.botMode.toUpperCase()}`);

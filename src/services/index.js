@@ -20,7 +20,6 @@ module.exports = {
     crypto: require('./external/coinGeckoClient'),
     qrcode: require('./external/qrCodeGenerator'),
     dictionary: require('./external/dictionaryClient'),
-    weather: require('./external/weatherClient'),
-    time: require('./external/timeClient')
+    weather: require('./external/weatherClient')
   }
 };

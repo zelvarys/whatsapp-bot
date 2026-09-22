@@ -27,7 +27,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
 
   const forecastLines = forecast.map((day, i) => {
     const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : weekday(day.date);
-    return `│ *${label}:* ${day.minTemp}°–${day.maxTemp}°C • ${day.description}${
+    return `*${label}:* ${day.minTemp}°–${day.maxTemp}°C • ${day.description}${
       day.precipitationChance != null ? ` • ${day.precipitationChance}% rain` : ''
     }`;
   });
@@ -41,9 +41,8 @@ async function handle(sock, msg, sender, userJid, fullText) {
 │ 💨 *Wind:* ${current.windspeed} km/h
 └─────────────⊶
 
-┌─⊶ *FORECAST*
+✧ *FORECAST*
 ${forecastLines.join('\n')}
-└─────────────⊶
 
 ╘═══════════════════╛`;
 

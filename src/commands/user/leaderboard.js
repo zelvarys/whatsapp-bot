@@ -15,14 +15,15 @@ async function handle(sock, msg, sender, args) {
 `;
 
   users.forEach((user, index) => {
-    let medal = `#${index + 1}`;
-    if (index === 0) medal = '🥇 #1';
-    else if (index === 1) medal = '🥈 #2';
-    else if (index === 2) medal = '🥉 #3';
+    let prefix = '';
+    if (index === 0) prefix = '🥇';
+    else if (index === 1) prefix = '🥈';
+    else if (index === 2) prefix = '🥉';
+    else prefix = `#${index + 1}.`;
 
     const tier = getTierName(user.level);
 
-    text += `${medal} ${user.username}\n   Level ${user.level} • ${user.points} points • ${tier}`;
+    text += `${prefix} ${user.username}\n   Level ${user.level} • ${user.points} points • ${tier}`;
 
     if (index < users.length - 1) {
       text += '\n─────────────────\n';
