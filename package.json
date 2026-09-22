@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-bot",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Multi-feature WhatsApp bot packed with AI and creative features, games, user system, media downloads, utilities and more",
   "main": "index.js",
   "scripts": {
