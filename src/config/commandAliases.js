@@ -2,26 +2,51 @@
 // Canonical names are what the router switches on.
 
 module.exports = {
+  // Leaderboard / profile
   lb: 'leaderboard',
   top: 'leaderboard',
+  me: 'profile',
+
+  // Games
   ttt: 'tictactoe',
+
+  // Media
   yt: 'youtube',
   fb: 'facebook',
   tt: 'tiktok',
-  h: 'help',
-  vv: 'reveal',
   dl: 'download',
-  qr: 'qrcode',
-  summarize: 'summary',
-  chat: 'ask',
-  me: 'profile',
   music: 'song',
-  bot: 'chatbot',
+
+  // AI
+  chat: 'ask',
+  summarize: 'summary',
   tr: 'translate',
-  info: 'owner',
-  dev: 'owner',
+  write: 'story',
+  bot: 'chatbot',
+
+  // Utility
+  h: 'help',
   menu: 'help',
+  vv: 'reveal',
+  qr: 'qrcode',
   s: 'sticker',
   del: 'delete',
-  write: 'story'
+
+  // New utilities
+  forecast: 'weather',
+  temp: 'weather',
+  clock: 'time',
+  dict: 'define',
+  meaning: 'define',
+  away: 'afk',
+  brb: 'afk',
+
+  // Owner
+  info: 'owner',
+  dev: 'owner',
+  reboot: 'restart',
+
+  // Mood
+  personality: 'mood',
+  tone: 'mood'
 };

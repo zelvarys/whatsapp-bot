@@ -6,6 +6,7 @@ const userProfilesPath = path.join(dataDir, 'user_profiles.json');
 const gameStatisticsPath = path.join(dataDir, 'game_statistics.json');
 const botSettingsPath = path.join(dataDir, 'bot_settings.json');
 const commandCachePath = path.join(dataDir, 'command_cache.json');
+const afkStatePath = path.join(dataDir, 'afk.json');
 
 // Content files (static, committed)
 const contentDir = path.join(__dirname, '../../content');
@@ -14,7 +15,7 @@ const contentDir = path.join(__dirname, '../../content');
 const botImagePath = path.join(__dirname, '../../assets/bot_image.jpg');
 
 // Bot identity
-const botVersion = '1.3';
+const botVersion = '1.4';
 
 // AI limits and timings
 const maxAiResponseLength = 4000;
@@ -63,8 +64,24 @@ const gameSettings = {
   scrambleMaxAttempts: 5,
   riddleMaxAttempts: 5,
   flagMaxAttempts: 3,
+  hangmanMaxWrong: 6,
   tictactoeTimeLimit: 120
 };
+
+// Tier thresholds — used by profile and leaderboard.
+// Order matters; first matching range wins.
+const tiers = [
+  { name: 'Legend', minLevel: 50 },
+  { name: 'Champion', minLevel: 30 },
+  { name: 'Elite', minLevel: 20 },
+  { name: 'Veteran', minLevel: 10 },
+  { name: 'Apprentice', minLevel: 5 },
+  { name: 'Rookie', minLevel: 1 }
+];
+
+// AI mood presets. User-scoped, stored in user_profiles.json.
+const moods = ['roast', 'neutral', 'nice'];
+const defaultMood = 'neutral';
 
 // Reaction per command. `null` means no reaction.
 const commandReactions = {
@@ -74,6 +91,7 @@ const commandReactions = {
   summary: '💬',
   tts: null,
   chatbot: null,
+  mood: null,
 
   reveal: '🔍',
   compress: '📥',
@@ -81,6 +99,10 @@ const commandReactions = {
   sticker: '💟',
   qrcode: null,
   delete: null,
+  define: null,
+  weather: null,
+  time: null,
+  afk: null,
 
   profile: null,
   leaderboard: null,
@@ -92,6 +114,7 @@ const commandReactions = {
   game: null,
   rps: null,
   tictactoe: null,
+  hangman: null,
 
   song: '🎵',
   download: '📥',
@@ -103,6 +126,7 @@ const commandReactions = {
   eval: null,
   groups: null,
   mode: null,
+  restart: null,
 
   owner: null,
   help: null,
@@ -116,6 +140,7 @@ module.exports = {
   gameStatisticsPath,
   botSettingsPath,
   commandCachePath,
+  afkStatePath,
   contentDir,
   botImagePath,
   botVersion,
@@ -134,5 +159,8 @@ module.exports = {
   cryptoApiUrl,
   supportedCryptos,
   gameSettings,
+  tiers,
+  moods,
+  defaultMood,
   commandReactions
 };
