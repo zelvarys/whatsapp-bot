@@ -57,7 +57,6 @@ function buildHelpText() {
 
 ┌─⊶ *OWNER ONLY*
 │• broadcast
-│• eval [script]
 │• groups
 │• mode [args]
 │• restart

@@ -45,7 +45,6 @@ const tiktokCmd = require('../commands/media/tiktok');
 const facebookCmd = require('../commands/media/facebook');
 
 const broadcastCmd = require('../commands/owner/broadcast');
-const evalCmd = require('../commands/owner/eval');
 const groupsCmd = require('../commands/owner/groups');
 const modeCmd = require('../commands/owner/mode');
 const restartCmd = require('../commands/owner/restart');
@@ -199,7 +198,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return facebookCmd.handle(sock, msg, sender, userJid, fullText);
 
     case 'broadcast':
-    case 'eval':
     case 'groups':
     case 'mode':
     case 'restart':
@@ -218,7 +216,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
 async function dispatchOwner(sock, command, msg, sender, userJid, args, fullText) {
   switch (command) {
     case 'broadcast': return broadcastCmd.handle(sock, msg, sender, userJid, args, fullText);
-    case 'eval':      return evalCmd.handle(sock, msg, sender, userJid, args, fullText);
     case 'groups':    return groupsCmd.handle(sock, msg, sender);
     case 'mode':      return modeCmd.handle(sock, msg, sender, userJid, args);
     case 'restart':   return restartCmd.handle(sock, msg, sender);

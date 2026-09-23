@@ -120,7 +120,6 @@ const commandReactions = {
   facebook: '📥',
 
   broadcast: '🔊',
-  eval: null,
   groups: null,
   mode: null,
   restart: null,
