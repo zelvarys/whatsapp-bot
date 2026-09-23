@@ -21,16 +21,10 @@ async function handle(sock, msg, sender) {
     totalMembers += memberCount;
 
     list += `${i + 1}. *${group.name || 'Unknown Group'}*\n`;
-    list += `   ▸ *Members:* ${memberCount}\n`;
-
-    if (group.lastActivity) {
-      list += `   ▸ *Active:* ${formatRelative(new Date(group.lastActivity))}\n`;
-    }
-
-    // No trailing border after the last group.
-    if (i < groupKeys.length - 1) {
-      list += '────────────────\n';
-    }
+    list += `┌─⊶
+│• *Members:* ${memberCount}\n`;
+    list += `│• *Active:* ${formatRelative(new Date(group.lastActivity))}
+└─────────────⊶\n`;
   }
 
   list += `\n╘═══════════════════╛\n`;
