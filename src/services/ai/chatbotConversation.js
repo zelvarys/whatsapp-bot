@@ -1,6 +1,7 @@
 const geminiClient = require('./geminiClient');
 const config = require('../../config');
 const userModel = require('../../models/userModel');
+const botState = require('../../models/botStateModel');
 const moodPrompts = require('./moodPrompts');
 
 const conversationHistory = new Map();
@@ -85,7 +86,7 @@ function isUsableReply(text) {
 async function generateResponse(text, userJid, chatJid) {
   try {
     const senderName = userModel.getDisplayName(userJid) || userJid.split('@')[0];
-    const mood = userModel.getMood(userJid);
+    const mood = botState.getMood(chatJid);
 
     appendMessage(chatJid, 'user', senderName, text);
 

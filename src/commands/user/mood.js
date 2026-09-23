@@ -1,12 +1,22 @@
 const config = require('../../config');
-const userModel = require('../../models/userModel');
+const botState = require('../../models/botStateModel');
 
 // !mood [roast|chill]
+// Group-scoped. Any member of the group can change it.
+// In DM, replies with a note that mood is group-only.
 async function handle(sock, msg, sender, userJid, args) {
-  if (!args.length) {
-    const current = userModel.getMood(userJid);
+  const isGroup = sender.endsWith('@g.us');
+
+  if (!isGroup) {
     return sock.sendMessage(sender, {
-      text: `✧ *AI MOOD*
+      text: '❌ AI mood is set per group and cannot be changed in private chat.'
+    }, { quoted: msg });
+  }
+
+  if (!args.length) {
+    const current = botState.getMood(sender);
+    return sock.sendMessage(sender, {
+      text: `✧ *GROUP AI MOOD*
 ┌─⊶
 │ *Current:* ${describe(current)}
 │
@@ -27,10 +37,15 @@ async function handle(sock, msg, sender, userJid, args) {
     }, { quoted: msg });
   }
 
-  userModel.setMood(userJid, mood);
+  const ok = botState.setMood(sender, mood);
+  if (!ok) {
+    return sock.sendMessage(sender, {
+      text: '❌ Failed to set mood. Try again.'
+    }, { quoted: msg });
+  }
 
   await sock.sendMessage(sender, {
-    text: `✅ AI mood set to ${describe(mood)}`
+    text: `✅ This group's AI mood is now ${describe(mood)}`
   }, { quoted: msg });
 }
 

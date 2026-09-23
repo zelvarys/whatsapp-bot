@@ -34,19 +34,12 @@ function getUser(jid) {
       totalPoints: 0,
       joinDate: new Date().toISOString(),
       lastActive: new Date().toISOString(),
-      achievements: [],
-      mood: config.defaultMood
+      achievements: []
     };
     saveAll();
   }
 
-  // Backfill missing or invalid fields on older records.
-  const user = global.userData[jid];
-  if (!config.moods.includes(user.mood)) {
-    user.mood = config.defaultMood;
-  }
-
-  return user;
+  return global.userData[jid];
 }
 
 function updateUser(jid, patch) {
@@ -133,14 +126,6 @@ function getDisplayName(jid) {
   return getUser(jid).username;
 }
 
-function getMood(jid) {
-  return getUser(jid).mood || config.defaultMood;
-}
-
-function setMood(jid, mood) {
-  updateUser(jid, { mood });
-}
-
 function getAllCount() {
   return Object.keys(global.userData).length;
 }
@@ -155,7 +140,5 @@ module.exports = {
   getLeaderboard,
   getUserRank,
   getDisplayName,
-  getMood,
-  setMood,
   getAllCount
 };
