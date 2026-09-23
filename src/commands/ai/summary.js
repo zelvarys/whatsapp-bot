@@ -1,7 +1,8 @@
 const config = require('../../config');
 const geminiClient = require('../../services/ai/geminiClient');
 
-// !summary [count]
+const SERVICE_UNAVAILABLE = '⚠️ AI service is currently unavailable. Please try again in a few moments.';
+
 async function handle(sock, msg, sender, userJid, args) {
   const limit = args[0] ? parseInt(args[0]) : config.summaryMaxMessages;
 
@@ -26,14 +27,16 @@ async function handle(sock, msg, sender, userJid, args) {
       `Summarize this chat conversation in 4-10 sentences. Go straight to the points, no introduction or greeting:\n\n${conversation}`
     );
 
+    if (!summary) {
+      return sock.sendMessage(sender, { text: SERVICE_UNAVAILABLE }, { quoted: msg });
+    }
+
     await sock.sendMessage(sender, {
       text: `Here is a summary of the last ${messages.length} messages:\n\n${summary}`
     }, { quoted: msg });
   } catch (err) {
     console.error('Summary command error:', err.message);
-    await sock.sendMessage(sender, {
-      text: '❌ Failed to summarize.'
-    }, { quoted: msg });
+    await sock.sendMessage(sender, { text: SERVICE_UNAVAILABLE }, { quoted: msg });
   }
 }
 

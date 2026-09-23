@@ -2,7 +2,8 @@ const config = require('../../config');
 const geminiClient = require('../../services/ai/geminiClient');
 const storyGenerator = require('../../services/ai/storyGenerator');
 
-// !ask <question>
+const SERVICE_UNAVAILABLE = '⚠️ AI service is currently unavailable. Please try again in a few moments.';
+
 async function handle(sock, msg, sender, userJid, fullText) {
   if (!fullText) {
     return sock.sendMessage(sender, {
@@ -30,9 +31,7 @@ Question: ${fullText}`;
     const aiResponse = await geminiClient.generateText(prompt, {});
 
     if (!aiResponse) {
-      return sock.sendMessage(sender, {
-        text: "I couldn't come up with a response."
-      }, { quoted: msg });
+      return sock.sendMessage(sender, { text: SERVICE_UNAVAILABLE }, { quoted: msg });
     }
 
     const cleaned = stripGreetingPrefix(aiResponse);
@@ -40,13 +39,10 @@ Question: ${fullText}`;
     await sock.sendMessage(sender, { text: cleaned }, { quoted: msg });
   } catch (err) {
     console.error('Ask command error:', err.message);
-    await sock.sendMessage(sender, {
-      text: '❌ I encountered an error while processing your request. Try again later.'
-    }, { quoted: msg });
+    await sock.sendMessage(sender, { text: SERVICE_UNAVAILABLE }, { quoted: msg });
   }
 }
 
-// Removes common greeting or filler openers in case the model adds one.
 function stripGreetingPrefix(text) {
   let cleaned = text.trim();
 

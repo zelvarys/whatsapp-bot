@@ -7,6 +7,8 @@ const conversationHistory = new Map();
 const MAX_HISTORY = 10;
 const CONTEXT_WINDOW = 4;
 
+const SERVICE_UNAVAILABLE = '⚠️ AI service is currently unavailable. Please try again in a few moments.';
+
 function getHistory(chatJid) {
   if (!conversationHistory.has(chatJid)) {
     conversationHistory.set(chatJid, []);
@@ -69,15 +71,6 @@ function cleanResponse(text) {
   return cleaned.trim();
 }
 
-function getNaturalFallback() {
-  const fallbacks = [
-    'Not sure what to say to that. Care to elaborate?',
-    'Hmm. Tell me more.',
-    'Go on, I am listening.'
-  ];
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
-}
-
 function isUsableReply(text) {
   if (!text) return false;
   if (text.length < 15) return false;
@@ -99,7 +92,6 @@ async function generateResponse(text, userJid, chatJid) {
     const context = buildContext(chatJid);
     const persona = moodPrompts.getPersona(mood);
 
-    // Short instruction. Long instruction blocks get echoed back by Gemini.
     const instruction = `Reply to ${senderName}. 2 sentences max. No name prefix. No filler.`;
 
     const prompt = context
@@ -117,13 +109,13 @@ ${instruction}`;
     const response = await geminiClient.generateChatbotText(prompt);
 
     if (!response || response.startsWith('❌') || response.startsWith('⚠️')) {
-      return getNaturalFallback();
+      return SERVICE_UNAVAILABLE;
     }
 
     const cleaned = cleanResponse(response);
 
     if (!isUsableReply(cleaned)) {
-      return getNaturalFallback();
+      return SERVICE_UNAVAILABLE;
     }
 
     const trimmed = cleaned.length > 300 ? cleaned.substring(0, 300) : cleaned;
@@ -132,7 +124,7 @@ ${instruction}`;
     return trimmed;
   } catch (err) {
     console.error('Chatbot response error:', err.message);
-    return getNaturalFallback();
+    return SERVICE_UNAVAILABLE;
   }
 }
 

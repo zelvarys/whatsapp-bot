@@ -2,8 +2,7 @@ const geminiClient = require('./geminiClient');
 const config = require('../../config');
 const userModel = require('../../models/userModel');
 
-// Generates short stories from a prompt. Handles daily-limit checks
-// and cooldowns through the usage tracker.
+const SERVICE_UNAVAILABLE = 'AI service is currently unavailable. Please try again in a few moments.';
 
 function getTodayKey(userId) {
   const today = new Date().toISOString().split('T')[0];
@@ -47,13 +46,13 @@ Requirements:
     );
 
     if (!text || text.length < 20) {
-      return { success: false, error: 'Story generation failed. Try again later.' };
+      return { success: false, error: SERVICE_UNAVAILABLE };
     }
 
     return { success: true, story: text.trim() };
   } catch (err) {
     console.error('Story generation error:', err.message);
-    return { success: false, error: `Failed: ${err.message}` };
+    return { success: false, error: SERVICE_UNAVAILABLE };
   }
 }
 
