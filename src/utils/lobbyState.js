@@ -1,10 +1,19 @@
 const config = require('../config');
 const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
-const bombshell = require('../commands/games/bombshell');
-const hotseat = require('../commands/games/hotseat');
 
 // Manages the lifecycle of a lobby, from creation through game end.
+
+const GAME_INFO = {
+  bombshell: {
+    name: 'BOMBSHELL',
+    description: 'Turn-based word chain. Each turn you get a pair of letters and must reply with a valid English word that starts with the first and ends with the second. Miss the 20-second window or break the rule and you are out. Last one standing wins.'
+  },
+  hotseat: {
+    name: 'HOT SEAT',
+    description: 'One player at a time is put on the spot with a quick challenge. Answer correctly within 20 seconds to survive. Wrong or too slow and you are eliminated. Last one standing wins.'
+  }
+};
 
 function createLobby(sender, gameType, host, gameModule) {
   const now = Date.now();
@@ -26,19 +35,20 @@ function createLobby(sender, gameType, host, gameModule) {
 }
 
 function buildLobbyText(lobby) {
-  const gameName = lobby.gameType === 'bombshell' ? 'BOMBSHELL' : 'HOT SEAT';
+  const info = GAME_INFO[lobby.gameType] || { name: lobby.gameType, description: '' };
   const secondsLeft = Math.max(0, Math.ceil((lobby.deadline - Date.now()) / 1000));
 
   const list = lobby.players.length === 0
     ? '  (no players yet)'
     : lobby.players.map((p, i) => `  ${i + 1}. @${p.split('@')[0]}`).join('\n');
 
-  return `✧ *${gameName} — LOBBY OPEN*
-┌─⊶
-│ Players: ${lobby.players.length}/${lobby.maxPlayers}
-│ Minimum to start: ${lobby.minPlayers}
-│ Closes in: ${secondsLeft}s
-└─────────────⊶
+  return `✧ *${info.name} — LOBBY OPEN*
+
+▸ ${info.description}
+
+*Players:* ${lobby.players.length}/${lobby.maxPlayers}
+*Minimum to start:* ${lobby.minPlayers}
+*Closes in:* ${secondsLeft}s
 
 ${list}
 
@@ -50,7 +60,6 @@ ${list}
 
 async function postLobby(sock, sender, lobby) {
   const text = buildLobbyText(lobby);
-
   const mentions = lobby.players.slice();
 
   const sent = await sock.sendMessage(sender, {
@@ -89,17 +98,13 @@ async function handleGameTurn(sock, msg, sender, userJid, text, lobby) {
   const game = lobby.gameState;
   if (!game) return false;
 
-  // Only the current player can act, except games that allow anyone.
   if (game.currentPlayer && game.currentPlayer !== userJid) {
-    // Silently ignore other players' replies for now.
     return true;
   }
 
   const result = lobby.gameModule.handleTurn(game, userJid, text);
-
   if (!result) return true;
 
-  // Cancel existing timeout — new state resets the clock.
   if (lobby.turnTimeout) {
     clearTimeout(lobby.turnTimeout);
     lobby.turnTimeout = null;
@@ -130,7 +135,6 @@ function scheduleTurnTimeout(sock, sender, lobby) {
     if (lobby.state !== 'running') return;
 
     const result = lobby.gameModule.handleTimeout(lobby.gameState);
-
     if (!result) return;
 
     const sent = await sock.sendMessage(sender, {
@@ -170,7 +174,6 @@ async function endGame(sender, lobby, outcome) {
   global.gameLobbies.delete(sender);
 }
 
-// Called by periodic cleanup every 30 seconds.
 async function pruneLobbies(sock) {
   const now = Date.now();
 

@@ -7,14 +7,6 @@ const maxPlayers = 8;
 
 const HUNT_LETTERS = 'ABCDEFGHIJKLMNOPRSTUVWY'.split('');
 
-const CHALLENGE_WEIGHTS = {
-  oddOneOut: 1,
-  typeBackwards: 1,
-  punctuation: 1,
-  letterHunt: 1,
-  silhouette: 1
-};
-
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -41,8 +33,6 @@ function randomPunctuationString() {
   for (let i = 0; i < len; i++) s += pool[Math.floor(Math.random() * pool.length)];
   return s;
 }
-
-// ---------------- Challenge generators ----------------
 
 function makeOddOneOut() {
   const content = load('hotseat');
@@ -100,7 +90,6 @@ function makeSilhouette() {
   const sentence = pickRandom(sentences);
   const words = sentence.split(' ');
 
-  // Position 2..6 (1-indexed, so index 1..5)
   const positions = [2, 3, 4, 5, 6].filter((p) => p <= words.length);
   const position = pickRandom(positions);
   const expected = words[position - 1];
@@ -125,8 +114,6 @@ function generateChallenge() {
   return pickRandom(GENERATORS)();
 }
 
-// ---------------- Game state ----------------
-
 function startGame(lobby) {
   const state = {
     type: 'hotseat',
@@ -139,12 +126,11 @@ function startGame(lobby) {
   };
 
   state.currentPlayer = pickRandom(state.players);
-
   state.challenge = generateChallenge();
 
   const text = `✧ *HOT SEAT — START*
 
-One player at a time. 10 seconds to answer.
+One player at a time. 20 seconds to answer.
 
 🔥 @${state.currentPlayer.split('@')[0]} is on the spot!
 
@@ -177,7 +163,6 @@ function handleTurn(game, userJid, text) {
     return eliminatePlayer(game, `wrong answer (expected: ${challenge.expected})`);
   }
 
-  // Advance to next player, fresh challenge
   const remaining = game.players.filter((p) => !game.eliminated.includes(p));
   const nextCandidates = remaining.filter((p) => p !== userJid);
 
@@ -195,7 +180,7 @@ function handleTurn(game, userJid, text) {
   return {
     text: `✅ Correct!
 
-🔥 @${game.currentPlayer.split('@')[0]} is on the spot!
+🔥 @${game.currentPlayer.split('@')[0]} is on the spot! (20s)
 
 ${game.challenge.prompt}`,
     mentions: [game.currentPlayer],
@@ -242,7 +227,7 @@ function eliminatePlayer(game, reason) {
   return {
     text: `💥 @${loser.split('@')[0]} is out (${reason})!
 
-🔥 @${game.currentPlayer.split('@')[0]} is on the spot!
+🔥 @${game.currentPlayer.split('@')[0]} is on the spot! (20s)
 
 ${game.challenge.prompt}`,
     mentions: [loser, game.currentPlayer],

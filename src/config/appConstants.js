@@ -65,7 +65,7 @@ const lobbySettings = {
   joinWindowMs: 90 * 1000,
   minPlayers: 3,
   maxPlayers: 8,
-  turnTimeoutMs: 10 * 1000,
+  turnTimeoutMs: 20 * 1000,
   pruneIntervalMs: 30 * 1000
 };
 

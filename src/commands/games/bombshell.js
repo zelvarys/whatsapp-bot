@@ -4,10 +4,6 @@ const wordValidator = require('../../utils/wordValidator');
 const minPlayers = 3;
 const maxPlayers = 8;
 
-// Letters excluded because they rarely form valid start/end pairs.
-const EXCLUDED_FIRST = ['Q', 'X', 'Z'];
-const EXCLUDED_LAST = ['Q', 'X', 'Z'];
-
 const START_LETTERS = 'ABCDEFGHIJKLMNOPRSTUVWY'.split('');
 const END_LETTERS = 'ABCDEFGHIJKLMNOPRSTUVWY'.split('');
 
@@ -38,7 +34,7 @@ function startGame(lobby) {
 The bomb passes to the first player.
 
 Word rule: starts with *${first}* and ends with *${second}*
-You have 10 seconds on your turn.
+You have 20 seconds on your turn.
 
 ▸ @${state.currentPlayer.split('@')[0]}, reply with a word!`;
 
@@ -52,7 +48,6 @@ You have 10 seconds on your turn.
 function handleTurn(game, userJid, text) {
   const word = String(text).trim().toUpperCase();
 
-  // Wrong player somehow
   if (game.currentPlayer !== userJid) return null;
 
   const first = game.firstLetter;
@@ -68,20 +63,18 @@ function handleTurn(game, userJid, text) {
 
   game.usedWords.push(word);
 
-  // Pick a fresh pattern for the next turn so the game doesn't stagnate
   const nextFirst = pickLetter(START_LETTERS);
   const nextSecond = pickLetter(END_LETTERS);
   game.firstLetter = nextFirst;
   game.secondLetter = nextSecond;
 
-  // Advance to next player
   game.turnIndex = (game.turnIndex + 1) % game.turnOrder.length;
   game.currentPlayer = game.turnOrder[game.turnIndex];
 
   const text_ = `✅ *${word}* accepted.
 
 Next: starts with *${nextFirst}* and ends with *${nextSecond}*
-▸ @${game.currentPlayer.split('@')[0]}, your turn!`;
+▸ @${game.currentPlayer.split('@')[0]}, your turn! (20s)`;
 
   return {
     text: text_,
@@ -98,7 +91,6 @@ function eliminateCurrent(game, reason) {
   const loser = game.currentPlayer;
   game.eliminated.push(loser);
 
-  // Remove from turn order
   const idx = game.turnOrder.indexOf(loser);
   if (idx !== -1) game.turnOrder.splice(idx, 1);
 
@@ -118,7 +110,6 @@ function eliminateCurrent(game, reason) {
   }
 
   if (game.turnOrder.length === 0) {
-    // Shouldn't happen but guard anyway
     return {
       text: `💥 Everyone eliminated. No winner.`,
       mentions: [loser],
@@ -138,13 +129,12 @@ function eliminateCurrent(game, reason) {
     text: `💥 @${loser.split('@')[0]} is out (${reason})!
 
 Next: starts with *${nextFirst}* and ends with *${nextSecond}*
-▸ @${game.currentPlayer.split('@')[0]}, your turn!`,
+▸ @${game.currentPlayer.split('@')[0]}, your turn! (20s)`,
     mentions: [loser, game.currentPlayer],
     gameOver: null
   };
 }
 
-// Entry point for the !bombshell command
 async function handle(sock, msg, sender, userJid) {
   const existing = global.gameLobbies.get(sender);
   if (existing) {
