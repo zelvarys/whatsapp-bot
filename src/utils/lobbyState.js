@@ -1,8 +1,7 @@
 const config = require('../config');
 const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
-
-// Manages the lifecycle of a lobby, from creation through game end.
+const jid = require('./jidHelpers');
 
 const GAME_INFO = {
   bombshell: {
@@ -14,6 +13,15 @@ const GAME_INFO = {
     description: 'One player at a time is put on the spot with a quick challenge. Answer correctly within 20 seconds to survive. Wrong or too slow and you are eliminated. Last one standing wins.'
   }
 };
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 function createLobby(sender, gameType, host, gameModule) {
   const now = Date.now();
@@ -28,9 +36,12 @@ function createLobby(sender, gameType, host, gameModule) {
     state: 'waiting',
     deadline: now + config.lobbySettings.joinWindowMs,
     lobbyMessageId: null,
+    lastLobbyMessageId: null,
     startedAt: null,
     gameState: null,
-    gameModule
+    gameModule,
+    turnTimeout: null,
+    turnToken: 0
   };
 }
 
@@ -40,15 +51,15 @@ function buildLobbyText(lobby) {
 
   const list = lobby.players.length === 0
     ? '  (no players yet)'
-    : lobby.players.map((p, i) => `  ${i + 1}. @${p.split('@')[0]}`).join('\n');
+    : lobby.players.map((p, i) => `  ${i + 1}. @${jid.jidToIdentifier(p)}`).join('\n');
 
   return `✧ *${info.name} — LOBBY OPEN*
 
 ▸ ${info.description}
 
-*Players:* ${lobby.players.length}/${lobby.maxPlayers}
-*Minimum to start:* ${lobby.minPlayers}
-*Closes in:* ${secondsLeft}s
+Players: ${lobby.players.length}/${lobby.maxPlayers}
+Minimum to start: ${lobby.minPlayers}
+Closes in: ${secondsLeft}s
 
 ${list}
 
@@ -62,13 +73,61 @@ async function postLobby(sock, sender, lobby) {
   const text = buildLobbyText(lobby);
   const mentions = lobby.players.slice();
 
-  const sent = await sock.sendMessage(sender, {
-    text,
-    mentions
-  });
+  const sent = await sock.sendMessage(sender, { text, mentions });
 
   if (sent && sent.key && sent.key.id) {
-    lobby.lobbyMessageId = sent.key.id;
+    if (!lobby.lobbyMessageId) lobby.lobbyMessageId = sent.key.id;
+    lobby.lastLobbyMessageId = sent.key.id;
+  }
+}
+
+async function postJoinUpdate(sock, sender, lobby) {
+  const info = GAME_INFO[lobby.gameType] || { name: lobby.gameType };
+  const secondsLeft = Math.max(0, Math.ceil((lobby.deadline - Date.now()) / 1000));
+
+  const list = lobby.players.length === 0
+    ? '  (no players yet)'
+    : lobby.players.map((p, i) => `  ${i + 1}. @${jid.jidToIdentifier(p)}`).join('\n');
+
+  const text = `✧ *${info.name} — LOBBY*
+Players: ${lobby.players.length}/${lobby.maxPlayers}
+Minimum to start: ${lobby.minPlayers}
+Closes in: ${secondsLeft}s
+
+${list}`;
+
+  const mentions = lobby.players.slice();
+
+  const sent = await sock.sendMessage(sender, { text, mentions });
+
+  if (sent && sent.key && sent.key.id) {
+    lobby.lastLobbyMessageId = sent.key.id;
+  }
+}
+
+async function postLeaveUpdate(sock, sender, lobby, leaverJid) {
+  const info = GAME_INFO[lobby.gameType] || { name: lobby.gameType };
+  const secondsLeft = Math.max(0, Math.ceil((lobby.deadline - Date.now()) / 1000));
+
+  const list = lobby.players.length === 0
+    ? '  (no players yet)'
+    : lobby.players.map((p, i) => `  ${i + 1}. @${jid.jidToIdentifier(p)}`).join('\n');
+
+  const text = `👋 @${jid.jidToIdentifier(leaverJid)} left.
+
+✧ *${info.name} — LOBBY*
+Players: ${lobby.players.length}/${lobby.maxPlayers}
+Minimum to start: ${lobby.minPlayers}
+Closes in: ${secondsLeft}s
+
+${list}`;
+
+  const mentions = [leaverJid, ...lobby.players];
+
+  const sent = await sock.sendMessage(sender, { text, mentions });
+
+  if (sent && sent.key && sent.key.id) {
+    lobby.lastLobbyMessageId = sent.key.id;
   }
 }
 
@@ -77,12 +136,16 @@ async function startGame(sock, sender, lobby) {
 
   lobby.state = 'running';
   lobby.startedAt = Date.now();
+  lobby.turnToken = 0;
 
-  const init = lobby.gameModule.startGame(lobby);
+  const shuffled = shuffle(lobby.players);
+  lobby.players = shuffled;
+
+  const init = lobby.gameModule.startGame(lobby, shuffled);
 
   const sent = await sock.sendMessage(sender, {
     text: init.text,
-    mentions: init.mentions || lobby.players
+    mentions: init.mentions || shuffled
   });
 
   if (sent && sent.key && sent.key.id) {
@@ -105,6 +168,8 @@ async function handleGameTurn(sock, msg, sender, userJid, text, lobby) {
   const result = lobby.gameModule.handleTurn(game, userJid, text);
   if (!result) return true;
 
+  // Invalidate any pending timeout — the turn was answered.
+  lobby.turnToken++;
   if (lobby.turnTimeout) {
     clearTimeout(lobby.turnTimeout);
     lobby.turnTimeout = null;
@@ -129,10 +194,18 @@ async function handleGameTurn(sock, msg, sender, userJid, text, lobby) {
 }
 
 function scheduleTurnTimeout(sock, sender, lobby) {
-  if (lobby.turnTimeout) clearTimeout(lobby.turnTimeout);
+  if (lobby.turnTimeout) {
+    clearTimeout(lobby.turnTimeout);
+    lobby.turnTimeout = null;
+  }
+
+  const myToken = ++lobby.turnToken;
 
   lobby.turnTimeout = setTimeout(async () => {
+    // If the token changed since this timer was scheduled, this timer is stale.
+    if (lobby.turnToken !== myToken) return;
     if (lobby.state !== 'running') return;
+    if (!lobby.gameState) return;
 
     const result = lobby.gameModule.handleTimeout(lobby.gameState);
     if (!result) return;
@@ -169,7 +242,10 @@ async function endGame(sender, lobby, outcome) {
 
   gameStatsModel.increment(lobby.gameType, 60 * winners.length);
 
-  if (lobby.turnTimeout) clearTimeout(lobby.turnTimeout);
+  if (lobby.turnTimeout) {
+    clearTimeout(lobby.turnTimeout);
+    lobby.turnTimeout = null;
+  }
 
   global.gameLobbies.delete(sender);
 }
@@ -197,6 +273,8 @@ module.exports = {
   createLobby,
   buildLobbyText,
   postLobby,
+  postJoinUpdate,
+  postLeaveUpdate,
   startGame,
   handleGameTurn,
   endGame,

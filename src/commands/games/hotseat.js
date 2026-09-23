@@ -114,10 +114,10 @@ function generateChallenge() {
   return pickRandom(GENERATORS)();
 }
 
-function startGame(lobby) {
+function startGame(lobby, orderedPlayers) {
   const state = {
     type: 'hotseat',
-    players: lobby.players.slice(),
+    players: orderedPlayers.slice(),
     eliminated: [],
     currentPlayer: null,
     challenge: null,
@@ -125,7 +125,7 @@ function startGame(lobby) {
     lastMessageId: null
   };
 
-  state.currentPlayer = pickRandom(state.players);
+  state.currentPlayer = orderedPlayers[0];
   state.challenge = generateChallenge();
 
   const text = `✧ *HOT SEAT — START*
@@ -141,6 +141,13 @@ ${state.challenge.prompt}`;
     mentions: [state.currentPlayer],
     state
   };
+}
+
+function nextPlayer(state) {
+  const remaining = state.players.filter((p) => !state.eliminated.includes(p));
+  const candidates = remaining.filter((p) => p !== state.currentPlayer);
+  if (candidates.length === 0) return remaining[0] || null;
+  return pickRandom(candidates);
 }
 
 function handleTurn(game, userJid, text) {
@@ -163,18 +170,16 @@ function handleTurn(game, userJid, text) {
     return eliminatePlayer(game, `wrong answer (expected: ${challenge.expected})`);
   }
 
-  const remaining = game.players.filter((p) => !game.eliminated.includes(p));
-  const nextCandidates = remaining.filter((p) => p !== userJid);
-
-  if (nextCandidates.length === 0) {
+  const next = nextPlayer(game);
+  if (!next) {
     return {
-      text: `✅ Correct! But no one left to challenge...`,
+      text: '✅ Correct! But no one left to challenge...',
       mentions: [],
       gameOver: null
     };
   }
 
-  game.currentPlayer = pickRandom(nextCandidates);
+  game.currentPlayer = next;
   game.challenge = generateChallenge();
 
   return {

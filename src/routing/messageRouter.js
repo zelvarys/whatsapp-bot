@@ -45,7 +45,7 @@ async function routeMessage(sock, bot, msg, stats) {
 
   // Lobby routing comes first — it owns messages within an active lobby.
   if (global.gameLobbies.has(sender)) {
-    const handled = await lobbyRouter.routeLobby(sock, msg, text, sender, userJid, repliedToMessageId);
+    const handled = await lobbyRouter.routeLobby(sock, msg, text, sender, userJid);
     if (handled) return;
   }
 

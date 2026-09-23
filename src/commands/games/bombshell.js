@@ -4,23 +4,55 @@ const wordValidator = require('../../utils/wordValidator');
 const minPlayers = 3;
 const maxPlayers = 8;
 
-const START_LETTERS = 'ABCDEFGHIJKLMNOPRSTUVWY'.split('');
-const END_LETTERS = 'ABCDEFGHIJKLMNOPRSTUVWY'.split('');
+// Curated list of letter pairs that reliably produce valid English words.
+// Order of the array doesn't matter — a pair is picked at random each turn.
+const LETTER_PAIRS = [
+  ['A', 'D'], ['A', 'E'], ['A', 'G'], ['A', 'K'], ['A', 'L'],
+  ['A', 'M'], ['A', 'N'], ['A', 'P'], ['A', 'R'], ['A', 'S'],
+  ['A', 'T'], ['A', 'W'], ['A', 'Y'],
+  ['B', 'D'], ['B', 'E'], ['B', 'G'], ['B', 'K'], ['B', 'L'],
+  ['B', 'N'], ['B', 'R'], ['B', 'S'], ['B', 'T'], ['B', 'Y'],
+  ['C', 'E'], ['C', 'H'], ['C', 'K'], ['C', 'L'], ['C', 'N'],
+  ['C', 'P'], ['C', 'R'], ['C', 'S'], ['C', 'T'], ['C', 'Y'],
+  ['D', 'E'], ['D', 'G'], ['D', 'K'], ['D', 'N'], ['D', 'R'],
+  ['D', 'S'], ['D', 'T'], ['D', 'Y'],
+  ['F', 'E'], ['F', 'G'], ['F', 'L'], ['F', 'N'], ['F', 'R'],
+  ['F', 'S'], ['F', 'T'], ['F', 'Y'],
+  ['G', 'E'], ['G', 'H'], ['G', 'L'], ['G', 'N'], ['G', 'R'],
+  ['G', 'S'], ['G', 'T'], ['G', 'Y'],
+  ['H', 'E'], ['H', 'L'], ['H', 'N'], ['H', 'P'], ['H', 'S'],
+  ['H', 'T'], ['H', 'Y'],
+  ['K', 'E'], ['K', 'N'], ['K', 'S'], ['K', 'T'], ['K', 'Y'],
+  ['L', 'E'], ['L', 'K'], ['L', 'L'], ['L', 'M'], ['L', 'N'],
+  ['L', 'P'], ['L', 'S'], ['L', 'T'], ['L', 'Y'],
+  ['M', 'E'], ['M', 'N'], ['M', 'P'], ['M', 'S'], ['M', 'T'], ['M', 'Y'],
+  ['N', 'E'], ['N', 'G'], ['N', 'L'], ['N', 'S'], ['N', 'T'], ['N', 'Y'],
+  ['P', 'E'], ['P', 'H'], ['P', 'L'], ['P', 'N'], ['P', 'R'],
+  ['P', 'S'], ['P', 'T'], ['P', 'Y'],
+  ['R', 'E'], ['R', 'K'], ['R', 'L'], ['R', 'M'], ['R', 'N'],
+  ['R', 'P'], ['R', 'S'], ['R', 'T'], ['R', 'Y'],
+  ['S', 'E'], ['S', 'G'], ['S', 'H'], ['S', 'K'], ['S', 'L'],
+  ['S', 'M'], ['S', 'N'], ['S', 'P'], ['S', 'S'], ['S', 'T'], ['S', 'Y'],
+  ['T', 'E'], ['T', 'H'], ['T', 'L'], ['T', 'N'], ['T', 'R'],
+  ['T', 'S'], ['T', 'T'], ['T', 'Y'],
+  ['W', 'E'], ['W', 'K'], ['W', 'L'], ['W', 'N'], ['W', 'R'],
+  ['W', 'S'], ['W', 'T'], ['W', 'Y'],
+  ['Y', 'E'], ['Y', 'S']
+];
 
-function pickLetter(pool) {
-  return pool[Math.floor(Math.random() * pool.length)];
+function pickPair() {
+  return LETTER_PAIRS[Math.floor(Math.random() * LETTER_PAIRS.length)];
 }
 
-function startGame(lobby) {
-  const first = pickLetter(START_LETTERS);
-  const second = pickLetter(END_LETTERS);
+function startGame(lobby, orderedPlayers) {
+  const [first, second] = pickPair();
 
   const state = {
     type: 'bombshell',
-    players: lobby.players.slice(),
+    players: orderedPlayers.slice(),
     eliminated: [],
-    currentPlayer: lobby.players[0],
-    turnOrder: lobby.players.slice(),
+    currentPlayer: orderedPlayers[0],
+    turnOrder: orderedPlayers.slice(),
     turnIndex: 0,
     firstLetter: first,
     secondLetter: second,
@@ -58,26 +90,23 @@ function handleTurn(game, userJid, text) {
   const isNew = !game.usedWords.includes(word);
 
   if (!patternOk || !isReal || !isNew) {
-    return eliminateCurrent(game, !patternOk ? 'pattern' : !isReal ? 'not a real word' : 'already used');
+    return eliminateCurrent(game, !patternOk ? 'wrong pattern' : !isReal ? 'not a real word' : 'already used');
   }
 
   game.usedWords.push(word);
 
-  const nextFirst = pickLetter(START_LETTERS);
-  const nextSecond = pickLetter(END_LETTERS);
+  const [nextFirst, nextSecond] = pickPair();
   game.firstLetter = nextFirst;
   game.secondLetter = nextSecond;
 
   game.turnIndex = (game.turnIndex + 1) % game.turnOrder.length;
   game.currentPlayer = game.turnOrder[game.turnIndex];
 
-  const text_ = `✅ *${word}* accepted.
+  return {
+    text: `✅ *${word}* accepted.
 
 Next: starts with *${nextFirst}* and ends with *${nextSecond}*
-▸ @${game.currentPlayer.split('@')[0]}, your turn! (20s)`;
-
-  return {
-    text: text_,
+▸ @${game.currentPlayer.split('@')[0]}, your turn! (20s)`,
     mentions: [game.currentPlayer],
     gameOver: null
   };
@@ -120,8 +149,7 @@ function eliminateCurrent(game, reason) {
   if (game.turnIndex >= game.turnOrder.length) game.turnIndex = 0;
   game.currentPlayer = game.turnOrder[game.turnIndex];
 
-  const nextFirst = pickLetter(START_LETTERS);
-  const nextSecond = pickLetter(END_LETTERS);
+  const [nextFirst, nextSecond] = pickPair();
   game.firstLetter = nextFirst;
   game.secondLetter = nextSecond;
 
