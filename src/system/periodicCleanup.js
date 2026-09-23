@@ -3,6 +3,8 @@ const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
 const cache = require('../models/commandCacheModel');
 const chatbotConversation = require('../services/ai/chatbotConversation');
+const lobbyState = require('../utils/lobbyState');
+const config = require('../config');
 
 let intervals = [];
 
@@ -33,6 +35,14 @@ function setupIntervals() {
 
   intervals.push(setInterval(pruneCooldowns, 5 * 60 * 1000));
   intervals.push(setInterval(refreshAllGroupData, 60 * 60 * 1000));
+
+  intervals.push(setInterval(() => {
+    const bot = global.botInstance;
+    if (!bot || !bot.sock) return;
+    lobbyState.pruneLobbies(bot.sock).catch((err) => {
+      console.error('Lobby prune error:', err.message);
+    });
+  }, config.lobbySettings.pruneIntervalMs));
 }
 
 function pruneActiveGames() {
@@ -41,9 +51,10 @@ function pruneActiveGames() {
 
   for (const [chatJid, game] of global.activeGames.entries()) {
     const isSlow = SLOW_GAMES.includes(game.type);
-    const maxAge = isSlow ? 2 * 60 * 1000 : 5 * 60 * 1000;
+    const maxIdle = isSlow ? 2 * 60 * 1000 : 5 * 60 * 1000;
+    const last = game.lastActivity || game.startTime || 0;
 
-    if (game.startTime && now - game.startTime > maxAge) {
+    if (now - last > maxIdle) {
       global.activeGames.delete(chatJid);
       removed++;
     }
@@ -106,7 +117,7 @@ async function refreshAllGroupData() {
       global.groupData[groupJid].lastFetched = Date.now();
       refreshed++;
     } catch (err) {
-      // Group may have been left or the bot lost access
+      // Group may have been left
     }
   }
 

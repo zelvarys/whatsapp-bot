@@ -1,9 +1,6 @@
 const fs = require('fs');
 const config = require('../../config');
 
-// !help | !menu | !commands — displays the command menu.
-// Not quoted intentionally so it doesn't clutter chat.
-
 function buildHelpText() {
   return `⨳
 ▸ *Mode:* ${global.botMode}
@@ -26,6 +23,8 @@ function buildHelpText() {
 │• games
 │• game [type]
 │• hangman
+│• bombshell 
+│• hotseat
 │• ttt start @friend
 │• rps [choice]
 └────────────⊶

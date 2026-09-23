@@ -1,12 +1,11 @@
 const config = require('../config');
 const commandRouter = require('./commandRouter');
 const gameRouter = require('./gameRouter');
+const lobbyRouter = require('./lobbyRouter');
 const chatbotRouter = require('./chatbotRouter');
 const mentions = require('../utils/mentionHelpers');
 const state = require('../utils/stateHelpers');
 const ownerChecker = require('../utils/ownerChecker');
-
-const GROUP_METADATA_TTL = 24 * 60 * 60 * 1000;
 
 async function routeMessage(sock, bot, msg, stats) {
   const sender = msg.key.remoteJid;
@@ -42,6 +41,12 @@ async function routeMessage(sock, bot, msg, stats) {
       }
       return;
     }
+  }
+
+  // Lobby routing comes first — it owns messages within an active lobby.
+  if (global.gameLobbies.has(sender)) {
+    const handled = await lobbyRouter.routeLobby(sock, msg, text, sender, userJid, repliedToMessageId);
+    if (handled) return;
   }
 
   const isTagged = mentions.isBotMentioned(msg, text);

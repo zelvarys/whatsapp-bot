@@ -22,6 +22,8 @@ const feedbackCmd = require('../commands/user/feedback');
 const moodCmd = require('../commands/user/mood');
 
 const gameRegistry = require('../commands/games/registry');
+const bombshellCmd = require('../commands/games/bombshell');
+const hotseatCmd = require('../commands/games/hotseat');
 
 const stickerCmd = require('../commands/utility/sticker');
 const compressCmd = require('../commands/utility/compress');
@@ -130,6 +132,10 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return gameRegistry.startGame(sock, msg, sender, args, bot);
     case 'hangman':
       return gameRegistry.hangman(sock, msg, sender, bot);
+    case 'bombshell':
+      return bombshellCmd.handle(sock, msg, sender, userJid);
+    case 'hotseat':
+      return hotseatCmd.handle(sock, msg, sender, userJid);
     case 'tictactoe':
       return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
     case 'rps':

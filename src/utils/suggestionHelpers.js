@@ -1,8 +1,6 @@
-// Suggests likely command names when the user mistypes one.
-
 const KNOWN_COMMANDS = [
   'ask', 'story', 'chatbot', 'translate', 'tts', 'summary', 'mood',
-  'games', 'game', 'hangman', 'tictactoe', 'rps',
+  'games', 'game', 'hangman', 'bombshell', 'hotseat', 'tictactoe', 'rps',
   'define', 'weather',
   'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
   'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
