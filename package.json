@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-bot",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Multi-feature WhatsApp bot packed with AI and creative features, games, user system, media downloads, utilities and more",
   "main": "index.js",
   "scripts": {
@@ -23,7 +23,8 @@
     "pdfkit": "^0.14.0",
     "pino": "^8.15.0",
     "qrcode": "^1.5.4",
-    "shadowx-ytdl": "^1.0.0"
+    "shadowx-ytdl": "^1.0.0",
+    "word-list": "^3.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
