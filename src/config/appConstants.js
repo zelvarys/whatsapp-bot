@@ -14,7 +14,7 @@ const contentDir = path.join(__dirname, '../../content');
 const botImagePath = path.join(__dirname, '../../assets/bot_image.jpg');
 
 // Bot identity
-const botVersion = '1.4';
+const botVersion = '1.5';
 
 // AI limits and timings
 const maxAiResponseLength = 4000;
@@ -60,6 +60,15 @@ const gameSettings = {
   tictactoeTimeLimit: 120
 };
 
+// Lobby-based multiplayer settings
+const lobbySettings = {
+  joinWindowMs: 90 * 1000,
+  minPlayers: 3,
+  maxPlayers: 8,
+  turnTimeoutMs: 10 * 1000,
+  pruneIntervalMs: 30 * 1000
+};
+
 const tiers = [
   { name: 'Legend', minLevel: 50 },
   { name: 'Champion', minLevel: 30 },
@@ -101,6 +110,8 @@ const commandReactions = {
   rps: null,
   tictactoe: null,
   hangman: null,
+  bombshell: null,
+  hotseat: null,
 
   song: '🎵',
   download: '📥',
@@ -144,6 +155,7 @@ module.exports = {
   cryptoApiUrl,
   supportedCryptos,
   gameSettings,
+  lobbySettings,
   tiers,
   moods,
   defaultMood,

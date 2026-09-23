@@ -34,5 +34,8 @@ module.exports = {
   reboot: 'restart',
 
   personality: 'mood',
-  tone: 'mood'
+  tone: 'mood',
+
+  bs: 'bombshell',
+  hs: 'hotseat'
 };
