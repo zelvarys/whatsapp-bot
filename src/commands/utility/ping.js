@@ -9,7 +9,7 @@ async function handle(sock, msg, sender) {
       text: `🏓 *Pong!* ${config.botName} ${config.botVersion}`
     }, { quoted: msg });
 
-    const responseTime = Date.now() - start - 200;
+    const responseTime = Date.now() - start;
 
     let status = 'Excellent';
     let emoji = '⚡';
