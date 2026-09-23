@@ -1,7 +1,6 @@
 const config = require('../../config');
 const storyGenerator = require('../../services/ai/storyGenerator');
 
-// !story <prompt>
 async function handle(sock, msg, sender, userJid, fullText) {
   if (!fullText) {
     return sock.sendMessage(sender, {

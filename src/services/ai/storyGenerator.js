@@ -1,6 +1,5 @@
 const geminiClient = require('./geminiClient');
 const config = require('../../config');
-const userModel = require('../../models/userModel');
 
 const SERVICE_UNAVAILABLE = 'AI service is currently unavailable. Please try again in a few moments.';
 
@@ -27,8 +26,6 @@ async function generateStory(prompt, userId) {
     };
   }
 
-  const mood = userModel.getMood(userId);
-
   const storyPrompt = `Write a short story based on this prompt: "${prompt}"
 
 Requirements:
@@ -39,11 +36,10 @@ Requirements:
 - End with a satisfying conclusion`;
 
   try {
-    const text = await geminiClient.generateText(
-      storyPrompt,
-      { temperature: 0.9, maxOutputTokens: 4096 },
-      mood
-    );
+    const text = await geminiClient.generateText(storyPrompt, {
+      temperature: 0.9,
+      maxOutputTokens: 4096
+    });
 
     if (!text || text.length < 20) {
       return { success: false, error: SERVICE_UNAVAILABLE };
