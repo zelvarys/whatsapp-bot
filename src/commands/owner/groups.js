@@ -20,7 +20,7 @@ async function handle(sock, msg, sender) {
     const memberCount = group.participants ? group.participants.length : 0;
     totalMembers += memberCount;
 
-    list += `${i + 1}. *${group.name || 'Unknown Group'}*\n`;
+    list += ` *${i + 1}. ${group.name || 'Unknown Group'}*\n`;
     list += `┌─⊶
 │• *Members:* ${memberCount}\n`;
     list += `│• *Active:* ${formatRelative(new Date(group.lastActivity))}

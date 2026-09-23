@@ -16,7 +16,7 @@ async function handle(sock, msg, sender, userJid, args) {
   if (!args.length) {
     const current = botState.getMood(sender);
     return sock.sendMessage(sender, {
-      text: `✧ *GROUP AI MOOD*
+      text: `✧ *CHATBOT MOOD*
 ┌─⊶
 │ *Current:* ${describe(current)}
 │
@@ -45,13 +45,13 @@ async function handle(sock, msg, sender, userJid, args) {
   }
 
   await sock.sendMessage(sender, {
-    text: `✅ This group's AI mood is now ${describe(mood)}`
+    text: `This group's AI mood is now ${describe(mood)}`
   }, { quoted: msg });
 }
 
 function describe(mood) {
-  if (mood === 'roast') return '*Roastful*';
-  return '*Chill*';
+  if (mood === 'roast') return '*Roastful* 🔥';
+  return '*Chill* 😎';
 }
 
 module.exports = { handle };
