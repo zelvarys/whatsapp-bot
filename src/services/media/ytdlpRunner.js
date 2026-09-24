@@ -6,10 +6,19 @@ const path = require('path');
 const execFilePromise = util.promisify(execFile);
 
 const TEMP_DIR = path.join(__dirname, '../../../temp');
-const TIMEOUT_MS = 180000;
+const TIMEOUT_MS = 300000;
 
 function ensureTemp() {
   if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
+
+function findNewestFile(dir, pattern) {
+  const files = fs.readdirSync(dir)
+    .filter((f) => pattern.test(f))
+    .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .sort((a, b) => b.t - a.t);
+
+  return files.length ? path.join(dir, files[0].f) : null;
 }
 
 async function downloadVideo(url) {
@@ -20,7 +29,9 @@ async function downloadVideo(url) {
   const args = [
     '--extractor-args', 'youtube:player_client=tv,mweb,web_safari',
     '--js-runtimes', 'deno',
-    '-f', 'best[height<=720]/best',
+    '--downloader', 'ffmpeg',
+    '-f', 'bv*[height<=720]+ba/b[height<=720]',
+    '--merge-output-format', 'mp4',
     '--no-playlist',
     '--no-warnings',
     '-o', template,
@@ -30,7 +41,7 @@ async function downloadVideo(url) {
   try {
     await execFilePromise('yt-dlp', args, { timeout: TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 });
 
-    const file = findNewestFile(TEMP_DIR, /^yt_/);
+    const file = findNewestFile(TEMP_DIR, /^yt_.*\.(mp4|mkv|webm)$/);
     if (!file) throw new Error('yt-dlp produced no output file');
 
     const buffer = fs.readFileSync(file);
@@ -51,6 +62,7 @@ async function downloadAudio(url) {
   const args = [
     '--extractor-args', 'youtube:player_client=tv,mweb,web_safari',
     '--js-runtimes', 'deno',
+    '--downloader', 'ffmpeg',
     '-x', '--audio-format', 'mp3', '--audio-quality', '128k',
     '--no-playlist',
     '--no-warnings',
@@ -72,15 +84,6 @@ async function downloadAudio(url) {
     console.error('yt-dlp audio error:', err.message);
     return { success: false, error: 'Music download failed' };
   }
-}
-
-function findNewestFile(dir, pattern) {
-  const files = fs.readdirSync(dir)
-    .filter((f) => pattern.test(f))
-    .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
-    .sort((a, b) => b.t - a.t);
-
-  return files.length ? path.join(dir, files[0].f) : null;
 }
 
 module.exports = { downloadVideo, downloadAudio };
