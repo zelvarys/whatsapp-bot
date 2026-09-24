@@ -10,6 +10,7 @@ module.exports = {
   tt: 'tiktok',
   dl: 'download',
   music: 'song',
+  play: 'song',
 
   chat: 'ask',
   summarize: 'summary',
