@@ -43,6 +43,10 @@ function findGame(chatJid, userJid) {
   return null;
 }
 
+function pickRandomStarter(player1, player2) {
+  return Math.random() < 0.5 ? player1 : player2;
+}
+
 async function start(sock, msg, sender, userJid, args) {
   if (args.length < 2) {
     return sock.sendMessage(sender, {
@@ -65,12 +69,14 @@ async function start(sock, msg, sender, userJid, args) {
   }
 
   const gameId = `${sender}_${Date.now()}`;
+  const starter = pickRandomStarter(userJid, opponent);
+  const starterSymbol = starter === userJid ? 'X' : 'O';
 
   global.tictactoeGames.set(gameId, {
     player1: userJid,
     player2: opponent,
     board: Array(9).fill(' '),
-    currentPlayer: userJid,
+    currentPlayer: starter,
     chatJid: sender,
     started: Date.now(),
     lastActivity: Date.now(),
@@ -89,7 +95,7 @@ Player O: @${opponent.split('@')[0]}
 
 ${board}
 
-▸ *Player X's turn!*
+🎲 *@${starter.split('@')[0]} (${starterSymbol}) goes first!*
 ▸ Reply to this message with 1-9`,
     mentions: [userJid, opponent]
   }, { quoted: msg });
@@ -103,12 +109,14 @@ ${board}
 
 async function startBot(sock, msg, sender, userJid) {
   const gameId = `${sender}_${Date.now()}_bot`;
+  const starter = pickRandomStarter(userJid, 'bot');
+  const starterSymbol = starter === userJid ? 'X' : 'O';
 
   global.tictactoeGames.set(gameId, {
     player1: userJid,
     player2: 'bot',
     board: Array(9).fill(' '),
-    currentPlayer: userJid,
+    currentPlayer: starter,
     chatJid: sender,
     started: Date.now(),
     lastActivity: Date.now(),
@@ -119,6 +127,8 @@ async function startBot(sock, msg, sender, userJid) {
 
   const board = formatBoard(Array(9).fill(' '));
 
+  const starterName = starter === 'bot' ? 'Bot' : `@${userJid.split('@')[0]}`;
+
   const sent = await sock.sendMessage(sender, {
     text: `❌️⭕️ *TIC TAC TOE vs BOT!*
 
@@ -126,14 +136,18 @@ You are X, Bot is O
 
 ${board}
 
-▸ *Your turn!*
-▸ Reply to this message with 1-9`
+🎲 *${starterName} (${starterSymbol}) goes first!*`
   }, { quoted: msg });
 
   const g = global.tictactoeGames.get(gameId);
   if (g && sent?.key?.id) {
     g.gameMessageId = sent.key.id;
     g.lastMessageId = sent.key.id;
+  }
+
+  // If the bot goes first, make its move automatically.
+  if (starter === 'bot') {
+    setTimeout(() => makeBotMove(sock, gameId, g, sender), 2000);
   }
 }
 
@@ -244,7 +258,6 @@ async function makeBotMove(sock, gameId, game, sender) {
   for (let i = 0; i < 9; i++) if (game.board[i] === ' ') available.push(i);
   if (!available.length) return;
 
-  // 1. Try winning move
   let move = -1;
   for (const pos of available) {
     const test = [...game.board];
@@ -252,7 +265,6 @@ async function makeBotMove(sock, gameId, game, sender) {
     if (checkWin(test) === 'O') { move = pos; break; }
   }
 
-  // 2. Try blocking move
   if (move === -1) {
     for (const pos of available) {
       const test = [...game.board];
@@ -261,7 +273,6 @@ async function makeBotMove(sock, gameId, game, sender) {
     }
   }
 
-  // 3. Random move
   if (move === -1) {
     move = available[Math.floor(Math.random() * available.length)];
   }
@@ -307,13 +318,10 @@ async function makeBotMove(sock, gameId, game, sender) {
   if (sent?.key?.id) game.lastMessageId = sent.key.id;
 }
 
-// Called by the router when a user replies to a tictactoe board message.
 async function handleReply(sock, sender, userJid, msg, text) {
   await makeMove(sock, sender, userJid, msg, [text]);
 }
 
-// Called by the router when the game has an active match and returns
-// whether the reply belongs to this game's message chain.
 function ownsReply(sender, userJid, repliedToMessageId) {
   const found = findGame(sender, userJid);
   if (!found) return false;
