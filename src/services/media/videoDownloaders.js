@@ -1,47 +1,13 @@
 const axios = require('axios');
-const ytdl = require('@distube/ytdl-core');
 const { download: ttdl } = require('@silent-tech-offc/ttdl');
 const getFBInfo = require('@renpwn/fb-downloader');
+const ytdlp = require('./ytdlpRunner');
 const config = require('../../config');
 
 // -------------------- YouTube --------------------
 
 async function youtube(url) {
-  try {
-    const info = await ytdl.getInfo(url);
-
-    // 720p cap, prefer mp4 with audio.
-    const format = ytdl.chooseFormat(info.formats, {
-      quality: 'highest',
-      filter: (f) => f.hasVideo && f.hasAudio && f.height && f.height <= 720
-    }) || ytdl.chooseFormat(info.formats, {
-      quality: 'highest',
-      filter: 'audioandvideo'
-    });
-
-    if (!format) {
-      throw new Error('No suitable format found');
-    }
-
-    const buffer = await new Promise((resolve, reject) => {
-      const chunks = [];
-      ytdl.downloadFromInfo(info, { format })
-        .on('data', (chunk) => chunks.push(chunk))
-        .on('end', () => resolve(Buffer.concat(chunks)))
-        .on('error', reject);
-    });
-
-    return {
-      success: true,
-      buffer,
-      title: info.videoDetails?.title || 'YouTube Video',
-      author: info.videoDetails?.author?.name || 'Unknown',
-      type: 'video/mp4'
-    };
-  } catch (err) {
-    console.error('YouTube download error:', err.message);
-    return { success: false, error: 'YouTube download failed' };
-  }
+  return ytdlp.downloadVideo(url);
 }
 
 // -------------------- TikTok --------------------

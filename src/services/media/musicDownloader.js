@@ -1,37 +1,16 @@
-// musicDownloader.js
-const untube = require('untube');
-const yts = require('yt-search');
-const fs = require('fs');
-const path = require('path');
+const ytdlp = require('./ytdlpRunner');
 
 async function downloadMusic(urlOrQuery) {
   try {
     let videoUrl = urlOrQuery;
 
+    // If it's not a URL, search using yt-dlp's built-in search.
     if (!urlOrQuery.includes('http')) {
-      const search = await yts(urlOrQuery);
-      if (!search?.videos?.length) throw new Error('No search results');
-      videoUrl = search.videos[0].url;
+      videoUrl = `ytsearch1:${urlOrQuery}`;
     }
 
-    const tempPath = path.join('./temp', `song_${Date.now()}.mp3`);
-
-    return new Promise((resolve) => {
-      const stream = untube(videoUrl, { format: 'highestaudio', filter: 'audioonly' });
-      
-      stream.pipe(fs.createWriteStream(tempPath));
-      
-      stream.on('end', () => {
-        const buffer = fs.readFileSync(tempPath);
-        fs.unlinkSync(tempPath);
-        resolve({ success: true, buffer, title: 'Downloaded', format: 'mp3' });
-      });
-      
-      stream.on('error', (err) => {
-        console.error('Music download error:', err.message);
-        resolve({ success: false, error: 'Music download failed' });
-      });
-    });
+    const result = await ytdlp.downloadAudio(videoUrl);
+    return result;
   } catch (err) {
     console.error('Music download error:', err.message);
     return { success: false, error: 'Music download failed' };
