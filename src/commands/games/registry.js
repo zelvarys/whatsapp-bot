@@ -14,23 +14,23 @@ async function showGames(sock, msg, sender) {
   const text = `✧ *AVAILABLE GAMES*
 ╒═══════════════════╕
 
-┌─⊶ *SINGLE PLAYER*
-│• game guess
-│• game trivia
+┌─⊶ *SOLO GAMES*
+│• game hangman
 │• game riddle
 │• game flag
+│• game guess
+│• game trivia
 │• game scramble
-│• game hangman
 └─────────────⊶
 
-┌─⊶ *HEAD TO HEAD*
+┌─⊶ *PLAY A FRIEND*
 │• ttt start @friend
 │• ttt bot — versus AI
-│• ttt end — End game
+│• ttt end — resign
 │• rps [choice]
 └─────────────⊶
 
-┌─⊶ *LOBBY — 3+ PLAYERS*
+┌─⊶ *LOBBY GAMES*
 │• bombshell
 │• hotseat
 └─────────────⊶
