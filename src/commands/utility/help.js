@@ -22,7 +22,6 @@ function buildHelpText() {
 ┌─⊶ *GAMES & FUN*
 │• games
 │• game [type]
-│• hangman
 │• bombshell 
 │• hotseat
 │• ttt start @friend
@@ -31,12 +30,12 @@ function buildHelpText() {
 
 ┌─⊶ *UTILITY TOOLS*
 │• define [word]
-│• weather [city]
+│• compress
 │• sticker
 │• qrcode [text]
-│• compress
-│• reveal
 │• pdf [format]
+│• reveal
+│• weather [city]
 └────────────⊶
 
 ┌─⊶ *USER SYSTEM*
