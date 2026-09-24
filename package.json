@@ -18,6 +18,7 @@
     "@silent-tech-offc/ttdl": "^1.0.0",
     "@whiskeysockets/baileys": "^6.7.9",
     "axios": "^1.6.2",
+    "bebytdl": "^1.0.0",
     "dotenv": "^16.3.1",
     "fluent-ffmpeg": "^2.1.2",
     "pdfkit": "^0.14.0",
