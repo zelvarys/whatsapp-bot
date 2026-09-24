@@ -1,43 +1,37 @@
-const ytdl = require('@distube/ytdl-core');
+// musicDownloader.js
+const untube = require('untube');
 const yts = require('yt-search');
+const fs = require('fs');
+const path = require('path');
 
 async function downloadMusic(urlOrQuery) {
   try {
     let videoUrl = urlOrQuery;
 
-    // Search first if the input isn't a URL.
     if (!urlOrQuery.includes('http')) {
       const search = await yts(urlOrQuery);
-      if (!search?.videos?.length) {
-        throw new Error('No search results');
-      }
+      if (!search?.videos?.length) throw new Error('No search results');
       videoUrl = search.videos[0].url;
     }
 
-    const info = await ytdl.getInfo(videoUrl);
-    const audioFormat = ytdl.chooseFormat(info.formats, {
-      quality: 'highestaudio',
-      filter: 'audioonly'
+    const tempPath = path.join('./temp', `song_${Date.now()}.mp3`);
+
+    return new Promise((resolve) => {
+      const stream = untube(videoUrl, { format: 'highestaudio', filter: 'audioonly' });
+      
+      stream.pipe(fs.createWriteStream(tempPath));
+      
+      stream.on('end', () => {
+        const buffer = fs.readFileSync(tempPath);
+        fs.unlinkSync(tempPath);
+        resolve({ success: true, buffer, title: 'Downloaded', format: 'mp3' });
+      });
+      
+      stream.on('error', (err) => {
+        console.error('Music download error:', err.message);
+        resolve({ success: false, error: 'Music download failed' });
+      });
     });
-
-    if (!audioFormat) {
-      throw new Error('No audio format found');
-    }
-
-    const buffer = await new Promise((resolve, reject) => {
-      const chunks = [];
-      ytdl.downloadFromInfo(info, { format: audioFormat })
-        .on('data', (chunk) => chunks.push(chunk))
-        .on('end', () => resolve(Buffer.concat(chunks)))
-        .on('error', reject);
-    });
-
-    return {
-      success: true,
-      buffer,
-      title: info.videoDetails?.title || urlOrQuery,
-      format: 'mp3'
-    };
   } catch (err) {
     console.error('Music download error:', err.message);
     return { success: false, error: 'Music download failed' };
