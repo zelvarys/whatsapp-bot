@@ -20,7 +20,7 @@ async function showGames(sock, msg, sender) {
 │• game riddle
 │• game flag
 │• game scramble
-│• hangman
+│• game hangman
 └─────────────⊶
 
 ┌─⊶ *HEAD TO HEAD*
@@ -55,15 +55,12 @@ async function startGame(sock, msg, sender, args, bot) {
     case 'scramble': return scrambleGame.start(sock, msg, sender, bot);
     case 'riddle':   return riddleGame.start(sock, msg, sender, bot);
     case 'flag':     return flagGame.start(sock, msg, sender, bot);
+    case 'hangman':  return hangmanGame.start(sock, msg, sender, bot);
     default:
       return sock.sendMessage(sender, {
         text: `❌ Unknown game type!\nUse ${config.prefix}games to see available games`
       }, { quoted: msg });
   }
-}
-
-async function hangman(sock, msg, sender, bot) {
-  return hangmanGame.start(sock, msg, sender, bot);
 }
 
 async function bombshell(sock, msg, sender, userJid) {
@@ -102,15 +99,9 @@ async function tictactoe(sock, msg, sender, userJid, args) {
 module.exports = {
   showGames,
   startGame,
-  hangman,
   bombshell,
   hotseat,
   tictactoe,
-  guess: guessGame.guess,
-  answer: triviaGame.answer,
-  unscramble: scrambleGame.unscramble,
-  solve: riddleGame.solve,
-  flag: flagGame.flag,
   rps: rpsGame.handle,
   tictactoeHandleReply: tictactoeGame.handleReply,
   tictactoeOwnsReply: tictactoeGame.ownsReply

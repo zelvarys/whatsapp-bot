@@ -22,8 +22,6 @@ const feedbackCmd = require('../commands/user/feedback');
 const moodCmd = require('../commands/user/mood');
 
 const gameRegistry = require('../commands/games/registry');
-const bombshellCmd = require('../commands/games/bombshell');
-const hotseatCmd = require('../commands/games/hotseat');
 
 const stickerCmd = require('../commands/utility/sticker');
 const compressCmd = require('../commands/utility/compress');
@@ -129,26 +127,14 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
       return gameRegistry.showGames(sock, msg, sender);
     case 'game':
       return gameRegistry.startGame(sock, msg, sender, args, bot);
-    case 'hangman':
-      return gameRegistry.hangman(sock, msg, sender, bot);
     case 'bombshell':
-      return bombshellCmd.handle(sock, msg, sender, userJid);
+      return gameRegistry.bombshell(sock, msg, sender, userJid);
     case 'hotseat':
-      return hotseatCmd.handle(sock, msg, sender, userJid);
+      return gameRegistry.hotseat(sock, msg, sender, userJid);
     case 'tictactoe':
       return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
     case 'rps':
       return gameRegistry.rps(sock, msg, sender, userJid, args);
-    case 'guess':
-      return gameRegistry.guess(sock, msg, sender, userJid, args);
-    case 'answer':
-      return gameRegistry.answer(sock, msg, sender, userJid, args);
-    case 'unscramble':
-      return gameRegistry.unscramble(sock, msg, sender, userJid, args);
-    case 'solve':
-      return gameRegistry.solve(sock, msg, sender, userJid, args);
-    case 'flag':
-      return gameRegistry.flag(sock, msg, sender, userJid, args);
 
     case 'profile':
       return profileCmd.handle(sock, msg, sender, userJid);

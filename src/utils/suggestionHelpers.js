@@ -1,6 +1,6 @@
 const KNOWN_COMMANDS = [
   'ask', 'story', 'chatbot', 'translate', 'tts', 'summary', 'mood',
-  'games', 'game', 'hangman', 'bombshell', 'hotseat', 'tictactoe', 'rps',
+  'games', 'game', 'tictactoe', 'rps', 'bombshell', 'hotseat',
   'define', 'weather',
   'pdf', 'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
   'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
