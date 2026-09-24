@@ -8,7 +8,6 @@ const rpsGame = require('./rps');
 const tictactoeGame = require('./tictactoe');
 const hangmanGame = require('./hangman');
 
-// !games — lists available games.
 async function showGames(sock, msg, sender) {
   const text = `✧ *AVAILABLE GAMES*
 ╒═══════════════════╕
@@ -37,7 +36,6 @@ async function showGames(sock, msg, sender) {
   await sock.sendMessage(sender, { text }, { quoted: msg });
 }
 
-// !game <type> — dispatches to the right start function.
 async function startGame(sock, msg, sender, args, bot) {
   if (!args.length) {
     return sock.sendMessage(sender, {
@@ -60,12 +58,10 @@ async function startGame(sock, msg, sender, args, bot) {
   }
 }
 
-// !hangman — starts hangman directly.
 async function hangman(sock, msg, sender, bot) {
   return hangmanGame.start(sock, msg, sender, bot);
 }
 
-// !ttt — dispatches subcommands.
 async function tictactoe(sock, msg, sender, userJid, args) {
   if (!args.length) {
     return sock.sendMessage(sender, {

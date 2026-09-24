@@ -1,9 +1,19 @@
+const hangmanEngine = require('../../services/games/hangmanEngine');
 const gameRules = require('../../utils/gameRules');
 
-// !hangman — starts a hangman round.
 async function start(sock, msg, sender, bot) {
-  const text = gameRules.startHangman(sender, bot);
-  const sent = await sock.sendMessage(sender, { text, context: { isGame: true } }, { quoted: msg });
+  if (bot && bot.stats) bot.stats.gamesPlayed++;
+
+  const result = hangmanEngine.start(sender);
+  if (result.error) {
+    return sock.sendMessage(sender, { text: result.error }, { quoted: msg });
+  }
+
+  const sent = await sock.sendMessage(sender, {
+    text: result.text,
+    context: { isGame: true }
+  }, { quoted: msg });
+
   gameRules.attachGameMessageId(sender, sent);
 }
 

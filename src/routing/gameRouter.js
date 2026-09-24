@@ -1,5 +1,6 @@
 const gameRules = require('../utils/gameRules');
-const tictactoeGame = require('../commands/games/tictactoe');
+const tictactoeEngine = require('../services/games/tictactoeEngine');
+const hangmanEngine = require('../services/games/hangmanEngine');
 const reactions = require('../utils/messageReactions');
 
 const REACTIVE_GAMES = ['trivia', 'riddle', 'wordScramble', 'flag'];
@@ -7,8 +8,9 @@ const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
 
 async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessageId) {
   if (/^[1-9]$/.test(text.trim())) {
-    if (tictactoeGame.ownsReply(sender, userJid, repliedToMessageId)) {
-      await tictactoeGame.handleReply(sock, sender, userJid, msg, text.trim());
+    if (tictactoeEngine.ownsReply(sender, userJid, repliedToMessageId)) {
+      const ttt = require('../commands/games/tictactoe');
+      await ttt.handleReply(sock, sender, userJid, msg, text.trim());
       return true;
     }
   }
@@ -20,9 +22,6 @@ async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessag
     repliedToMessageId &&
     (repliedToMessageId === game.gameMessageId || repliedToMessageId === game.lastMessageId);
 
-  // Strict reply-chain rule for fast games.
-  // Slow games accept a plain-text answer as long as the message matches
-  // the expected shape for that game.
   const isSlow = SLOW_GAMES.includes(game.type);
   const isShapedAnswer = matchesShape(game.type, text.trim());
 
@@ -54,7 +53,6 @@ async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessag
   return true;
 }
 
-// Validates that the raw text could plausibly be an answer for the game type.
 function matchesShape(gameType, text) {
   switch (gameType) {
     case 'hangman':
@@ -97,7 +95,7 @@ function processGameText(gameType, sender, userJid, text) {
       return gameRules.processFlagGuess(sender, userJid, text);
 
     case 'hangman':
-      return gameRules.processHangmanGuess(sender, userJid, text);
+      return hangmanEngine.processGuess(sender, userJid, text);
 
     default:
       return null;

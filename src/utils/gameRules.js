@@ -3,15 +3,9 @@ const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
 const config = require('../config');
 
-// All game rules and state transitions live here.
-// Chat state is stored in global.activeGames (Map of chatJid → game object).
-
-// Games that expect long turns between answers don't auto-expire as fast.
-// Fast games (guess, trivia, flag) expire after 20 seconds of inactivity.
-// Slow games (hangman, riddle, wordScramble) get 2 minutes of inactivity.
 const FAST_STALE_MS = 20 * 1000;
 const SLOW_STALE_MS = 2 * 60 * 1000;
-const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
+const SLOW_GAMES = ['riddle', 'wordScramble'];
 
 function isSlowGame(type) {
   return SLOW_GAMES.includes(type);
@@ -468,133 +462,6 @@ function processFlagGuess(chatJid, userJid, guess) {
   return { result: hint, won: false, gameOver: false };
 }
 
-function buildHangmanDisplay(game) {
-  const word = game.word.toUpperCase();
-  const guessed = new Set(game.guessedLetters);
-
-  const visible = word
-    .split('')
-    .map((ch) => (guessed.has(ch) ? ch : '_'))
-    .join(' ');
-
-  const wrong = game.wrongLetters.length
-    ? game.wrongLetters.join(' ')
-    : '—';
-
-  const remaining = game.maxWrong - game.wrongLetters.length;
-
-  return `✧ *HANGMAN* — ${game.category}
-
-${visible}
-
-Wrong: ${wrong}
-Attempts left: ${remaining}/${game.maxWrong}`;
-}
-
-function startHangman(chatJid, bot) {
-  if (!canStartGame(chatJid, 'hangman')) {
-    const active = global.activeGames.get(chatJid);
-    return `❌ A ${gameLabel(active.type)} game is already active!`;
-  }
-
-  if (bot && bot.stats) bot.stats.gamesPlayed++;
-
-  const now = Date.now();
-  const pool = load('hangman_words');
-  const pick = pool[Math.floor(Math.random() * pool.length)];
-
-  global.activeGames.set(chatJid, {
-    type: 'hangman',
-    word: pick.word.toUpperCase(),
-    category: pick.category,
-    guessedLetters: [],
-    wrongLetters: [],
-    maxWrong: config.gameSettings.hangmanMaxWrong,
-    startTime: now,
-    lastActivity: now,
-    gameMessageId: null,
-    lastMessageId: null,
-    isGroup: chatJid.endsWith('@g.us')
-  });
-
-  const game = global.activeGames.get(chatJid);
-  return `${buildHangmanDisplay(game)}
-
-▸ Reply with a single letter to guess.`;
-}
-
-function processHangmanGuess(chatJid, userJid, rawGuess) {
-  const game = global.activeGames.get(chatJid);
-  if (!game || game.type !== 'hangman') return null;
-
-  touchGame(game);
-
-  const letter = String(rawGuess).trim().toUpperCase();
-
-  if (!/^[A-Z]$/.test(letter)) {
-    return {
-      result: '❌ Send one letter at a time.',
-      won: false,
-      gameOver: false,
-      keepGame: true
-    };
-  }
-
-  if (game.guessedLetters.includes(letter)) {
-    return {
-      result: `❌ *${letter}* was already guessed.`,
-      won: false,
-      gameOver: false,
-      keepGame: true
-    };
-  }
-
-  game.guessedLetters.push(letter);
-
-  const isInWord = game.word.includes(letter);
-  if (!isInWord) {
-    game.wrongLetters.push(letter);
-  }
-
-  const won = game.word.split('').every((ch) => game.guessedLetters.includes(ch));
-
-  if (won) {
-    global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 50);
-    userModel.addWin(userJid);
-    gameStatsModel.increment('hangman', 50);
-
-    return {
-      result: `🎉 *SOLVED!* +50 points\nThe word was *${game.word}*\n\n▸ Play again: !hangman`,
-      won: true,
-      gameOver: true,
-      mention: game.isGroup ? userJid : null
-    };
-  }
-
-  const lost = game.wrongLetters.length >= game.maxWrong;
-
-  if (lost) {
-    global.activeGames.delete(chatJid);
-    userModel.addPoints(userJid, 5);
-    gameStatsModel.increment('hangman', 5);
-
-    return {
-      result: `💀 *GAME OVER* +5 points\nThe word was *${game.word}*\n\n▸ Play again: !hangman`,
-      won: false,
-      gameOver: true,
-      mention: game.isGroup ? userJid : null
-    };
-  }
-
-  return {
-    result: buildHangmanDisplay(game),
-    won: false,
-    gameOver: false,
-    keepGame: true
-  };
-}
-
 function playRockPaperScissors(userChoice, bot) {
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
@@ -661,6 +528,8 @@ function updateLastMessageId(chatJid, sentMsg) {
 module.exports = {
   canStartGame,
   isSimilarAnswer,
+  touchGame,
+  gameLabel,
   startGuessNumber,
   processGuess,
   startTrivia,
@@ -671,8 +540,6 @@ module.exports = {
   processRiddle,
   startFlagQuiz,
   processFlagGuess,
-  startHangman,
-  processHangmanGuess,
   playRockPaperScissors,
   attachGameMessageId,
   updateLastMessageId
