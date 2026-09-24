@@ -33,7 +33,7 @@ function buildHelpText() {
 │• compress
 │• sticker
 │• qrcode [text]
-│• pdf [format]
+│• pdf [image/text]
 │• reveal
 │• weather [city]
 └────────────⊶

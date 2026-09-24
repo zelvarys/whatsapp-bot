@@ -1,20 +1,64 @@
-const systemStats = require('../../system/systemStats');
+const os = require('os');
+const config = require('../../config');
+const { formatUptime } = require('../../utils/formatHelpers');
+
+function collectSystemInfo() {
+  return {
+    platform: os.platform(),
+    arch: os.arch(),
+    type: os.type(),
+    nodeVersion: process.version,
+    v8Version: process.versions.v8,
+    processUptimeSeconds: Math.floor(process.uptime())
+  };
+}
 
 async function handle(sock, sender) {
   const bot = global.botInstance;
+
   if (!bot) {
     return sock.sendMessage(sender, {
       text: '📊 Bot statistics temporarily unavailable.'
     });
   }
 
-  await systemStats.showStats(
-    sender,
-    sock,
-    bot.stats,
-    bot.isConnected,
-    bot.onlineSince
-  );
+  const stats = bot.stats;
+  const uptimeMs = Date.now() - stats.startTime;
+  const sys = collectSystemInfo();
+
+  const text = `*✧ BOT STATISTICS*
+╒═══════════════════╕
+
+▸ *Name:* ${config.botName}
+▸ *Version:* ${config.botVersion}
+▸ *Prefix:* ${config.prefix}
+▸ *Mode:* ${global.botMode}
+
+┌─⊶ *SYSTEM*
+│ *Platform:* ${sys.platform} ${sys.arch}
+│ *OS:* ${sys.type}
+│ *Node.js:* ${sys.nodeVersion}
+│ *V8 Engine:* ${sys.v8Version}
+│ *Environment:* Termux
+│ *Process Uptime:* ${sys.processUptimeSeconds}s
+└─────────────⊶
+
+┌─⊶ *ACTIVITY*
+│ *Messages:* ${stats.messagesReceived}
+│ *Commands Executed:* ${stats.commandsExecuted}
+│ *Games Played:* ${stats.gamesPlayed}
+│ *Groups Joined:* ${Object.keys(global.groupData).length}
+│ *Uptime:* ${formatUptime(uptimeMs)}
+└─────────────⊶
+
+┌─⊶ *STATUS*
+│ *Status:* ${bot.isConnected ? 'Connected ✅' : 'Disconnected ❌'}
+│ *Online Since:* ${bot.onlineSince ? new Date(bot.onlineSince).toLocaleTimeString() : 'Offline'}
+└─────────────⊶
+
+╘═══════════════════╛`;
+
+  await sock.sendMessage(sender, { text });
 }
 
 module.exports = { handle };

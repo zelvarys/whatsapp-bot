@@ -7,7 +7,7 @@ const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
 const cacheModel = require('../models/commandCacheModel');
-const periodicCleanup = require('../system/periodicCleanup');
+const housekeeping = require('../utils/housekeepingTasks');
 const state = require('../utils/stateHelpers');
 
 class WhatsAppBot {
@@ -37,7 +37,7 @@ class WhatsAppBot {
         this.dataLoaded = true;
       }
 
-      periodicCleanup.setupIntervals();
+      housekeeping.setupIntervals();
       await this.connect();
 
       global.botInstance = this;
@@ -49,9 +49,9 @@ class WhatsAppBot {
 
   printBanner() {
     console.log(`
-═════════════════════════
+════════════════════════
    ${config.botName} v${config.botVersion}
-═════════════════════════
+════════════════════════
 `);
   }
 
@@ -100,17 +100,6 @@ class WhatsAppBot {
         return null;
       }
     };
-  }
-
-  async showStats(sender) {
-    const systemStats = require('../system/systemStats');
-    return systemStats.showStats(
-      sender,
-      this.sock,
-      this.stats,
-      this.isConnected,
-      this.onlineSince
-    );
   }
 }
 

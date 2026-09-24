@@ -1,6 +1,6 @@
 const WhatsAppBot = require('./src/core/whatsappBot');
 const globalState = require('./src/core/globalState');
-const periodicCleanup = require('./src/system/periodicCleanup');
+const housekeeping = require('./src/utils/housekeepingTasks');
 
 // Initialize all global containers first — everything downstream
 // expects them to already exist.
@@ -10,8 +10,8 @@ const bot = new WhatsAppBot();
 bot.start();
 
 // Graceful shutdown handlers.
-process.on('SIGINT', () => periodicCleanup.handleShutdown('SIGINT'));
-process.on('SIGTERM', () => periodicCleanup.handleShutdown('SIGTERM'));
+process.on('SIGINT', () => housekeeping.handleShutdown('SIGINT'));
+process.on('SIGTERM', () => housekeeping.handleShutdown('SIGTERM'));
 
 // Last-resort logging for crashes we didn't catch.
 process.on('unhandledRejection', (reason) => {
