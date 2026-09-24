@@ -166,7 +166,7 @@ function startTrivia(chatJid, bot) {
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
   const now = Date.now();
-  const questions = load('trivia');
+  const questions = load('trivia_questions');
   const question = questions[Math.floor(Math.random() * questions.length)];
 
   global.activeGames.set(chatJid, {
