@@ -7,12 +7,14 @@ const flagGame = require('./flag');
 const rpsGame = require('./rps');
 const tictactoeGame = require('./tictactoe');
 const hangmanGame = require('./hangman');
+const bombshellGame = require('./bombshell');
+const hotseatGame = require('./hotseat');
 
 async function showGames(sock, msg, sender) {
   const text = `✧ *AVAILABLE GAMES*
 ╒═══════════════════╕
 
-┌─⊶ *MAIN GAMES*
+┌─⊶ *SINGLE PLAYER*
 │• game guess
 │• game trivia
 │• game riddle
@@ -21,14 +23,16 @@ async function showGames(sock, msg, sender) {
 │• hangman
 └─────────────⊶
 
-┌─⊶ *TIC TAC TOE*
+┌─⊶ *HEAD TO HEAD*
 │• ttt start @friend
-│• ttt bot - versus AI
-│• ttt end - End game
+│• ttt bot — versus AI
+│• ttt end — End game
+│• rps [choice]
 └─────────────⊶
 
-┌─⊶ *OTHER GAMES*
-│• rps [choice]
+┌─⊶ *LOBBY — 3+ PLAYERS*
+│• bombshell
+│• hotseat
 └─────────────⊶
 
 ╘═══════════════════╛`;
@@ -62,14 +66,22 @@ async function hangman(sock, msg, sender, bot) {
   return hangmanGame.start(sock, msg, sender, bot);
 }
 
+async function bombshell(sock, msg, sender, userJid) {
+  return bombshellGame.handle(sock, msg, sender, userJid);
+}
+
+async function hotseat(sock, msg, sender, userJid) {
+  return hotseatGame.handle(sock, msg, sender, userJid);
+}
+
 async function tictactoe(sock, msg, sender, userJid, args) {
   if (!args.length) {
     return sock.sendMessage(sender, {
       text: `✧ *TIC TAC TOE*
 ┌─⊶
 │• ttt start @friend
-│• ttt bot - versus AI
-│• ttt end - End game
+│• ttt bot — versus AI
+│• ttt end — End game
 └─────────────⊶`
     }, { quoted: msg });
   }
@@ -91,6 +103,8 @@ module.exports = {
   showGames,
   startGame,
   hangman,
+  bombshell,
+  hotseat,
   tictactoe,
   guess: guessGame.guess,
   answer: triviaGame.answer,
