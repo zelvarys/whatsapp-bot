@@ -1,40 +1,41 @@
-const { autoDownload, downloadAudio } = require('bebytdl');
+const ytdl = require('@distube/ytdl-core');
+const yts = require('yt-search');
 
 async function downloadMusic(urlOrQuery) {
   try {
-    let result;
+    let videoUrl = urlOrQuery;
 
-    // If it's a search term, we still need a URL. 
-    // We can use the autoDownload function which handles both.
-    // If you pass a search term, it may not work, so we keep using shadowx-ytdl for search only.
-    if (urlOrQuery.includes('http')) {
-       // Use the reliable API-based audio downloader for direct URLs
-       result = await downloadAudio(urlOrQuery);
-    } else {
-       // Fallback to searching first, then getting the URL.
-       const ytdl = require('shadowx-ytdl');
-       const search = await ytdl.searchYouTube(urlOrQuery);
-       if (!search || !search.results || !search.results.length) {
-         throw new Error('No search results');
-       }
-       result = await downloadAudio(search.results[0].url);
+    // Search first if the input isn't a URL.
+    if (!urlOrQuery.includes('http')) {
+      const search = await yts(urlOrQuery);
+      if (!search?.videos?.length) {
+        throw new Error('No search results');
+      }
+      videoUrl = search.videos[0].url;
     }
 
-    if (!result || !result.success) {
-      throw new Error(result?.error || 'Download failed');
+    const info = await ytdl.getInfo(videoUrl);
+    const audioFormat = ytdl.chooseFormat(info.formats, {
+      quality: 'highestaudio',
+      filter: 'audioonly'
+    });
+
+    if (!audioFormat) {
+      throw new Error('No audio format found');
     }
 
-    // bebytdl returns downloadLinks, we need to fetch the actual buffer
-    const downloadUrl = result.data.downloadLinks[0].url;
-    const response = await fetch(downloadUrl);
-    if (!response.ok) throw new Error('Failed to fetch audio file');
-
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const buffer = await new Promise((resolve, reject) => {
+      const chunks = [];
+      ytdl.downloadFromInfo(info, { format: audioFormat })
+        .on('data', (chunk) => chunks.push(chunk))
+        .on('end', () => resolve(Buffer.concat(chunks)))
+        .on('error', reject);
+    });
 
     return {
       success: true,
       buffer,
-      title: result.data.title || urlOrQuery,
+      title: info.videoDetails?.title || urlOrQuery,
       format: 'mp3'
     };
   } catch (err) {

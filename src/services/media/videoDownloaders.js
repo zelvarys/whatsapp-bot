@@ -1,30 +1,41 @@
 const axios = require('axios');
-const ytdl = require('shadowx-ytdl');
+const ytdl = require('@distube/ytdl-core');
 const { download: ttdl } = require('@silent-tech-offc/ttdl');
 const getFBInfo = require('@renpwn/fb-downloader');
 const config = require('../../config');
 
-// All video downloaders in one file. Each returns { success, buffer, title }.
+// -------------------- YouTube --------------------
 
 async function youtube(url) {
   try {
-    const info = await ytdl.downloadVideo(url, 720);
+    const info = await ytdl.getInfo(url);
 
-    if (!info || !info.download || !info.download.downloadUrl) {
-      throw new Error('No download URL returned');
+    // 720p cap, prefer mp4 with audio.
+    const format = ytdl.chooseFormat(info.formats, {
+      quality: 'highest',
+      filter: (f) => f.hasVideo && f.hasAudio && f.height && f.height <= 720
+    }) || ytdl.chooseFormat(info.formats, {
+      quality: 'highest',
+      filter: 'audioandvideo'
+    });
+
+    if (!format) {
+      throw new Error('No suitable format found');
     }
 
-    const response = await fetch(info.download.downloadUrl);
-    if (!response.ok) {
-      throw new Error(`Fetch failed: ${response.status}`);
-    }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const buffer = await new Promise((resolve, reject) => {
+      const chunks = [];
+      ytdl.downloadFromInfo(info, { format })
+        .on('data', (chunk) => chunks.push(chunk))
+        .on('end', () => resolve(Buffer.concat(chunks)))
+        .on('error', reject);
+    });
 
     return {
       success: true,
       buffer,
-      title: info.title || 'YouTube Video',
+      title: info.videoDetails?.title || 'YouTube Video',
+      author: info.videoDetails?.author?.name || 'Unknown',
       type: 'video/mp4'
     };
   } catch (err) {
@@ -32,6 +43,8 @@ async function youtube(url) {
     return { success: false, error: 'YouTube download failed' };
   }
 }
+
+// -------------------- TikTok --------------------
 
 async function tiktok(url) {
   try {
@@ -102,6 +115,8 @@ async function expandTikTokShortUrl(url) {
   return url;
 }
 
+// -------------------- Facebook --------------------
+
 async function facebook(url) {
   try {
     const info = await getFBInfo(url);
@@ -134,6 +149,8 @@ async function facebook(url) {
     return { success: false, error: 'Facebook download failed' };
   }
 }
+
+// -------------------- Universal dispatcher --------------------
 
 async function universal(url) {
   const trimmed = url.trim();

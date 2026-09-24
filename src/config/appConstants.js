@@ -113,7 +113,7 @@ const commandReactions = {
   bombshell: null,
   hotseat: null,
 
-  song: '🎵',
+  song: '🔍',
   download: '📥',
   youtube: '📥',
   tiktok: '📥',
