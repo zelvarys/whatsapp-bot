@@ -12,11 +12,11 @@ module.exports = {
   music: 'song',
   play: 'song',
 
-  chat: 'ask',
   summarize: 'summary',
   tr: 'translate',
   write: 'story',
   bot: 'chatbot',
+  chat: 'chatbot',
 
   h: 'help',
   menu: 'help',

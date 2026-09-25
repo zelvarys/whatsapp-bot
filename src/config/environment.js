@@ -30,6 +30,7 @@ if (geminiApiKeys.length === 0) {
 
 module.exports = {
   ownerNumber: process.env.OWNER_NUMBER,
+  ownerLid: process.env.OWNER_LID,
   botName: process.env.BOT_NAME,
   prefix: process.env.BOT_PREFIX,
   adminPassword: process.env.ADMIN_PASSWORD,
