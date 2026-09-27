@@ -6,7 +6,7 @@ const socketEvents = require('./socketEvents');
 const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
-const cacheModel = require('../models/commandCacheModel');
+const cacheModel = require('../models/cacheModel');
 const housekeeping = require('../utils/housekeepingTasks');
 const state = require('../utils/stateHelpers');
 
