@@ -1,7 +1,7 @@
 const fs = require('fs');
 const os = require('os');
-const config = require('../../config');
-const { formatUptime } = require('../../utils/formatHelpers');
+const config = require('../config');
+const { formatUptime } = require('../utils/formatHelpers');
 
 // -------------------- help --------------------
 

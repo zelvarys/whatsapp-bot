@@ -1,6 +1,6 @@
-const config = require('../../config');
-const video = require('../../services/media/videoDownloaders');
-const musicDownloader = require('../../services/media/musicDownloader');
+const config = require('../config');
+const video = require('../services/media/videoDownloaders');
+const musicDownloader = require('../services/media/musicDownloader');
 
 // -------------------- download --------------------
 

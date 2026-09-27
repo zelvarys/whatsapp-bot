@@ -1,9 +1,9 @@
-const config = require('../../config');
-const botState = require('../../models/botStateModel');
-const userModel = require('../../models/userModel');
-const gameStatsModel = require('../../models/gameStatsModel');
-const cacheModel = require('../../models/cacheModel');
-const jid = require('../../utils/jidHelpers');
+const config = require('../config');
+const botState = require('../models/botStateModel');
+const userModel = require('../models/userModel');
+const gameStatsModel = require('../models/gameStatsModel');
+const cacheModel = require('../models/cacheModel');
+const jid = require('../utils/jidHelpers');
 
 // -------------------- broadcast --------------------
 

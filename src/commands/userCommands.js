@@ -1,8 +1,8 @@
-const config = require('../../config');
-const userModel = require('../../models/userModel');
-const cryptoClient = require('../../services/external/cryptoClient');
-const jid = require('../../utils/jidHelpers');
-const { getTierName, getLevelProgress } = require('../../utils/formatHelpers');
+const config = require('../config');
+const userModel = require('../models/userModel');
+const cryptoClient = require('../services/external/cryptoClient');
+const jid = require('../utils/jidHelpers');
+const { getTierName, getLevelProgress } = require('../utils/formatHelpers');
 
 // -------------------- profile --------------------
 
