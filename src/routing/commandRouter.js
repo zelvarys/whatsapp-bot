@@ -6,16 +6,8 @@ const suggestions = require('../utils/suggestionHelpers');
 const reactions = require('../utils/messageReactions');
 const cache = require('../models/cacheModel');
 
-const askCmd = require('../commands/aiCommands/ask');
-const storyCmd = require('../commands/aiCommands/story');
-const translateCmd = require('../commands/aiCommands/translate');
-const ttsCmd = require('../commands/aiCommands/tts');
-const summaryCmd = require('../commands/aiCommands/summary');
-const chatbotCmd = require('../commands/aiCommands/chatbot');
-const moodCmd = require('../commands/aiCommands/mood');
-
+const aiCommands = require('../commands/aiCommands');
 const gameRegistry = require('../commands/gameCommands/registry');
-
 const defineCmd = require('../commands/utilityCommands/define');
 const weatherCmd = require('../commands/utilityCommands/weather');
 const stickerCmd = require('../commands/utilityCommands/sticker');
@@ -23,7 +15,6 @@ const compressCmd = require('../commands/utilityCommands/compress');
 const qrcodeCmd = require('../commands/utilityCommands/qrcode');
 const revealCmd = require('../commands/utilityCommands/reveal');
 const deleteCmd = require('../commands/utilityCommands/delete');
-
 const mediaCommands = require('../commands/mediaCommands');
 const userCommands = require('../commands/userCommands');
 const ownerCommands = require('../commands/ownerCommands');
@@ -91,13 +82,13 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
 async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText, isGroup) {
   switch (command) {
     // AI
-    case 'ask':      return askCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'story':    return storyCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'translate':return translateCmd.handle(sock, msg, sender, userJid, args);
-    case 'tts':      return ttsCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'summary':  return summaryCmd.handle(sock, msg, sender, userJid, args);
-    case 'chatbot':  return chatbotCmd.handle(sock, msg, sender, userJid, args);
-    case 'mood':     return moodCmd.handle(sock, msg, sender, userJid, args);
+    case 'ask':       return aiCommands.ask(sock, msg, sender, userJid, fullText);
+    case 'story':     return aiCommands.story(sock, msg, sender, userJid, fullText);
+    case 'translate': return aiCommands.translate(sock, msg, sender, userJid, args);
+    case 'tts':       return aiCommands.tts(sock, msg, sender, userJid, fullText);
+    case 'summary':   return aiCommands.summary(sock, msg, sender, userJid, args);
+    case 'chatbot':   return aiCommands.chatbot(sock, msg, sender, userJid, args);
+    case 'mood':      return aiCommands.mood(sock, msg, sender, userJid, args);
 
     // Games
     case 'games':     return gameRegistry.showGames(sock, msg, sender);
