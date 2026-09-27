@@ -9,7 +9,7 @@ const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
 async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessageId) {
   if (/^[1-9]$/.test(text.trim())) {
     if (tictactoeEngine.ownsReply(sender, userJid, repliedToMessageId)) {
-      const ttt = require('../commands/games/tictactoe');
+      const ttt = require('../commands/gameCommands/versus/tictactoe');
       await ttt.handleReply(sock, sender, userJid, msg, text.trim());
       return true;
     }
