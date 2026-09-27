@@ -1,5 +1,4 @@
 const config = require('../config');
-const fs = require('fs');
 
 const ownerChecker = require('../utils/ownerChecker');
 const state = require('../utils/stateHelpers');
@@ -7,45 +6,29 @@ const suggestions = require('../utils/suggestionHelpers');
 const reactions = require('../utils/messageReactions');
 const cache = require('../models/commandCacheModel');
 
-const askCmd = require('../commands/ai/ask');
-const storyCmd = require('../commands/ai/story');
-const translateCmd = require('../commands/ai/translate');
-const ttsCmd = require('../commands/ai/tts');
-const summaryCmd = require('../commands/ai/summary');
-const chatbotCmd = require('../commands/ai/chatbot');
+const askCmd = require('../commands/aiCommands/ask');
+const storyCmd = require('../commands/aiCommands/story');
+const translateCmd = require('../commands/aiCommands/translate');
+const ttsCmd = require('../commands/aiCommands/tts');
+const summaryCmd = require('../commands/aiCommands/summary');
+const chatbotCmd = require('../commands/aiCommands/chatbot');
+const moodCmd = require('../commands/aiCommands/mood');
 
-const profileCmd = require('../commands/user/profile');
-const leaderboardCmd = require('../commands/user/leaderboard');
-const registerCmd = require('../commands/user/register');
-const cryptoCmd = require('../commands/user/crypto');
-const feedbackCmd = require('../commands/user/feedback');
-const moodCmd = require('../commands/user/mood');
+const gameRegistry = require('../commands/gameCommands/registry');
 
-const gameRegistry = require('../commands/games/registry');
+const defineCmd = require('../commands/utilityCommands/define');
+const weatherCmd = require('../commands/utilityCommands/weather');
+const stickerCmd = require('../commands/utilityCommands/sticker');
+const compressCmd = require('../commands/utilityCommands/compress');
+const pdfCmd = require('../commands/utilityCommands/pdf');
+const qrcodeCmd = require('../commands/utilityCommands/qrcode');
+const revealCmd = require('../commands/utilityCommands/reveal');
+const deleteCmd = require('../commands/utilityCommands/delete');
 
-const stickerCmd = require('../commands/utility/sticker');
-const compressCmd = require('../commands/utility/compress');
-const pdfCmd = require('../commands/utility/pdf');
-const qrcodeCmd = require('../commands/utility/qrcode');
-const revealCmd = require('../commands/utility/reveal');
-const deleteCmd = require('../commands/utility/delete');
-const pingCmd = require('../commands/utility/ping');
-const helpCmd = require('../commands/utility/help');
-const ownerInfoCmd = require('../commands/utility/owner-info');
-const statsCmd = require('../commands/utility/stats');
-const defineCmd = require('../commands/utility/define');
-const weatherCmd = require('../commands/utility/weather');
-
-const downloadCmd = require('../commands/media/download');
-const songCmd = require('../commands/media/song');
-const youtubeCmd = require('../commands/media/youtube');
-const tiktokCmd = require('../commands/media/tiktok');
-const facebookCmd = require('../commands/media/facebook');
-
-const broadcastCmd = require('../commands/owner/broadcast');
-const groupsCmd = require('../commands/owner/groups');
-const modeCmd = require('../commands/owner/mode');
-const restartCmd = require('../commands/owner/restart');
+const mediaCommands = require('../commands/mediaCommands');
+const userCommands = require('../commands/userCommands');
+const ownerCommands = require('../commands/ownerCommands');
+const otherCommands = require('../commands/otherCommands');
 
 const CACHEABLE = ['profile', 'games', 'help', 'owner'];
 
@@ -108,81 +91,54 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
 
 async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText, isGroup) {
   switch (command) {
-    case 'ask':
-      return askCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'story':
-      return storyCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'translate':
-      return translateCmd.handle(sock, msg, sender, userJid, args);
-    case 'tts':
-      return ttsCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'summary':
-      return summaryCmd.handle(sock, msg, sender, userJid, args);
-    case 'chatbot':
-      return chatbotCmd.handle(sock, msg, sender, userJid, args);
-    case 'mood':
-      return moodCmd.handle(sock, msg, sender, userJid, args);
+    // AI
+    case 'ask':      return askCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'story':    return storyCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'translate':return translateCmd.handle(sock, msg, sender, userJid, args);
+    case 'tts':      return ttsCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'summary':  return summaryCmd.handle(sock, msg, sender, userJid, args);
+    case 'chatbot':  return chatbotCmd.handle(sock, msg, sender, userJid, args);
+    case 'mood':     return moodCmd.handle(sock, msg, sender, userJid, args);
 
-    case 'games':
-      return gameRegistry.showGames(sock, msg, sender);
-    case 'game':
-      return gameRegistry.startGame(sock, msg, sender, args, bot);
-    case 'bombshell':
-      return gameRegistry.bombshell(sock, msg, sender, userJid);
-    case 'hotseat':
-      return gameRegistry.hotseat(sock, msg, sender, userJid);
-    case 'tictactoe':
-      return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
-    case 'rps':
-      return gameRegistry.rps(sock, msg, sender, userJid, args);
+    // Games
+    case 'games':     return gameRegistry.showGames(sock, msg, sender);
+    case 'game':      return gameRegistry.startGame(sock, msg, sender, args, bot);
+    case 'bombshell': return gameRegistry.bombshell(sock, msg, sender, userJid);
+    case 'hotseat':   return gameRegistry.hotseat(sock, msg, sender, userJid);
+    case 'tictactoe': return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
+    case 'rps':       return gameRegistry.rps(sock, msg, sender, userJid, args);
 
-    case 'profile':
-      return profileCmd.handle(sock, msg, sender, userJid);
-    case 'leaderboard':
-      return leaderboardCmd.handle(sock, msg, sender, args);
-    case 'register':
-      return registerCmd.handle(sock, msg, sender, userJid, args);
-    case 'crypto':
-      return cryptoCmd.handle(sock, msg, sender, userJid, args);
-    case 'feedback':
-      return feedbackCmd.handle(sock, msg, sender, userJid, fullText);
+    // Utility
+    case 'define':   return defineCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'weather':  return weatherCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'sticker':  return stickerCmd.handle(sock, msg, sender);
+    case 'compress': return compressCmd.handle(sock, msg, sender);
+    case 'pdf':      return pdfCmd.handle(sock, msg, sender, userJid, args);
+    case 'qrcode':   return qrcodeCmd.handle(sock, msg, sender, userJid, fullText);
+    case 'reveal':   return revealCmd.handle(sock, msg, sender);
+    case 'delete':   return deleteCmd.handle(sock, msg, sender, userJid);
 
-    case 'sticker':
-      return stickerCmd.handle(sock, msg, sender);
-    case 'compress':
-      return compressCmd.handle(sock, msg, sender);
-    case 'pdf':
-      return pdfCmd.handle(sock, msg, sender, userJid, args);
-    case 'qrcode':
-      return qrcodeCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'reveal':
-      return revealCmd.handle(sock, msg, sender);
-    case 'delete':
-      return deleteCmd.handle(sock, msg, sender, userJid);
-    case 'ping':
-      return pingCmd.handle(sock, msg, sender);
-    case 'help':
-      return helpCmd.handle(sock, sender);
-    case 'owner':
-      return ownerInfoCmd.handle(sock, msg, sender);
-    case 'stats':
-      return statsCmd.handle(sock, sender);
-    case 'define':
-      return defineCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'weather':
-      return weatherCmd.handle(sock, msg, sender, userJid, fullText);
+    // User
+    case 'profile':     return userCommands.profile(sock, msg, sender, userJid);
+    case 'leaderboard': return userCommands.leaderboard(sock, msg, sender, args);
+    case 'register':    return userCommands.register(sock, msg, sender, userJid, args);
+    case 'crypto':      return userCommands.crypto(sock, msg, sender, userJid, args);
+    case 'feedback':    return userCommands.feedback(sock, msg, sender, userJid, fullText);
 
-    case 'download':
-      return downloadCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'song':
-      return songCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'youtube':
-      return youtubeCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'tiktok':
-      return tiktokCmd.handle(sock, msg, sender, userJid, fullText);
-    case 'facebook':
-      return facebookCmd.handle(sock, msg, sender, userJid, fullText);
+    // Media
+    case 'download':  return mediaCommands.download(sock, msg, sender, userJid, fullText);
+    case 'youtube':   return mediaCommands.youtube(sock, msg, sender, userJid, fullText);
+    case 'tiktok':    return mediaCommands.tiktok(sock, msg, sender, userJid, fullText);
+    case 'facebook':  return mediaCommands.facebook(sock, msg, sender, userJid, fullText);
+    case 'song':      return mediaCommands.song(sock, msg, sender, userJid, fullText);
 
+    // Other
+    case 'help':   return otherCommands.help(sock, sender);
+    case 'ping':   return otherCommands.ping(sock, msg, sender);
+    case 'stats':  return otherCommands.stats(sock, sender);
+    case 'owner':  return otherCommands.ownerInfo(sock, msg, sender);
+
+    // Owner only
     case 'broadcast':
     case 'groups':
     case 'mode':
@@ -201,10 +157,10 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
 
 async function dispatchOwner(sock, command, msg, sender, userJid, args, fullText) {
   switch (command) {
-    case 'broadcast': return broadcastCmd.handle(sock, msg, sender, userJid, args, fullText);
-    case 'groups':    return groupsCmd.handle(sock, msg, sender);
-    case 'mode':      return modeCmd.handle(sock, msg, sender, userJid, args);
-    case 'restart':   return restartCmd.handle(sock, msg, sender);
+    case 'broadcast': return ownerCommands.broadcast(sock, msg, sender, userJid, args, fullText);
+    case 'groups':    return ownerCommands.groups(sock, msg, sender);
+    case 'mode':      return ownerCommands.mode(sock, msg, sender, userJid, args);
+    case 'restart':   return ownerCommands.restart(sock, msg, sender);
   }
 }
 
