@@ -1,5 +1,5 @@
-const lobbyState = require('../../utils/lobbyState');
-const engine = require('../../services/games/bombshellEngine');
+const lobbyState = require('../../../utils/lobbyState');
+const engine = require('../../../services/games/bombshellEngine');
 
 async function handle(sock, msg, sender, userJid) {
   const existing = global.gameLobbies.get(sender);

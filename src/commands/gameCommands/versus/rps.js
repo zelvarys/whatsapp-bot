@@ -1,9 +1,8 @@
-const config = require('../../config');
-const gameRules = require('../../utils/gameRules');
-const userModel = require('../../models/userModel');
-const gameStatsModel = require('../../models/gameStatsModel');
+const config = require('../../../config');
+const gameRules = require('../../../utils/gameRules');
+const userModel = require('../../../models/userModel');
+const gameStatsModel = require('../../../models/gameStatsModel');
 
-// !rps <rock|paper|scissors>
 async function handle(sock, msg, sender, userJid, args) {
   if (!args.length) {
     return sock.sendMessage(sender, {

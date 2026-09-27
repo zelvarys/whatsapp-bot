@@ -1,5 +1,5 @@
-const config = require('../../config');
-const engine = require('../../services/games/tictactoeEngine');
+const config = require('../../../config');
+const engine = require('../../../services/games/tictactoeEngine');
 
 async function start(sock, msg, sender, userJid, args) {
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;

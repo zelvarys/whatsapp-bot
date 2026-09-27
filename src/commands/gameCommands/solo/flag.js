@@ -1,4 +1,4 @@
-const gameRules = require('../../utils/gameRules');
+const gameRules = require('../../../utils/gameRules');
 
 async function start(sock, msg, sender, bot) {
   const text = gameRules.startFlagQuiz(sender, bot);

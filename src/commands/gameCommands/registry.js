@@ -1,14 +1,14 @@
 const config = require('../../config');
-const guessGame = require('./guess');
-const triviaGame = require('./trivia');
-const scrambleGame = require('./scramble');
-const riddleGame = require('./riddle');
-const flagGame = require('./flag');
-const rpsGame = require('./rps');
-const tictactoeGame = require('./tictactoe');
-const hangmanGame = require('./hangman');
-const bombshellGame = require('./bombshell');
-const hotseatGame = require('./hotseat');
+const guessGame = require('./solo/guess');
+const triviaGame = require('./solo/trivia');
+const scrambleGame = require('./solo/scramble');
+const riddleGame = require('./solo/riddle');
+const flagGame = require('./solo/flag');
+const hangmanGame = require('./solo/hangman');
+const tictactoeGame = require('./versus/tictactoe');
+const rpsGame = require('./versus/rps');
+const bombshellGame = require('./lobby/bombshell');
+const hotseatGame = require('./lobby/hotseat');
 
 async function showGames(sock, msg, sender) {
   const text = `✧ *AVAILABLE GAMES*
@@ -78,7 +78,7 @@ async function tictactoe(sock, msg, sender, userJid, args) {
 ┌─⊶
 │• ttt start @friend
 │• ttt bot — versus AI
-│• ttt end — End game
+│• ttt end — resign
 └─────────────⊶`
     }, { quoted: msg });
   }

@@ -1,5 +1,5 @@
-const lobbyState = require('../../utils/lobbyState');
-const engine = require('../../services/games/hotseatEngine');
+const lobbyState = require('../../../utils/lobbyState');
+const engine = require('../../../services/games/hotseatEngine');
 
 async function handle(sock, msg, sender, userJid) {
   const existing = global.gameLobbies.get(sender);

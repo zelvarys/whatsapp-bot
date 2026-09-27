@@ -1,5 +1,5 @@
-const hangmanEngine = require('../../services/games/hangmanEngine');
-const gameRules = require('../../utils/gameRules');
+const hangmanEngine = require('../../../services/games/hangmanEngine');
+const gameRules = require('../../../utils/gameRules');
 
 async function start(sock, msg, sender, bot) {
   if (bot && bot.stats) bot.stats.gamesPlayed++;
