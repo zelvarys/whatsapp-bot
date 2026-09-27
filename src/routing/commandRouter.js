@@ -4,7 +4,7 @@ const ownerChecker = require('../utils/ownerChecker');
 const state = require('../utils/stateHelpers');
 const suggestions = require('../utils/suggestionHelpers');
 const reactions = require('../utils/messageReactions');
-const cache = require('../models/commandCacheModel');
+const cache = require('../models/cacheModel');
 
 const askCmd = require('../commands/aiCommands/ask');
 const storyCmd = require('../commands/aiCommands/story');
@@ -20,7 +20,6 @@ const defineCmd = require('../commands/utilityCommands/define');
 const weatherCmd = require('../commands/utilityCommands/weather');
 const stickerCmd = require('../commands/utilityCommands/sticker');
 const compressCmd = require('../commands/utilityCommands/compress');
-const pdfCmd = require('../commands/utilityCommands/pdf');
 const qrcodeCmd = require('../commands/utilityCommands/qrcode');
 const revealCmd = require('../commands/utilityCommands/reveal');
 const deleteCmd = require('../commands/utilityCommands/delete');
@@ -113,7 +112,6 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
     case 'weather':  return weatherCmd.handle(sock, msg, sender, userJid, fullText);
     case 'sticker':  return stickerCmd.handle(sock, msg, sender);
     case 'compress': return compressCmd.handle(sock, msg, sender);
-    case 'pdf':      return pdfCmd.handle(sock, msg, sender, userJid, args);
     case 'qrcode':   return qrcodeCmd.handle(sock, msg, sender, userJid, fullText);
     case 'reveal':   return revealCmd.handle(sock, msg, sender);
     case 'delete':   return deleteCmd.handle(sock, msg, sender, userJid);

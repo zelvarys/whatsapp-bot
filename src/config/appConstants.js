@@ -92,11 +92,10 @@ const commandReactions = {
 
   reveal: '🔍',
   compress: '📥',
-  pdf: '📥',
   sticker: '💟',
   qrcode: null,
   delete: null,
-  define: null,
+  define: '🔍',
   weather: null,
 
   profile: null,
