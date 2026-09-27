@@ -1,4 +1,3 @@
-const config = require('../../config');
 const ownerChecker = require('../../utils/ownerChecker');
 const state = require('../../utils/stateHelpers');
 
