@@ -110,7 +110,7 @@ const commandReactions = {
   tictactoe: null,
   hangman: null,
   bombshell: null,
-  hotseat: null,
+  cluster: null,
 
   song: '🔍',
   download: '📥',

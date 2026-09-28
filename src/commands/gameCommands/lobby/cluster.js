@@ -1,5 +1,5 @@
 const lobbyState = require('../../../utils/lobbyState');
-const engine = require('../../../services/games/hotseatEngine');
+const engine = require('../../../services/games/clusterEngine');
 
 async function handle(sock, msg, sender, userJid) {
   const existing = global.gameLobbies.get(sender);
@@ -9,7 +9,7 @@ async function handle(sock, msg, sender, userJid) {
     }, { quoted: msg });
   }
 
-  const lobby = lobbyState.createLobby(sender, 'hotseat', userJid, engine);
+  const lobby = lobbyState.createLobby(sender, 'cluster', userJid, engine);
   global.gameLobbies.set(sender, lobby);
 
   await lobbyState.postLobby(sock, sender, lobby);

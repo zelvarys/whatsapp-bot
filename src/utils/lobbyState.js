@@ -8,9 +8,9 @@ const GAME_INFO = {
     name: 'BOMBSHELL',
     description: 'Turn-based word chain. Each turn you get a pair of letters and must reply with a valid English word that starts with the first and ends with the second. Miss the 20-second window or break the rule and you are out. Last one standing wins.'
   },
-  hotseat: {
-    name: 'HOT SEAT',
-    description: 'One player at a time is put on the spot with a quick challenge. Answer correctly within 20 seconds to survive. Wrong or too slow and you are eliminated. Last one standing wins.'
+  cluster: {
+    name: 'CLUSTER',
+    description: 'Turn-based word game. Each turn one player gets a consonant cluster and must reply with a valid English word that either starts with it or ends with it. Miss the 20-second window or give a bad word and you are out. Last one standing wins.'
   }
 };
 

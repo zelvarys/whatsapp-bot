@@ -94,7 +94,7 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
     case 'games':     return gameRegistry.showGames(sock, msg, sender);
     case 'game':      return gameRegistry.startGame(sock, msg, sender, args, bot);
     case 'bombshell': return gameRegistry.bombshell(sock, msg, sender, userJid);
-    case 'hotseat':   return gameRegistry.hotseat(sock, msg, sender, userJid);
+    case 'cluster':   return gameRegistry.cluster(sock, msg, sender, userJid);
     case 'tictactoe': return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
     case 'rps':       return gameRegistry.rps(sock, msg, sender, userJid, args);
 

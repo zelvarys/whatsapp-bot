@@ -27,7 +27,7 @@ function buildHelpText() {
 │• games
 │• game [type]
 │• bombshell
-│• hotseat
+│• cluster
 │• ttt start @friend
 │• rps [choice]
 └────────────⊶

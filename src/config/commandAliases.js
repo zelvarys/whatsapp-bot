@@ -38,5 +38,5 @@ module.exports = {
   tone: 'mood',
 
   bs: 'bombshell',
-  hs: 'hotseat'
+  cl: 'cluster'
 };

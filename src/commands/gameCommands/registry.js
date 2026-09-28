@@ -8,18 +8,18 @@ const hangmanGame = require('./solo/hangman');
 const tictactoeGame = require('./versus/tictactoe');
 const rpsGame = require('./versus/rps');
 const bombshellGame = require('./lobby/bombshell');
-const hotseatGame = require('./lobby/hotseat');
+const clusterGame = require('./lobby/cluster');
 
 async function showGames(sock, msg, sender) {
   const text = `✧ *AVAILABLE GAMES*
 ╒═══════════════════╕
 
 ┌─⊶ *SOLO GAMES*
+│• game trivia
 │• game hangman
 │• game riddle
 │• game flag
 │• game guess
-│• game trivia
 │• game scramble
 └─────────────⊶
 
@@ -32,7 +32,7 @@ async function showGames(sock, msg, sender) {
 
 ┌─⊶ *LOBBY GAMES*
 │• bombshell
-│• hotseat
+│• cluster
 └─────────────⊶
 
 ╘═══════════════════╛`;
@@ -67,8 +67,8 @@ async function bombshell(sock, msg, sender, userJid) {
   return bombshellGame.handle(sock, msg, sender, userJid);
 }
 
-async function hotseat(sock, msg, sender, userJid) {
-  return hotseatGame.handle(sock, msg, sender, userJid);
+async function cluster(sock, msg, sender, userJid) {
+  return clusterGame.handle(sock, msg, sender, userJid);
 }
 
 async function tictactoe(sock, msg, sender, userJid, args) {
@@ -100,7 +100,7 @@ module.exports = {
   showGames,
   startGame,
   bombshell,
-  hotseat,
+  cluster,
   tictactoe,
   rps: rpsGame.handle,
   tictactoeHandleReply: tictactoeGame.handleReply,
