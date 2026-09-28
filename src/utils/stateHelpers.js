@@ -1,6 +1,10 @@
-// In-memory state tracking: last command, cooldowns, and sent-message IDs.
+// In-memory state tracking: last command, cooldowns, sent-message IDs,
+// and download locks.
 
 const config = require('../config');
+
+const downloadLocks = new Map();
+const DOWNLOAD_LOCK_MAX_MS = 120 * 1000;
 
 function storeLastCommand(userJid, text, prefix) {
   if (text.startsWith(`${prefix}!!`)) return;
@@ -60,11 +64,37 @@ function isReplyToBot(msg) {
   return isBotMessageId(ctx.stanzaId);
 }
 
+function isDownloadLocked(userJid, command, argument) {
+  const key = `${userJid}_${command}_${argument.toLowerCase()}`;
+  const entry = downloadLocks.get(key);
+  if (!entry) return false;
+
+  if (Date.now() - entry.startedAt > DOWNLOAD_LOCK_MAX_MS) {
+    downloadLocks.delete(key);
+    return false;
+  }
+
+  return true;
+}
+
+function lockDownload(userJid, command, argument) {
+  const key = `${userJid}_${command}_${argument.toLowerCase()}`;
+  downloadLocks.set(key, { startedAt: Date.now() });
+}
+
+function unlockDownload(userJid, command, argument) {
+  const key = `${userJid}_${command}_${argument.toLowerCase()}`;
+  downloadLocks.delete(key);
+}
+
 module.exports = {
   storeLastCommand,
   getLastCommand,
   checkCooldown,
   trackBotMessage,
   isBotMessageId,
-  isReplyToBot
+  isReplyToBot,
+  isDownloadLocked,
+  lockDownload,
+  unlockDownload
 };

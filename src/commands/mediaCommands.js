@@ -1,6 +1,9 @@
 const config = require('../config');
 const video = require('../services/media/videoDownloaders');
 const musicDownloader = require('../services/media/musicDownloader');
+const state = require('../utils/stateHelpers');
+
+const BUSY_MESSAGE = '⏳ Your previous request is still running. Please wait for it to finish.';
 
 // -------------------- download --------------------
 
@@ -12,6 +15,12 @@ async function download(sock, msg, sender, userJid, fullText) {
   }
 
   const url = fullText.trim();
+
+  if (state.isDownloadLocked(userJid, 'download', url)) {
+    return sock.sendMessage(sender, { text: BUSY_MESSAGE }, { quoted: msg });
+  }
+
+  state.lockDownload(userJid, 'download', url);
 
   try {
     const result = await video.universal(url);
@@ -34,6 +43,8 @@ async function download(sock, msg, sender, userJid, fullText) {
     await sock.sendMessage(sender, {
       text: '❌ Download failed! Try a different link or platform.'
     }, { quoted: msg });
+  } finally {
+    state.unlockDownload(userJid, 'download', url);
   }
 }
 
@@ -64,6 +75,12 @@ async function song(sock, msg, sender, userJid, fullText) {
 
   const query = fullText.trim();
 
+  if (state.isDownloadLocked(userJid, 'song', query)) {
+    return sock.sendMessage(sender, { text: BUSY_MESSAGE }, { quoted: msg });
+  }
+
+  state.lockDownload(userJid, 'song', query);
+
   try {
     const result = await musicDownloader.downloadMusic(query);
 
@@ -82,6 +99,8 @@ async function song(sock, msg, sender, userJid, fullText) {
     else if (err.message.includes('timeout')) errorMsg = '❌ Download timed out. Try shorter song.';
 
     await sock.sendMessage(sender, { text: errorMsg }, { quoted: msg });
+  } finally {
+    state.unlockDownload(userJid, 'song', query);
   }
 }
 
