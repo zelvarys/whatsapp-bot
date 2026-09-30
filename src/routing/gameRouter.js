@@ -1,7 +1,7 @@
 const gameRules = require('../utils/gameRules');
 const tictactoeEngine = require('../services/games/tictactoeEngine');
 const hangmanEngine = require('../services/games/hangmanEngine');
-const versusGames = require('../commands/gameCommands/versusGames');
+const duoGames = require('../commands/gameCommands/duoGames');
 const reactions = require('../utils/messageReactions');
 
 const REACTIVE_GAMES = ['trivia', 'riddle', 'wordScramble', 'flag'];
@@ -10,7 +10,7 @@ const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
 async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessageId) {
   if (/^[1-9]$/.test(text.trim())) {
     if (tictactoeEngine.ownsReply(sender, userJid, repliedToMessageId)) {
-      await versusGames.handleReply(sock, sender, userJid, msg, text.trim());
+      await duoGames.handleReply(sock, sender, userJid, msg, text.trim());
       return true;
     }
   }

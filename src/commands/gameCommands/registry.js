@@ -1,6 +1,6 @@
 const config = require('../../config');
 const soloGames = require('./soloGames');
-const versusGames = require('./versusGames');
+const duoGames = require('./duoGames');
 const lobbyGames = require('./lobbyGames');
 
 async function showGames(sock, msg, sender) {
@@ -8,11 +8,11 @@ async function showGames(sock, msg, sender) {
 ╒═══════════════════╕
 
 ┌─⊶ *SOLO GAMES*
+│• game trivia
 │• game hangman
 │• game riddle
-│• game flag
 │• game guess
-│• game trivia
+│• game flag
 │• game scramble
 └─────────────⊶
 
@@ -78,9 +78,9 @@ async function tictactoe(sock, msg, sender, userJid, args) {
   const action = args[0].toLowerCase();
 
   switch (action) {
-    case 'start': return versusGames.start(sock, msg, sender, userJid, args);
-    case 'bot':   return versusGames.startBot(sock, msg, sender, userJid);
-    case 'end':   return versusGames.end(sock, msg, sender, userJid);
+    case 'start': return duoGames.start(sock, msg, sender, userJid, args);
+    case 'bot':   return duoGames.startBot(sock, msg, sender, userJid);
+    case 'end':   return duoGames.end(sock, msg, sender, userJid);
     default:
       return sock.sendMessage(sender, {
         text: '❌ Invalid action!\n*Use:* start, bot, or end'
@@ -94,6 +94,6 @@ module.exports = {
   bombshell,
   cluster,
   tictactoe,
-  tictactoeHandleReply: versusGames.handleReply,
-  tictactoeOwnsReply: versusGames.ownsReply
+  tictactoeHandleReply: duoGames.handleReply,
+  tictactoeOwnsReply: duoGames.ownsReply
 };
