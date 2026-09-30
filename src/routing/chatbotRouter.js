@@ -2,7 +2,7 @@ const botState = require('../models/botStateModel');
 const chatbotConversation = require('../services/ai/chatbotConversation');
 const jid = require('../utils/jidHelpers');
 
-const FIXED_TAG_REPLY = 'Hey, how can I help you';
+const FIXED_TAG_REPLY = 'Hey, how can I help you? 👀';
 
 async function routeChatbot(sock, msg, text, sender, userJid, isGroup, isReplyToBot, isTagged, stats) {
   if (!botState.isChatbotEnabled()) return;

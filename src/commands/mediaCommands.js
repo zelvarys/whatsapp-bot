@@ -67,7 +67,7 @@ async function song(sock, msg, sender, userJid, fullText) {
     return sock.sendMessage(sender, {
       text: `✧ *MUSIC DOWNLOAD*
 ┌─⊶
-│ *Usage:* ${config.prefix}song [name/url]
+│ *Usage:* ${config.prefix}song <name/url>
 │ *Example:* ${config.prefix}song say goodbye
 └─────────────⊶`
     }, { quoted: msg });

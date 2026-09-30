@@ -9,7 +9,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
 │ ${config.prefix}qrcode https://google.com
 │ ${config.prefix}qrcode Hello World
 └─────────────⊶
-▸ *Usage:* ${config.prefix}qrcode [text/url]`
+▸ *Usage:* ${config.prefix}qrcode <text/url>`
     }, { quoted: msg });
   }
 

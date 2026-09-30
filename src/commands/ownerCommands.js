@@ -12,7 +12,7 @@ async function broadcast(sock, msg, sender, userJid, args, fullText) {
     return sock.sendMessage(sender, {
       text: `✧ *BROADCAST COMMAND*
 ┌─⊶
-│ *Usage:* ${config.prefix}broadcast [message]
+│ *Usage:* ${config.prefix}broadcast <message>
 └─────────────⊶`
     }, { quoted: msg });
   }
@@ -102,7 +102,7 @@ async function mode(sock, msg, sender, userJid, args) {
       text: `✧ *BOT MODE*
 ┌─⊶
 │ *Current Mode:* ${botState.getMode().toUpperCase()}
-│ *Usage:* ${config.prefix}mode [public/private]
+│ *Usage:* ${config.prefix}mode <public/private>
 └─────────────⊶`
     }, { quoted: msg });
   }

@@ -21,7 +21,7 @@ async function lookup(word) {
     const response = await axios.get(url, {
       timeout: 10000,
       headers: {
-        'User-Agent': 'IncognitoBot/1.4 (https://github.com/zelvarys)'
+        'User-Agent': 'whatsapp-bot/2.0 (https://github.com/zelvarys)'
       }
     });
 

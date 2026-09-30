@@ -144,8 +144,8 @@ async function tts(sock, msg, sender, userJid, fullText) {
     return sock.sendMessage(sender, {
       text: `✧ *TEXT TO SPEECH*
 ┌─⊶
-│ *Usage:* ${config.prefix}tts [text]
-│ *Max:* ${config.ttsMaxLength} characters
+│ *Usage:* ${config.prefix}tts <text>
+│ *Example:* ${config.prefix}tts Zelvarys is Peak
 └─────────────⊶`
     }, { quoted: msg });
   }
@@ -278,7 +278,7 @@ async function mood(sock, msg, sender, userJid, args) {
 │ • roast — sharp and sarcastic
 │ • chill — laid-back and friendly
 │
-│ *Usage:* ${config.prefix}mood [roast/chill]
+│ *Usage:* ${config.prefix}mood <roast/chill>
 └─────────────⊶`
     }, { quoted: msg });
   }
@@ -304,8 +304,8 @@ async function mood(sock, msg, sender, userJid, args) {
 }
 
 function describeMood(m) {
-  if (m === 'roast') return '🔥 Roastful';
-  return '😎 Chill';
+  if (m === 'roast') return 'Roastful 🔥';
+  return 'Chill 😎';
 }
 
 module.exports = {

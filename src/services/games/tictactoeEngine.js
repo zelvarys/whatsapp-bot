@@ -100,7 +100,7 @@ function startVsBot(chatJid, userJid) {
   });
 
   const board = formatBoard(Array(9).fill(' '));
-  const starterName = starter === 'bot' ? 'Bot' : `@${userJid.split('@')[0]}`;
+  const starterName = starter === 'bot' ? 'Bot' : `Player`;
 
   return {
     text: `❌️⭕️ *TIC TAC TOE vs BOT!*

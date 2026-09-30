@@ -7,7 +7,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
     return sock.sendMessage(sender, {
       text: `✧ *DICTIONARY*
 ┌─⊶
-│ *Usage:* ${config.prefix}define [word]
+│ *Usage:* ${config.prefix}define <word>
 │ *Example:* ${config.prefix}define serendipity
 └─────────────⊶`
     }, { quoted: msg });

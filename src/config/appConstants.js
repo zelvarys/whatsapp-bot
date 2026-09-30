@@ -9,18 +9,16 @@ const commandCachePath = path.join(dataDir, 'command_cache.json');
 
 // Content files (static, committed)
 const contentDir = path.join(__dirname, '../../content');
-
-// Asset files
 const botImagePath = path.join(__dirname, '../../assets/bot_image.jpg');
 
 // Bot identity
-const botVersion = '1.5';
+const botVersion = '2.0';
 
 // AI limits and timings
 const maxAiResponseLength = 4000;
 const aiCooldownTime = 10000;
 const summaryMaxMessages = 50;
-const ttsMaxLength = 200;
+const ttsMaxLength = 300;
 const maxFileSize = 15 * 1024 * 1024;
 
 const commandCooldown = 2000;
@@ -106,7 +104,6 @@ const commandReactions = {
 
   games: null,
   game: null,
-  rps: null,
   tictactoe: null,
   hangman: null,
   bombshell: null,

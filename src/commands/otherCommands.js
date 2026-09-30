@@ -13,58 +13,58 @@ function buildHelpText() {
 
 ╔═══════ ∘◦ ✧ ◦∘ ═══════╗
 
-┌─⊶ *AI & CREATIVE*
-│• ask [question]
-│• story [prompt]
+┌─⊶ *1. AI & CREATIVE*
+│• ask <question>
 │• chatbot on/off
+│• summary <num>
 │• translate
-│• tts [text]
-│• summary [num]
-│• mood [type]
+│• story <prompt>
+│• tts <text>
+│• mood chill/roast
 └────────────⊶
 
-┌─⊶ *GAMES & FUN*
+┌─⊶ *2. GAMES & FUN*
+│• game <type>
 │• games
-│• game [type]
-│• bombshell
-│• cluster
+│• bombshell 
+│• hotseat
 │• ttt start @friend
-│• rps [choice]
 └────────────⊶
 
-┌─⊶ *UTILITY TOOLS*
-│• define [word]
+┌─⊶ *3. UTILITY TOOLS*
+│• define <word>
 │• compress
 │• sticker
-│• qrcode [text]
+│• pdf image/text
+│• qrcode <text>
 │• reveal
-│• weather [city]
+│• weather <city>
 └────────────⊶
 
-┌─⊶ *USER SYSTEM*
+┌─⊶ *4. USER SYSTEM*
 │• profile
 │• leaderboard
-│• register [name]
-│• crypto [coin]
+│• register <name>
+│• crypto <coin>
 │• feedback
 └────────────⊶
 
-┌─⊶ *MEDIA DOWNLOAD*
+┌─⊶ *5. MEDIA DOWNLOAD*
 │• download
-│• song [name/url]
+│• song <name/url>
 │• youtube
 │• tiktok
 │• facebook
 └────────────⊶
 
-┌─⊶ *OWNER ONLY*
+┌─⊶ *6. OWNER ONLY*
 │• broadcast
 │• groups
-│• mode [args]
+│• mode <args>
 │• restart
 └────────────⊶
 
-┌─⊶ *OTHERS*
+┌─⊶ *7. OTHERS*
 │• ping - Bot latency
 │• stats - Bot statistics
 │• !! - Repeat command
@@ -117,7 +117,7 @@ async function ping(sock, msg, sender) {
 
     await sock.sendMessage(sender, {
       text: `┌─⊶📡 *BOT LATENCY*
-│ 🏓 *Response:* ${responseTime}ms
+│ 🏓 *Ping:* ${responseTime}ms
 │ ${emoji} *Status:* ${status}
 └─────────────⊶`
     }, { quoted: msg });

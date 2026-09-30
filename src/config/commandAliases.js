@@ -26,7 +26,6 @@ module.exports = {
   del: 'delete',
 
   forecast: 'weather',
-  temp: 'weather',
   dict: 'define',
   meaning: 'define',
 

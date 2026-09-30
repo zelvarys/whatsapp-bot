@@ -7,7 +7,7 @@ async function handle(sock, msg, sender, userJid, fullText) {
     return sock.sendMessage(sender, {
       text: `✧ *WEATHER*
 ┌─⊶
-│ *Usage:* ${config.prefix}weather [city]
+│ *Usage:* ${config.prefix}weather <city>
 │ *Example:* ${config.prefix}weather Lagos
 └─────────────⊶`
     }, { quoted: msg });

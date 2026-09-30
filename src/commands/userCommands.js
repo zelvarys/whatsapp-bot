@@ -130,7 +130,7 @@ async function register(sock, msg, sender, userJid, args) {
 async function crypto(sock, msg, sender, userJid, args) {
   if (args.length === 0) {
     return sock.sendMessage(sender, {
-      text: `✧ *CRYPTO PRICES*\n\n*Usage:* ${config.prefix}crypto [coin]\n*Supported:* ${config.supportedCryptos.join(', ')}`
+      text: `✧ *CRYPTO PRICES*\n\n*Usage:* ${config.prefix}crypto <coin>\n*Supported:* ${config.supportedCryptos.join(', ')}`
     }, { quoted: msg });
   }
 
@@ -179,7 +179,7 @@ async function feedback(sock, msg, sender, userJid, fullText) {
     return sock.sendMessage(sender, {
       text: `✧ *FEEDBACK SYSTEM*
 ┌─⊶
-│ *Usage:* ${config.prefix}feedback [message]
+│ *Usage:* ${config.prefix}feedback <message>
 │ Send suggestions or bug reports
 └─────────────⊶`
     }, { quoted: msg });
