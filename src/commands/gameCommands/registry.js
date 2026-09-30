@@ -1,25 +1,18 @@
 const config = require('../../config');
-const guessGame = require('./solo/guess');
-const triviaGame = require('./solo/trivia');
-const scrambleGame = require('./solo/scramble');
-const riddleGame = require('./solo/riddle');
-const flagGame = require('./solo/flag');
-const hangmanGame = require('./solo/hangman');
-const tictactoeGame = require('./versus/tictactoe');
-const rpsGame = require('./versus/rps');
-const bombshellGame = require('./lobby/bombshell');
-const clusterGame = require('./lobby/cluster');
+const soloGames = require('./soloGames');
+const versusGames = require('./versusGames');
+const lobbyGames = require('./lobbyGames');
 
 async function showGames(sock, msg, sender) {
   const text = `✧ *AVAILABLE GAMES*
 ╒═══════════════════╕
 
 ┌─⊶ *SOLO GAMES*
-│• game trivia
 │• game hangman
 │• game riddle
 │• game flag
 │• game guess
+│• game trivia
 │• game scramble
 └─────────────⊶
 
@@ -27,7 +20,6 @@ async function showGames(sock, msg, sender) {
 │• ttt start @friend
 │• ttt bot — versus AI
 │• ttt end — resign
-│• rps [choice]
 └─────────────⊶
 
 ┌─⊶ *LOBBY GAMES*
@@ -50,12 +42,12 @@ async function startGame(sock, msg, sender, args, bot) {
   const type = args[0].toLowerCase();
 
   switch (type) {
-    case 'guess':    return guessGame.start(sock, msg, sender, bot);
-    case 'trivia':   return triviaGame.start(sock, msg, sender, bot);
-    case 'scramble': return scrambleGame.start(sock, msg, sender, bot);
-    case 'riddle':   return riddleGame.start(sock, msg, sender, bot);
-    case 'flag':     return flagGame.start(sock, msg, sender, bot);
-    case 'hangman':  return hangmanGame.start(sock, msg, sender, bot);
+    case 'guess':    return soloGames.guess(sock, msg, sender, bot);
+    case 'trivia':   return soloGames.trivia(sock, msg, sender, bot);
+    case 'scramble': return soloGames.scramble(sock, msg, sender, bot);
+    case 'riddle':   return soloGames.riddle(sock, msg, sender, bot);
+    case 'flag':     return soloGames.flag(sock, msg, sender, bot);
+    case 'hangman':  return soloGames.hangman(sock, msg, sender, bot);
     default:
       return sock.sendMessage(sender, {
         text: `❌ Unknown game type!\nUse ${config.prefix}games to see available games`
@@ -64,11 +56,11 @@ async function startGame(sock, msg, sender, args, bot) {
 }
 
 async function bombshell(sock, msg, sender, userJid) {
-  return bombshellGame.handle(sock, msg, sender, userJid);
+  return lobbyGames.bombshell(sock, msg, sender, userJid);
 }
 
 async function cluster(sock, msg, sender, userJid) {
-  return clusterGame.handle(sock, msg, sender, userJid);
+  return lobbyGames.cluster(sock, msg, sender, userJid);
 }
 
 async function tictactoe(sock, msg, sender, userJid, args) {
@@ -86,9 +78,9 @@ async function tictactoe(sock, msg, sender, userJid, args) {
   const action = args[0].toLowerCase();
 
   switch (action) {
-    case 'start': return tictactoeGame.start(sock, msg, sender, userJid, args);
-    case 'bot':   return tictactoeGame.startBot(sock, msg, sender, userJid);
-    case 'end':   return tictactoeGame.end(sock, msg, sender, userJid);
+    case 'start': return versusGames.start(sock, msg, sender, userJid, args);
+    case 'bot':   return versusGames.startBot(sock, msg, sender, userJid);
+    case 'end':   return versusGames.end(sock, msg, sender, userJid);
     default:
       return sock.sendMessage(sender, {
         text: '❌ Invalid action!\n*Use:* start, bot, or end'
@@ -102,7 +94,6 @@ module.exports = {
   bombshell,
   cluster,
   tictactoe,
-  rps: rpsGame.handle,
-  tictactoeHandleReply: tictactoeGame.handleReply,
-  tictactoeOwnsReply: tictactoeGame.ownsReply
+  tictactoeHandleReply: versusGames.handleReply,
+  tictactoeOwnsReply: versusGames.ownsReply
 };

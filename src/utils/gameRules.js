@@ -462,49 +462,6 @@ function processFlagGuess(chatJid, userJid, guess) {
   return { result: hint, won: false, gameOver: false };
 }
 
-function playRockPaperScissors(userChoice, bot) {
-  if (bot && bot.stats) bot.stats.gamesPlayed++;
-
-  const choices = ['rock', 'paper', 'scissors'];
-  const botChoice = choices[Math.floor(Math.random() * 3)];
-  const user = String(userChoice).toLowerCase();
-
-  if (!choices.includes(user)) {
-    return {
-      result: '❌ Invalid subcommand!\n*Usage:* rps [rock/paper/scissors]',
-      won: false,
-      gameOver: true
-    };
-  }
-
-  let outcome = '';
-  let won = false;
-
-  if (user === botChoice) {
-    outcome = "🤝 *It's a tie!*";
-  } else if (
-    (user === 'rock' && botChoice === 'scissors') ||
-    (user === 'paper' && botChoice === 'rock') ||
-    (user === 'scissors' && botChoice === 'paper')
-  ) {
-    outcome = '🎉 *You win*';
-    won = true;
-  } else {
-    outcome = '❌ *You lose!*';
-  }
-
-  return {
-    result: `✧ *ROCK PAPER SCISSORS*
-┌─⊶
-│ *You*: ${user}
-│ *Bot*: ${botChoice}
-└─────────────⊶
-${outcome}`,
-    won,
-    gameOver: true
-  };
-}
-
 function attachGameMessageId(chatJid, sentMsg) {
   if (!sentMsg || !sentMsg.key || !sentMsg.key.id) return;
 
@@ -540,7 +497,6 @@ module.exports = {
   processRiddle,
   startFlagQuiz,
   processFlagGuess,
-  playRockPaperScissors,
   attachGameMessageId,
   updateLastMessageId
 };
