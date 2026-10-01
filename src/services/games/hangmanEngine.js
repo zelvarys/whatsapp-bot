@@ -4,6 +4,9 @@ const userModel = require('../../models/userModel');
 const gameStatsModel = require('../../models/gameStatsModel');
 const gameRules = require('../../utils/gameRules');
 
+const POINTS_PER_CORRECT_LETTER = 15;
+const POINTS_ON_LOSS = 5;
+
 function buildDisplay(game) {
   const word = game.word.toUpperCase();
   const guessed = new Set(game.guessedLetters);
@@ -27,7 +30,7 @@ Wrong: ${wrong}
 Attempts left: ${remaining}/${game.maxWrong}`;
 }
 
-function start(chatJid) {
+function start(chatJid, userJid) {
   if (!gameRules.canStartGame(chatJid, 'hangman')) {
     const active = global.activeGames.get(chatJid);
     return { error: `❌ A ${gameRules.gameLabel(active.type)} game is already active!` };
@@ -43,7 +46,7 @@ function start(chatJid) {
     category: pick.category,
     guessedLetters: [],
     wrongLetters: [],
-    participants: [],
+    participants: userJid ? [userJid] : [],
     maxWrong: config.gameSettings.hangmanMaxWrong,
     startTime: now,
     lastActivity: now,
@@ -51,6 +54,8 @@ function start(chatJid) {
     lastMessageId: null,
     isGroup: chatJid.endsWith('@g.us')
   });
+
+  if (userJid) userModel.recordParticipation(userJid);
 
   const game = global.activeGames.get(chatJid);
   return { text: `${buildDisplay(game)}\n\n▸ Reply with a single letter to guess.` };
@@ -68,8 +73,7 @@ function processGuess(chatJid, userJid, rawGuess) {
     return {
       result: '❌ Send one letter at a time.',
       won: false,
-      gameOver: false,
-      keepGame: true
+      gameOver: false
     };
   }
 
@@ -77,13 +81,13 @@ function processGuess(chatJid, userJid, rawGuess) {
     return {
       result: `❌ *${letter}* was already guessed.`,
       won: false,
-      gameOver: false,
-      keepGame: true
+      gameOver: false
     };
   }
 
-  if (!game.participants.includes(userJid)) {
+  if (userJid && !game.participants.includes(userJid)) {
     game.participants.push(userJid);
+    userModel.recordParticipation(userJid);
   }
 
   game.guessedLetters.push(letter);
@@ -91,7 +95,7 @@ function processGuess(chatJid, userJid, rawGuess) {
   const isInWord = game.word.includes(letter);
 
   if (isInWord) {
-    userModel.addPoints(userJid, 15);
+    userModel.addPoints(userJid, POINTS_PER_CORRECT_LETTER);
   } else {
     game.wrongLetters.push(letter);
   }
@@ -100,14 +104,18 @@ function processGuess(chatJid, userJid, rawGuess) {
 
   if (won) {
     global.activeGames.delete(chatJid);
-    userModel.addWin(userJid);
-    gameStatsModel.increment('hangman', 50);
+
+    for (const participant of game.participants) {
+      userModel.addWin(participant);
+    }
+
+    gameStatsModel.increment('hangman', POINTS_PER_CORRECT_LETTER * game.participants.length);
 
     return {
-      result: `🎉 *SOLVED!*\nThe word was *${game.word}*\n\n▸ +15 for the letter, +50 for the win\n▸ Play again: !hangman`,
+      result: `🎉 *SOLVED!*\nThe word was *${game.word}*\n\n▸ Play again: !hangman`,
       won: true,
       gameOver: true,
-      mention: game.isGroup ? userJid : null
+      mention: game.isGroup ? game.participants : null
     };
   }
 
@@ -117,13 +125,13 @@ function processGuess(chatJid, userJid, rawGuess) {
     global.activeGames.delete(chatJid);
 
     for (const participant of game.participants) {
-      userModel.addPoints(participant, 5);
+      userModel.addPoints(participant, POINTS_ON_LOSS);
     }
 
-    gameStatsModel.increment('hangman', 5 * game.participants.length);
+    gameStatsModel.increment('hangman', POINTS_ON_LOSS * game.participants.length);
 
     return {
-      result: `💀 *GAME OVER*\nThe word was *${game.word}*\n\n▸ +5 points to all participant`,
+      result: `💀 *GAME OVER*\nThe word was *${game.word}*\n\n▸ +${POINTS_ON_LOSS} points to every participant`,
       won: false,
       gameOver: true,
       mention: game.isGroup ? game.participants : null
@@ -131,14 +139,13 @@ function processGuess(chatJid, userJid, rawGuess) {
   }
 
   const letterFeedback = isInWord
-    ? `✅ *${letter}* is in the word (+15 points)`
+    ? `✅ *${letter}* is in the word (+${POINTS_PER_CORRECT_LETTER} points)`
     : `❌ *${letter}* is not in the word`;
 
   return {
     result: `${letterFeedback}\n\n${buildDisplay(game)}`,
     won: false,
-    gameOver: false,
-    keepGame: true
+    gameOver: false
   };
 }
 

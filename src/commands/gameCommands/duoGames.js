@@ -1,5 +1,6 @@
 const config = require('../../config');
 const engine = require('../../services/games/tictactoeEngine');
+const mentions = require('../../utils/mentionHelpers');
 
 async function start(sock, msg, sender, userJid, args) {
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
@@ -10,7 +11,17 @@ async function start(sock, msg, sender, userJid, args) {
     }, { quoted: msg });
   }
 
-  const result = engine.startPvP(sender, userJid, mentioned[0]);
+  const opponent = mentioned[0];
+
+  // Mentioning the bot in a duo game is not allowed. Use !ttt bot for
+  // that, so the distinction stays clear for the user.
+  if (mentions.isBotMentioned(msg, '')) {
+    return sock.sendMessage(sender, {
+      text: '❌ Use !ttt bot to play against me, not !ttt start.'
+    }, { quoted: msg });
+  }
+
+  const result = engine.startPvP(sender, userJid, opponent);
   if (result.error) {
     return sock.sendMessage(sender, { text: result.error }, { quoted: msg });
   }
@@ -39,11 +50,17 @@ async function startBot(sock, msg, sender, userJid) {
   }
 
   if (result.botGoesFirst) {
-    setTimeout(() => runBotMove(sock, result.gameId, g, sender), 2000);
+    setTimeout(() => runBotMove(sock, result.gameId, sender), 2000);
   }
 }
 
-async function runBotMove(sock, gameId, game, sender) {
+async function runBotMove(sock, gameId, sender) {
+  const game = global.tictactoeGames.get(gameId);
+
+  // The game may have been ended or timed out between the bot turn being
+  // scheduled and the timer firing. Nothing to do if so.
+  if (!game) return;
+
   const result = engine.processBotMove(gameId, game);
   if (!result) return;
 
@@ -94,7 +111,7 @@ async function makeMove(sock, sender, userJid, msg, args) {
   if (sent?.key?.id) game.lastMessageId = sent.key.id;
 
   if (result.botTurn) {
-    setTimeout(() => runBotMove(sock, id, game, sender), 2000);
+    setTimeout(() => runBotMove(sock, id, sender), 2000);
   }
 }
 

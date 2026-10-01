@@ -1,61 +1,45 @@
 const gameRules = require('../../utils/gameRules');
 const hangmanEngine = require('../../services/games/hangmanEngine');
 
-// -------------------- guess --------------------
-
-async function guess(sock, msg, sender, bot) {
-  const text = gameRules.startGuessNumber(sender, bot);
-  const sent = await sock.sendMessage(sender, { text, context: { isGame: true } }, { quoted: msg });
+async function guess(sock, msg, sender, userJid, bot) {
+  const text = gameRules.startGuessNumber(sender, bot, userJid);
+  const sent = await sock.sendMessage(sender, { text }, { quoted: msg });
   gameRules.attachGameMessageId(sender, sent);
 }
 
-// -------------------- trivia --------------------
-
-async function trivia(sock, msg, sender, bot) {
-  const text = gameRules.startTrivia(sender, bot);
-  const sent = await sock.sendMessage(sender, { text, context: { isGame: true } }, { quoted: msg });
+async function trivia(sock, msg, sender, userJid, bot) {
+  const text = gameRules.startTrivia(sender, bot, userJid);
+  const sent = await sock.sendMessage(sender, { text }, { quoted: msg });
   gameRules.attachGameMessageId(sender, sent);
 }
 
-// -------------------- scramble --------------------
-
-async function scramble(sock, msg, sender, bot) {
-  const text = gameRules.startWordScramble(sender, bot);
-  const sent = await sock.sendMessage(sender, { text, context: { isGame: true } }, { quoted: msg });
+async function scramble(sock, msg, sender, userJid, bot) {
+  const text = gameRules.startWordScramble(sender, bot, userJid);
+  const sent = await sock.sendMessage(sender, { text }, { quoted: msg });
   gameRules.attachGameMessageId(sender, sent);
 }
 
-// -------------------- riddle --------------------
-
-async function riddle(sock, msg, sender, bot) {
-  const text = gameRules.startRiddle(sender, bot);
-  const sent = await sock.sendMessage(sender, { text, context: { isGame: true } }, { quoted: msg });
+async function riddle(sock, msg, sender, userJid, bot) {
+  const text = gameRules.startRiddle(sender, bot, userJid);
+  const sent = await sock.sendMessage(sender, { text }, { quoted: msg });
   gameRules.attachGameMessageId(sender, sent);
 }
 
-// -------------------- flag --------------------
-
-async function flag(sock, msg, sender, bot) {
-  const text = gameRules.startFlagQuiz(sender, bot);
-  const sent = await sock.sendMessage(sender, { text, context: { isGame: true } }, { quoted: msg });
+async function flag(sock, msg, sender, userJid, bot) {
+  const text = gameRules.startFlagQuiz(sender, bot, userJid);
+  const sent = await sock.sendMessage(sender, { text }, { quoted: msg });
   gameRules.attachGameMessageId(sender, sent);
 }
 
-// -------------------- hangman --------------------
-
-async function hangman(sock, msg, sender, bot) {
+async function hangman(sock, msg, sender, userJid, bot) {
   if (bot && bot.stats) bot.stats.gamesPlayed++;
 
-  const result = hangmanEngine.start(sender);
+  const result = hangmanEngine.start(sender, userJid);
   if (result.error) {
     return sock.sendMessage(sender, { text: result.error }, { quoted: msg });
   }
 
-  const sent = await sock.sendMessage(sender, {
-    text: result.text,
-    context: { isGame: true }
-  }, { quoted: msg });
-
+  const sent = await sock.sendMessage(sender, { text: result.text }, { quoted: msg });
   gameRules.attachGameMessageId(sender, sent);
 }
 

@@ -1,5 +1,4 @@
 const lobbyState = require('../utils/lobbyState');
-const jid = require('../utils/jidHelpers');
 
 async function routeLobby(sock, msg, text, sender, userJid) {
   const lobby = global.gameLobbies.get(sender);
@@ -30,7 +29,7 @@ async function routeLobby(sock, msg, text, sender, userJid) {
     }
   }
 
-  // In-game: any reply to the game's message chain.
+  // In-game: only accept replies to the current turn's message chain.
   if (lobby.state === 'running') {
     const game = lobby.gameState;
     if (!game) return false;
@@ -41,7 +40,6 @@ async function routeLobby(sock, msg, text, sender, userJid) {
     const isReplyToGame = repliedToId &&
       (repliedToId === game.gameMessageId || repliedToId === game.lastMessageId);
 
-    // Accept direct replies to the current turn message. Ignore other messages.
     if (!isReplyToGame) return false;
 
     return await lobbyState.handleGameTurn(sock, msg, sender, userJid, text.trim(), lobby);
@@ -69,7 +67,9 @@ async function handleJoin(sock, msg, sender, userJid, lobby) {
 
   await lobbyState.postJoinUpdate(sock, sender, lobby);
 
-  // Auto-start if the lobby is now full.
+  // Auto-start if the lobby is now full. lobbyState.startGame flips the
+  // state to 'running' synchronously, so if the prune interval races us
+  // here, only one of the two actually starts the game.
   if (lobby.players.length >= lobby.maxPlayers) {
     await lobbyState.startGame(sock, sender, lobby);
   }

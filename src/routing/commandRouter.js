@@ -4,7 +4,6 @@ const ownerChecker = require('../utils/ownerChecker');
 const state = require('../utils/stateHelpers');
 const suggestions = require('../utils/suggestionHelpers');
 const reactions = require('../utils/messageReactions');
-const cache = require('../models/cacheModel');
 
 const aiCommands = require('../commands/aiCommands');
 const gameRegistry = require('../commands/gameCommands/registry');
@@ -19,8 +18,6 @@ const mediaCommands = require('../commands/mediaCommands');
 const userCommands = require('../commands/userCommands');
 const ownerCommands = require('../commands/ownerCommands');
 const otherCommands = require('../commands/otherCommands');
-
-const CACHEABLE = ['profile', 'games', 'help', 'owner'];
 
 async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
   if (text === `${config.prefix}!!` || text === '!!') {
@@ -41,14 +38,6 @@ async function routeCommand(sock, bot, msg, text, sender, userJid, isGroup) {
 
   if (config.commandAliases[command]) {
     command = config.commandAliases[command];
-  }
-
-  if (CACHEABLE.includes(command)) {
-    const key = `${command}_${args.join('_')}`;
-    const cached = cache.get(key);
-    if (cached) {
-      return sock.sendMessage(sender, { text: cached }, { quoted: msg });
-    }
   }
 
   if (state.checkCooldown(userJid, command)) return;
@@ -92,7 +81,7 @@ async function dispatch(sock, bot, command, msg, sender, userJid, args, fullText
 
     // Games
     case 'games':     return gameRegistry.showGames(sock, msg, sender);
-    case 'game':      return gameRegistry.startGame(sock, msg, sender, args, bot);
+    case 'game':      return gameRegistry.startGame(sock, msg, sender, userJid, args, bot);
     case 'bombshell': return gameRegistry.bombshell(sock, msg, sender, userJid);
     case 'cluster':   return gameRegistry.cluster(sock, msg, sender, userJid);
     case 'tictactoe': return gameRegistry.tictactoe(sock, msg, sender, userJid, args);
