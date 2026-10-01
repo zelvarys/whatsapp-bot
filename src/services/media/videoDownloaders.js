@@ -43,6 +43,9 @@ async function tiktok(url) {
   }
 }
 
+// Short links need to be resolved before the downloader can handle them.
+// The HEAD request is tried first because it does not transfer a body;
+// the GET fallback handles servers that do not answer HEAD cleanly.
 async function expandTikTokShortUrl(url) {
   if (!url.includes('vt.tiktok.com') && !url.includes('vm.tiktok.com')) {
     return url;
@@ -60,7 +63,7 @@ async function expandTikTokShortUrl(url) {
 
     if (response.headers.location) return response.headers.location;
   } catch (err) {
-    // Try GET fallback
+    // Fall through to GET.
   }
 
   try {
@@ -75,7 +78,7 @@ async function expandTikTokShortUrl(url) {
     const finalUrl = response.request?.res?.responseUrl;
     if (finalUrl) return finalUrl;
   } catch (err) {
-    // Fall through
+    // Fall through.
   }
 
   return url;

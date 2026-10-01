@@ -3,11 +3,17 @@ const axios = require('axios');
 // Fetches weather from Open-Meteo. No API key required.
 // Geocoding: https://geocoding-api.open-meteo.com/v1/search
 // Forecast:  https://api.open-meteo.com/v1/forecast
+//
+// Results are cached per city for ten minutes so repeated lookups do not
+// hammer the upstream service.
 
 const GEO_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 
-// WMO weather interpretation codes → human-readable text
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const cache = new Map();
+
+// WMO weather interpretation codes mapped to human-readable text.
 const WEATHER_CODES = {
   0: 'Clear sky',
   1: 'Mainly clear',
@@ -66,6 +72,13 @@ async function getWeather(city) {
     return { success: false, error: 'No city provided' };
   }
 
+  const key = city.trim().toLowerCase();
+  const cached = cache.get(key);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return { success: true, data: cached.data };
+  }
+
   try {
     const place = await geocode(city.trim());
     if (!place) {
@@ -111,6 +124,8 @@ async function getWeather(city) {
         precipitationChance: daily.precipitation_probability_max[i]
       }))
     };
+
+    cache.set(key, { data: result, timestamp: Date.now() });
 
     return { success: true, data: result };
   } catch (err) {

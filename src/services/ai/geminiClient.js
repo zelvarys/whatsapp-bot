@@ -1,6 +1,9 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../../config');
-const moodPrompts = require('./moodPrompts');
+
+// The client rotates through API keys and models on rate limits or
+// transient errors. Indexes persist across calls so a busy bot does not
+// keep retrying the same key that just failed.
 
 let textKeyIndex = 0;
 let textModelIndex = 0;
@@ -9,14 +12,12 @@ let chatbotModelIndex = 0;
 
 const TEXT_MODELS = [
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-pro'
+  'gemini-2.5-flash-lite'
 ];
 
 const CHATBOT_MODELS = [
   'gemini-2.5-flash-lite',
-  'gemini-2.5-flash',
-  'gemini-pro'
+  'gemini-2.5-flash'
 ];
 
 function baseGenerationConfig(overrides = {}) {
@@ -41,6 +42,8 @@ async function tryGenerate(apiKey, modelName, prompt, generationConfig) {
   return result.response.text();
 }
 
+// Some model/config combinations reject thinkingConfig. Retrying without
+// it is cheaper than tracking which models currently support it.
 async function tryGenerateWithoutThinking(apiKey, modelName, prompt, generationConfig) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -70,13 +73,19 @@ async function runWithRotation(prompt, generationConfig, models, startKey, start
       } catch (err) {
         const msg = err.message || '';
 
+        // Missing model or rate-limited: try the next model on the same key.
         if (msg.includes('model not found') || msg.includes('404')) continue;
         if (msg.includes('rate limit') || msg.includes('429')) continue;
+
+        // Permission errors will not resolve by cycling. Move on to the
+        // next key instead of burning the remaining models.
         if (msg.includes('permission denied') || msg.includes('403')) break;
+
         if (msg.includes('safety') || msg.includes('blocked')) {
           return { text: null, blocked: true };
         }
 
+        // Some SDK/model pairs reject thinkingConfig. Retry without it.
         if (msg.includes('thinking')) {
           try {
             const text = await tryGenerateWithoutThinking(apiKey, modelName, prompt, generationConfig);
@@ -94,15 +103,10 @@ async function runWithRotation(prompt, generationConfig, models, startKey, start
   return { text: null };
 }
 
-// Generic text generation. Accepts an optional `mood` used to prepend
-// a persona to the prompt when the caller wants it.
-async function generateText(prompt, generationConfig = {}, mood = null) {
-  const finalPrompt = mood
-    ? `${moodPrompts.getPersona(mood)}\n\n${prompt}`
-    : prompt;
-
+// Generic text generation for commands that want a plain answer.
+async function generateText(prompt, generationConfig = {}) {
   const result = await runWithRotation(
-    finalPrompt,
+    prompt,
     baseGenerationConfig(generationConfig),
     TEXT_MODELS,
     textKeyIndex,
@@ -121,8 +125,8 @@ async function generateText(prompt, generationConfig = {}, mood = null) {
   return result.text;
 }
 
-// Chatbot path. Persona is always applied by the caller (chatbotConversation
-// passes the mood-specific prompt), so no injection here.
+// Chatbot path. Persona is applied by the caller, so no injection here.
+// Slightly higher temperature keeps casual replies from sounding canned.
 async function generateChatbotText(prompt, generationConfig = {}) {
   const result = await runWithRotation(
     prompt,

@@ -22,12 +22,20 @@ function stripTranslationPrefixes(text) {
   return cleaned.split('\n')[0].trim();
 }
 
+// Undocumented Google endpoint used only as a fallback when Gemini is
+// unavailable. Results are not cached because the endpoint can change
+// without notice and a stale translation is worse than a fresh attempt.
 async function googleTranslateFallback(text) {
   try {
     const encoded = encodeURIComponent(text.substring(0, 500));
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encoded}`;
 
-    const response = await axios.get(url, { timeout: 10000 });
+    const response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
 
     if (
       response.data &&
@@ -38,7 +46,7 @@ async function googleTranslateFallback(text) {
       return response.data[0][0][0];
     }
   } catch (err) {
-    // Fall through
+    // Fall through — caller reports the service as unavailable.
   }
 
   return null;
@@ -69,7 +77,7 @@ async function translateToEnglish(text, userId) {
       }
     }
   } catch (err) {
-    // Fall through to Google
+    // Fall through to the Google endpoint.
   }
 
   const fallback = await googleTranslateFallback(text);

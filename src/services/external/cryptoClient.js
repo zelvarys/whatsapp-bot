@@ -1,7 +1,9 @@
 const axios = require('axios');
 const config = require('../../config');
 
-// Fetches crypto prices from CoinGecko. Results cached for 5 minutes.
+// Fetches crypto prices from CoinGecko. Results are cached for five
+// minutes. The supported coin list is fixed, so the cache can never grow
+// beyond that.
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map();
@@ -25,6 +27,17 @@ async function getPrice(coin) {
     }
 
     const data = response.data[coin];
+
+    // CoinGecko occasionally returns partial payloads. Reject them early
+    // so the command layer never has to worry about undefined prices.
+    if (typeof data.usd !== 'number') {
+      throw new Error('Missing usd price');
+    }
+
+    if (typeof data.ngn !== 'number') {
+      data.ngn = 0;
+    }
+
     cache.set(coin, { data, timestamp: Date.now() });
 
     return { success: true, data };

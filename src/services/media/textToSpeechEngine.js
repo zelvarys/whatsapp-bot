@@ -3,8 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 
-// Generates a voice note. Google's translate TTS returns MP3,
-// which WhatsApp doesn't like as a PTT. We convert to OGG/Opus.
+// Generates a voice note. Google's translate TTS returns MP3, which
+// WhatsApp does not accept as a PTT, so the buffer is converted to
+// OGG/Opus before sending.
+//
+// The caller is responsible for keeping the input under the endpoint's
+// roughly 200-character limit. The command layer enforces this via
+// config.ttsMaxLength.
 
 const TEMP_DIR = path.join(__dirname, '../../../temp');
 

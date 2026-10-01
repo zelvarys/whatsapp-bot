@@ -41,10 +41,14 @@ function buildContext(chatJid) {
     .join('\n');
 }
 
+// Strips the common "Name:" prefixes that models like to prepend, along
+// with leading pleasantries. The model is told not to do this, but it
+// slips through often enough to warrant cleanup.
 function cleanResponse(text) {
   let cleaned = text.trim();
 
   cleaned = cleaned.replace(/^[A-Za-z_][A-Za-z0-9_]*\s+said:?\s*/i, '');
+
   cleaned = cleaned.replace(/^[A-Za-z_][A-Za-z0-9_]{0,30}:?\s+/, (match) => {
     const name = match.replace(/:?\s+$/, '').toLowerCase();
     if (
@@ -72,9 +76,12 @@ function cleanResponse(text) {
   return cleaned.trim();
 }
 
+// Rejects known non-answers from the model. The threshold is deliberately
+// low so short but legitimate replies ("Yes.", "Not really.") are not
+// discarded along with the filler.
 function isUsableReply(text) {
   if (!text) return false;
-  if (text.length < 15) return false;
+  if (text.length < 3) return false;
 
   const lower = text.toLowerCase();
   const fillers = ['ok', 'okay', 'acknowledged', 'sure', 'noted', 'alright', 'yeah'];

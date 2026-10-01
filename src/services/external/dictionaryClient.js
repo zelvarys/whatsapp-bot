@@ -30,7 +30,7 @@ async function lookup(word) {
       return { success: false, error: `No definition found for "${word}"` };
     }
 
-    // data.en is an array of entries, one per part of speech
+    // data.en is an array of entries, one per part of speech.
     const entries = data.en.map((entry) => ({
       partOfSpeech: entry.partOfSpeech || 'unknown',
       definitions: (entry.definitions || [])
@@ -53,7 +53,8 @@ async function lookup(word) {
   }
 }
 
-// Wiktionary returns HTML fragments; strip tags and clean up whitespace.
+// Wiktionary returns HTML fragments; strip tags and decode the handful of
+// entities that show up in practice.
 function cleanDefinition(html) {
   if (!html) return '';
 

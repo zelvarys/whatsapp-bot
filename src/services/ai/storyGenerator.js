@@ -8,6 +8,9 @@ function getTodayKey(userId) {
   return `${userId}_${today}`;
 }
 
+// Returns false when the user has exhausted their daily AI budget. On a
+// successful check it increments the counter so ask and story share the
+// same quota.
 function canUse(userId) {
   const key = getTodayKey(userId);
   const used = global.aiUsage.get(key) || 0;
