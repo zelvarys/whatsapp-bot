@@ -2,7 +2,6 @@ const config = require('../config');
 const botState = require('../models/botStateModel');
 const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
-const cacheModel = require('../models/cacheModel');
 const jid = require('../utils/jidHelpers');
 
 // -------------------- broadcast --------------------
@@ -41,6 +40,7 @@ async function broadcastToAllGroups(sock, message) {
         text: `✧ *BROADCAST MESSAGE*\n\n${message}`
       });
       success++;
+      // Small delay between sends to avoid tripping rate limits.
       await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (err) {
       console.error(`Broadcast failed for ${groupId}:`, err.message);
@@ -54,8 +54,8 @@ async function broadcastToAllGroups(sock, message) {
 // -------------------- groups --------------------
 
 async function groups(sock, msg, sender) {
-  const groups_ = global.groupData || {};
-  const groupKeys = Object.keys(groups_);
+  const groupMap = global.groupData || {};
+  const groupKeys = Object.keys(groupMap);
 
   if (groupKeys.length === 0) {
     return sock.sendMessage(sender, {
@@ -67,15 +67,14 @@ async function groups(sock, msg, sender) {
   let totalMembers = 0;
 
   for (let i = 0; i < groupKeys.length; i++) {
-    const group = groups_[groupKeys[i]];
+    const group = groupMap[groupKeys[i]];
     const memberCount = group.participants ? group.participants.length : 0;
     totalMembers += memberCount;
 
     list += `${i + 1}. *${group.name || 'Unknown Group'}*\n`;
-    list += `┌─⊶
-│• *Members:* ${memberCount}\n`;
-    list += `│• *Active:* ${formatRelative(new Date(group.lastActivity))}
-└─────────────⊶\n`;
+    list += `┌─⊶\n│• *Members:* ${memberCount}\n`;
+    list += `│• *Active:* ${formatRelative(new Date(group.lastActivity))}\n`;
+    list += `└─────────────⊶\n`;
   }
 
   list += `\n╘═══════════════════╛\n`;
@@ -139,7 +138,6 @@ async function restart(sock, msg, sender) {
     userModel.saveAll();
     gameStatsModel.saveAll();
     botState.save();
-    cacheModel.saveAll();
   } catch (err) {
     console.error('Save on restart failed:', err.message);
   }

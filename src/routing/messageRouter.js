@@ -16,8 +16,6 @@ async function routeMessage(sock, bot, msg, stats) {
   const ctx = msg.message?.extendedTextMessage?.contextInfo;
   const repliedToMessageId = ctx?.stanzaId;
 
-  storeChatHistory(sender, userJid, text);
-
   if (isGroup) {
     if (global.groupData[sender]) {
       global.groupData[sender].lastActivity = new Date();
@@ -43,7 +41,12 @@ async function routeMessage(sock, bot, msg, stats) {
     }
   }
 
-  // Lobby routing comes first — it owns messages within an active lobby.
+  // History is only recorded for messages that make it past the private
+  // mode gate, so summaries never include traffic the bot should not
+  // have been reading in the first place.
+  storeChatHistory(sender, userJid, text);
+
+  // Lobby routing comes first. It owns messages within an active lobby.
   if (global.gameLobbies.has(sender)) {
     const handled = await lobbyRouter.routeLobby(sock, msg, text, sender, userJid);
     if (handled) return;
@@ -82,7 +85,7 @@ async function fetchGroupMetadata(sock, jid) {
       lastFetched: Date.now()
     };
   } catch (err) {
-    // Leave placeholder
+    // Leave placeholder in place — it will be retried on next refresh.
   }
 }
 

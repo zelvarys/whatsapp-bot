@@ -5,7 +5,7 @@ const KNOWN_COMMANDS = [
   'compress', 'qrcode', 'reveal', 'sticker', 'feedback', 'delete',
   'profile', 'leaderboard', 'register', 'owner', 'crypto', 'mode',
   'download', 'song', 'tiktok', 'groups', 'facebook', 'youtube',
-  'ping', 'stats', 'help', 'commands', 'menu', 'restart'
+  'ping', 'stats', 'help', 'menu', 'restart'
 ];
 
 function levenshteinDistance(a, b) {

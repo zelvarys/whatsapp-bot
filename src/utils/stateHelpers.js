@@ -1,10 +1,21 @@
 // In-memory state tracking: last command, cooldowns, sent-message IDs,
 // and download locks.
+//
+// Message ID tracking exists so the delete command and the "reply to bot"
+// detector can recognise messages the bot itself sent. IDs expire via a
+// periodic sweep driven by housekeepingTasks; scheduling one timer per
+// message would leave thousands of pending timers in the loop on a busy
+// bot.
 
 const config = require('../config');
 
 const downloadLocks = new Map();
 const DOWNLOAD_LOCK_MAX_MS = 120 * 1000;
+
+const TRACKED_MESSAGE_TTL_MS = config.messageIdTtl;
+
+// Map of messageId -> insertion timestamp, used to expire entries.
+const trackedMessages = new Map();
 
 function storeLastCommand(userJid, text, prefix) {
   if (text.startsWith(`${prefix}!!`)) return;
@@ -30,26 +41,32 @@ function checkCooldown(userJid, command) {
   return false;
 }
 
-function trackBotMessage(messageId, chatJid, options) {
+// Records a bot-sent message ID. The third argument is the options object
+// passed to sock.sendMessage. Game engines and lobby code mark their own
+// message IDs separately, so nothing here needs to distinguish them.
+function trackBotMessage(messageId) {
   global.botMessageIds.add(messageId);
+  trackedMessages.set(messageId, Date.now());
+}
 
-  if (options && options.context && options.context.isGame) {
-    global.gameMessageIds.add(messageId);
+// Removes IDs older than the TTL. Called periodically by housekeeping.
+function sweepTrackedMessages() {
+  const cutoff = Date.now() - TRACKED_MESSAGE_TTL_MS;
+  let removed = 0;
+
+  for (const [messageId, timestamp] of trackedMessages.entries()) {
+    if (timestamp < cutoff) {
+      trackedMessages.delete(messageId);
+      global.botMessageIds.delete(messageId);
+      removed++;
+    }
   }
 
-  setTimeout(() => {
-    global.botMessageIds.delete(messageId);
-    global.gameMessageIds.delete(messageId);
-    global.helpMessageIds.delete(messageId);
-  }, config.messageIdTtl);
+  return removed;
 }
 
 function isBotMessageId(messageId) {
-  return (
-    global.botMessageIds.has(messageId) ||
-    global.gameMessageIds.has(messageId) ||
-    global.helpMessageIds.has(messageId)
-  );
+  return global.botMessageIds.has(messageId);
 }
 
 function isReplyToBot(msg) {
@@ -92,6 +109,7 @@ module.exports = {
   getLastCommand,
   checkCooldown,
   trackBotMessage,
+  sweepTrackedMessages,
   isBotMessageId,
   isReplyToBot,
   isDownloadLocked,

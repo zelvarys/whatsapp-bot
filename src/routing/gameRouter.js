@@ -1,6 +1,5 @@
 const gameRules = require('../utils/gameRules');
 const tictactoeEngine = require('../services/games/tictactoeEngine');
-const hangmanEngine = require('../services/games/hangmanEngine');
 const duoGames = require('../commands/gameCommands/duoGames');
 const reactions = require('../utils/messageReactions');
 
@@ -34,7 +33,9 @@ async function routeGameAnswer(sock, msg, text, sender, userJid, repliedToMessag
 
   const sent = await sock.sendMessage(sender, {
     text: result.result,
-    mentions: result.mention ? [result.mention] : undefined
+    mentions: result.mention
+      ? Array.isArray(result.mention) ? result.mention : [result.mention]
+      : undefined
   }, { quoted: msg });
 
   const stillActive = global.activeGames.get(sender);
@@ -95,7 +96,7 @@ function processGameText(gameType, sender, userJid, text) {
       return gameRules.processFlagGuess(sender, userJid, text);
 
     case 'hangman':
-      return hangmanEngine.processGuess(sender, userJid, text);
+      return require('../services/games/hangmanEngine').processGuess(sender, userJid, text);
 
     default:
       return null;

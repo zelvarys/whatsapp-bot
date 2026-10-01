@@ -1,4 +1,5 @@
 const wordValidator = require('../../utils/wordValidator');
+const userModel = require('../../models/userModel');
 
 const minPlayers = 3;
 const maxPlayers = 8;
@@ -37,12 +38,21 @@ const LETTER_PAIRS = [
   ['Y', 'E'], ['Y', 'S']
 ];
 
-function pickPair() {
+// Picks a pair that is different from the one currently in play. Without
+// this the same challenge can repeat back to back and a player who just
+// answered it has an unfair advantage.
+function pickPair(previousFirst, previousSecond) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const pair = LETTER_PAIRS[Math.floor(Math.random() * LETTER_PAIRS.length)];
+    if (pair[0] !== previousFirst || pair[1] !== previousSecond) {
+      return pair;
+    }
+  }
   return LETTER_PAIRS[Math.floor(Math.random() * LETTER_PAIRS.length)];
 }
 
 function startGame(orderedPlayers) {
-  const [first, second] = pickPair();
+  const [first, second] = pickPair(null, null);
 
   const state = {
     type: 'bombshell',
@@ -57,6 +67,10 @@ function startGame(orderedPlayers) {
     gameMessageId: null,
     lastMessageId: null
   };
+
+  for (const player of orderedPlayers) {
+    userModel.recordParticipation(player);
+  }
 
   return {
     text: `✧ *BOMBSHELL — START*
@@ -90,7 +104,7 @@ function handleTurn(game, userJid, text) {
 
   game.usedWords.push(word);
 
-  const [nextFirst, nextSecond] = pickPair();
+  const [nextFirst, nextSecond] = pickPair(first, last);
   game.firstLetter = nextFirst;
   game.secondLetter = nextSecond;
 
@@ -141,7 +155,7 @@ function eliminateCurrent(game, reason) {
   if (game.turnIndex >= game.turnOrder.length) game.turnIndex = 0;
   game.currentPlayer = game.turnOrder[game.turnIndex];
 
-  const [nextFirst, nextSecond] = pickPair();
+  const [nextFirst, nextSecond] = pickPair(game.firstLetter, game.secondLetter);
   game.firstLetter = nextFirst;
   game.secondLetter = nextSecond;
 

@@ -1,16 +1,17 @@
 const ytdlp = require('./ytdlpRunner');
 
+// Accepts either a direct URL or a search query. Search queries are
+// forwarded to yt-dlp's ytsearch1: pseudo-URL, which resolves to the
+// first YouTube hit.
 async function downloadMusic(urlOrQuery) {
   try {
     let videoUrl = urlOrQuery;
 
-    // If it's not a URL, search using yt-dlp's built-in search.
     if (!urlOrQuery.includes('http')) {
       videoUrl = `ytsearch1:${urlOrQuery}`;
     }
 
-    const result = await ytdlp.downloadAudio(videoUrl);
-    return result;
+    return await ytdlp.downloadAudio(videoUrl);
   } catch (err) {
     console.error('Music download error:', err.message);
     return { success: false, error: 'Music download failed' };

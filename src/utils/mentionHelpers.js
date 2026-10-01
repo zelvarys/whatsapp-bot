@@ -1,4 +1,5 @@
-// Detects whether the bot was @mentioned in a message.
+// Detects whether the bot was @mentioned in a message. WhatsApp delivers
+// mentions as either a phone-number JID or a LID, so both are checked.
 
 const fs = require('fs');
 const path = require('path');
@@ -9,6 +10,8 @@ function getBotLid() {
     return global.botInstance.botLid;
   }
 
+  // Fallback for the window between process start and the first
+  // connection open, during which botInstance.botLid is not yet set.
   try {
     const credsPath = path.join(__dirname, '../../auth_info/creds.json');
     if (fs.existsSync(credsPath)) {
@@ -20,7 +23,7 @@ function getBotLid() {
       }
     }
   } catch (err) {
-    // Caller treats as no LID
+    // Caller treats a missing LID as no LID.
   }
 
   return null;
@@ -51,7 +54,7 @@ function isBotMentioned(msg, text) {
   if (text) {
     const lower = text.toLowerCase();
     if (
-      lower.includes('@incognito') ||
+      lower.includes('@zelvarys') ||
       lower.includes('@bot') ||
       lower.includes(`@${config.botName.toLowerCase()}`)
     ) {

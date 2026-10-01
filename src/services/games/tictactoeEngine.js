@@ -64,6 +64,9 @@ function startPvP(chatJid, userJid, opponent) {
     lastMessageId: null
   });
 
+  userModel.recordParticipation(userJid);
+  userModel.recordParticipation(opponent);
+
   const board = formatBoard(Array(9).fill(' '));
 
   return {
@@ -99,8 +102,10 @@ function startVsBot(chatJid, userJid) {
     lastMessageId: null
   });
 
+  userModel.recordParticipation(userJid);
+
   const board = formatBoard(Array(9).fill(' '));
-  const starterName = starter === 'bot' ? 'Bot' : `Player`;
+  const starterName = starter === 'bot' ? 'Bot' : 'Player';
 
   return {
     text: `❌️⭕️ *TIC TAC TOE vs BOT!*

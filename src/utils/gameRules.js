@@ -46,6 +46,41 @@ function gameLabel(type) {
   return labels[type] || type;
 }
 
+// Levenshtein distance between two strings, used to accept answers that
+// are close enough to the reference without being exact.
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+
+  for (let j = 0; j <= n; j++) prev[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + cost
+      );
+    }
+    const swap = prev;
+    prev = curr;
+    curr = swap;
+  }
+
+  return prev[n];
+}
+
+// Accepts an answer if it normalises to the same string as the correct
+// answer, or if the edit distance is within a tolerance that scales with
+// the length of the expected answer. Short answers (three letters or
+// fewer) require an exact match so that a stray letter cannot win.
 function isSimilarAnswer(userAnswer, correctAnswer) {
   const normalize = (str) =>
     String(str)
@@ -57,26 +92,21 @@ function isSimilarAnswer(userAnswer, correctAnswer) {
   const user = normalize(userAnswer);
   const correct = normalize(correctAnswer);
 
+  if (!user || !correct) return false;
   if (user === correct) return true;
-  if (user.length >= 3 && user.includes(correct)) return true;
-  if (correct.length >= 3 && correct.includes(user)) return true;
 
-  const synonyms = {
-    tv: ['television', 'tv', 'television set'],
-    pc: ['computer', 'personal computer', 'pc'],
-    phone: ['mobile', 'cellphone', 'telephone', 'smartphone'],
-    bike: ['bicycle', 'motorcycle', 'motorbike'],
-    car: ['automobile', 'vehicle', 'auto']
-  };
+  const threshold =
+    correct.length <= 3 ? 0 :
+    correct.length <= 6 ? 1 :
+    correct.length <= 10 ? 2 :
+    3;
 
-  for (const values of Object.values(synonyms)) {
-    if (values.includes(user) && values.includes(correct)) return true;
-  }
+  if (threshold === 0) return false;
 
-  return false;
+  return levenshtein(user, correct) <= threshold;
 }
 
-function startGuessNumber(chatJid, bot) {
+function startGuessNumber(chatJid, bot, userJid) {
   if (!canStartGame(chatJid, 'guess')) {
     const active = global.activeGames.get(chatJid);
     return `❌ A ${gameLabel(active.type)} game is already active!`;
@@ -97,6 +127,8 @@ function startGuessNumber(chatJid, bot) {
     gameMessageId: null,
     lastMessageId: null
   });
+
+  if (userJid) userModel.recordParticipation(userJid);
 
   return `✧ *NUMBER GUESSING*
 ┌─⊶
@@ -157,7 +189,7 @@ function processGuess(chatJid, userJid, rawGuess) {
   };
 }
 
-function startTrivia(chatJid, bot) {
+function startTrivia(chatJid, bot, userJid) {
   if (!canStartGame(chatJid, 'trivia')) {
     const active = global.activeGames.get(chatJid);
     return `❌ A ${gameLabel(active.type)} game is already active!`;
@@ -176,8 +208,11 @@ function startTrivia(chatJid, bot) {
     lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
-    isGroup: chatJid.endsWith('@g.us')
+    isGroup: chatJid.endsWith('@g.us'),
+    participants: userJid ? [userJid] : []
   });
+
+  if (userJid) userModel.recordParticipation(userJid);
 
   return `✧ *TRIVIA TIME*
 
@@ -193,6 +228,11 @@ function processTriviaAnswer(chatJid, userJid, answer) {
   if (!game || game.type !== 'trivia') return null;
 
   touchGame(game);
+
+  if (userJid && !game.participants.includes(userJid)) {
+    game.participants.push(userJid);
+    userModel.recordParticipation(userJid);
+  }
 
   const userAnswer = String(answer).trim().toUpperCase();
   const correct = game.question.answer;
@@ -219,7 +259,7 @@ function processTriviaAnswer(chatJid, userJid, answer) {
   };
 }
 
-function startWordScramble(chatJid, bot) {
+function startWordScramble(chatJid, bot, userJid) {
   if (!canStartGame(chatJid, 'wordScramble')) {
     const active = global.activeGames.get(chatJid);
     return `❌ A ${gameLabel(active.type)} game is already active!`;
@@ -242,8 +282,11 @@ function startWordScramble(chatJid, bot) {
     lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
-    isGroup: chatJid.endsWith('@g.us')
+    isGroup: chatJid.endsWith('@g.us'),
+    participants: userJid ? [userJid] : []
   });
+
+  if (userJid) userModel.recordParticipation(userJid);
 
   return `✧ *WORD SCRAMBLE*
 ┌─⊶
@@ -258,6 +301,11 @@ function processWordScramble(chatJid, userJid, guess) {
   if (!game || game.type !== 'wordScramble') return null;
 
   touchGame(game);
+
+  if (userJid && !game.participants.includes(userJid)) {
+    game.participants.push(userJid);
+    userModel.recordParticipation(userJid);
+  }
 
   const userGuess = String(guess).trim().toUpperCase();
   const correct = game.word.toUpperCase();
@@ -307,7 +355,7 @@ function processWordScramble(chatJid, userJid, guess) {
   };
 }
 
-function startRiddle(chatJid, bot) {
+function startRiddle(chatJid, bot, userJid) {
   if (!canStartGame(chatJid, 'riddle')) {
     const active = global.activeGames.get(chatJid);
     return `❌ A ${gameLabel(active.type)} game is already active!`;
@@ -329,8 +377,11 @@ function startRiddle(chatJid, bot) {
     lastActivity: now,
     gameMessageId: null,
     lastMessageId: null,
-    isGroup: chatJid.endsWith('@g.us')
+    isGroup: chatJid.endsWith('@g.us'),
+    participants: userJid ? [userJid] : []
   });
+
+  if (userJid) userModel.recordParticipation(userJid);
 
   return `✧ *RIDDLE TIME*
 
@@ -345,6 +396,11 @@ function processRiddle(chatJid, userJid, guess) {
   if (!game || game.type !== 'riddle') return null;
 
   touchGame(game);
+
+  if (userJid && !game.participants.includes(userJid)) {
+    game.participants.push(userJid);
+    userModel.recordParticipation(userJid);
+  }
 
   const isCorrect = isSimilarAnswer(guess, game.answer);
 
@@ -383,7 +439,7 @@ function processRiddle(chatJid, userJid, guess) {
   };
 }
 
-function startFlagQuiz(chatJid, bot) {
+function startFlagQuiz(chatJid, bot, userJid) {
   if (!canStartGame(chatJid, 'flag')) {
     const active = global.activeGames.get(chatJid);
     return `❌ A ${gameLabel(active.type)} game is already active!`;
@@ -404,8 +460,11 @@ function startFlagQuiz(chatJid, bot) {
     startTime: now,
     lastActivity: now,
     gameMessageId: null,
-    lastMessageId: null
+    lastMessageId: null,
+    participants: userJid ? [userJid] : []
   });
+
+  if (userJid) userModel.recordParticipation(userJid);
 
   return `✧ *FLAG QUIZ*
 ┌─⊶
@@ -420,6 +479,11 @@ function processFlagGuess(chatJid, userJid, guess) {
   if (!game || game.type !== 'flag') return null;
 
   touchGame(game);
+
+  if (userJid && !game.participants.includes(userJid)) {
+    game.participants.push(userJid);
+    userModel.recordParticipation(userJid);
+  }
 
   game.attempts++;
 

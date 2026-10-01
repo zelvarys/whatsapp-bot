@@ -13,43 +13,42 @@ function buildHelpText() {
 
 ╔═══════ ∘◦ ✧ ◦∘ ═══════╗
 
-┌─⊶ *1. AI & CREATIVE*
+┌─⊶ *AI & CREATIVE*
+│• summary
 │• ask <question>
 │• chatbot on/off
-│• summary <num>
-│• translate
 │• story <prompt>
+│• translate
 │• tts <text>
 │• mood chill/roast
 └────────────⊶
 
-┌─⊶ *2. GAMES & FUN*
+┌─⊶ *GAMES & FUN*
 │• game <type>
 │• games
-│• bombshell 
-│• hotseat
-│• ttt start @friend
+│• bombshell
+│• cluster
+│• ttt start @tag
 └────────────⊶
 
-┌─⊶ *3. UTILITY TOOLS*
+┌─⊶ *UTILITY TOOLS*
+│• qr <text>
+│• weather <city>
+│• sticker
+│• reveal
 │• define <word>
 │• compress
-│• sticker
-│• pdf image/text
-│• qrcode <text>
-│• reveal
-│• weather <city>
 └────────────⊶
 
-┌─⊶ *4. USER SYSTEM*
-│• profile
+┌─⊶ *USER SYSTEM*
 │• leaderboard
+│• profile
 │• register <name>
 │• crypto <coin>
 │• feedback
 └────────────⊶
 
-┌─⊶ *5. MEDIA DOWNLOAD*
+┌─⊶ *MEDIA DOWNLOAD*
 │• download
 │• song <name/url>
 │• youtube
@@ -57,14 +56,14 @@ function buildHelpText() {
 │• facebook
 └────────────⊶
 
-┌─⊶ *6. OWNER ONLY*
+┌─⊶ *OWNER ONLY*
 │• broadcast
 │• groups
 │• mode <args>
 │• restart
 └────────────⊶
 
-┌─⊶ *7. OTHERS*
+┌─⊶ *OTHERS*
 │• ping - Bot latency
 │• stats - Bot statistics
 │• !! - Repeat command

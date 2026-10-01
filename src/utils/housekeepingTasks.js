@@ -1,40 +1,43 @@
 const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
-const cache = require('../models/cacheModel');
 const chatbotConversation = require('../services/ai/chatbotConversation');
 const lobbyState = require('../utils/lobbyState');
+const state = require('../utils/stateHelpers');
 const config = require('../config');
 
 let intervals = [];
 
 const SLOW_GAMES = ['hangman', 'riddle', 'wordScramble'];
 
+// Clears any timers left over from a previous call. Without this a
+// second start (for example after a failed startup that retried) would
+// leave duplicate intervals running side by side.
+function clearIntervals() {
+  intervals.forEach((id) => clearInterval(id));
+  intervals = [];
+}
+
 function setupIntervals() {
+  clearIntervals();
+
   intervals.push(setInterval(() => {
     userModel.saveAll();
     gameStatsModel.saveAll();
     botState.save();
-    cache.saveAll();
     console.log('💾 Auto-saved all data');
   }, 5 * 60 * 1000));
 
   intervals.push(setInterval(pruneActiveGames, 5 * 60 * 1000));
   intervals.push(setInterval(pruneUsageCounters, 60 * 60 * 1000));
-  intervals.push(setInterval(pruneMessageIds, 30 * 60 * 1000));
-
-  intervals.push(setInterval(() => {
-    const removed = cache.pruneExpired();
-    if (removed > 0) console.log(`🧹 Cleared ${removed} stale cache entries`);
-  }, 60 * 60 * 1000));
+  intervals.push(setInterval(pruneTrackedMessages, 5 * 60 * 1000));
+  intervals.push(setInterval(pruneCooldowns, 5 * 60 * 1000));
+  intervals.push(setInterval(refreshAllGroupData, 60 * 60 * 1000));
 
   intervals.push(setInterval(() => {
     const removed = chatbotConversation.pruneOldConversations();
     if (removed > 0) console.log(`🧹 Cleared ${removed} idle chatbot conversations`);
   }, 60 * 60 * 1000));
-
-  intervals.push(setInterval(pruneCooldowns, 5 * 60 * 1000));
-  intervals.push(setInterval(refreshAllGroupData, 60 * 60 * 1000));
 
   intervals.push(setInterval(() => {
     const bot = global.botInstance;
@@ -77,16 +80,9 @@ function pruneUsageCounters() {
   if (removed > 0) console.log(`🧹 Cleared ${removed} old usage records`);
 }
 
-function pruneMessageIds() {
-  if (global.botMessageIds.size > 5000) {
-    const ids = Array.from(global.botMessageIds).slice(0, 1000);
-    ids.forEach((id) => global.botMessageIds.delete(id));
-  }
-
-  if (global.gameMessageIds.size > 1000) {
-    const ids = Array.from(global.gameMessageIds).slice(0, 500);
-    ids.forEach((id) => global.gameMessageIds.delete(id));
-  }
+function pruneTrackedMessages() {
+  const removed = state.sweepTrackedMessages();
+  if (removed > 0) console.log(`🧹 Cleared ${removed} expired message IDs`);
 }
 
 function pruneCooldowns() {
@@ -117,7 +113,7 @@ async function refreshAllGroupData() {
       global.groupData[groupJid].lastFetched = Date.now();
       refreshed++;
     } catch (err) {
-      // Group may have been left
+      // Group may have been left or no longer exists.
     }
   }
 
@@ -131,13 +127,11 @@ function handleShutdown(signal) {
     userModel.saveAll();
     gameStatsModel.saveAll();
     botState.save();
-    cache.saveAll();
   } catch (err) {
     console.error('Save on shutdown failed:', err.message);
   }
 
-  intervals.forEach((id) => clearInterval(id));
-  intervals = [];
+  clearIntervals();
 
   setTimeout(() => process.exit(0), 500);
 }

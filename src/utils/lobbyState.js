@@ -132,8 +132,11 @@ ${list}`;
 }
 
 async function startGame(sock, sender, lobby) {
+  // The state flip must happen before any await so a concurrent caller
+  // (auto-start on join, prune interval, host reply) sees a non-waiting
+  // lobby and bails out immediately. Without this, two callers can both
+  // pass the check and start the game twice.
   if (lobby.state !== 'waiting') return;
-
   lobby.state = 'running';
   lobby.startedAt = Date.now();
   lobby.turnToken = 0;
@@ -141,7 +144,7 @@ async function startGame(sock, sender, lobby) {
   const shuffled = shuffle(lobby.players);
   lobby.players = shuffled;
 
-  const init = lobby.gameModule.startGame(lobby, shuffled);
+  const init = lobby.gameModule.startGame(shuffled);
 
   const sent = await sock.sendMessage(sender, {
     text: init.text,
@@ -162,13 +165,16 @@ async function handleGameTurn(sock, msg, sender, userJid, text, lobby) {
   if (!game) return false;
 
   if (game.currentPlayer && game.currentPlayer !== userJid) {
+    await sock.sendMessage(sender, {
+      text: `❌ It's not your turn. Waiting on @${game.currentPlayer.split('@')[0]}.`,
+      mentions: [game.currentPlayer]
+    }, { quoted: msg });
     return true;
   }
 
   const result = lobby.gameModule.handleTurn(game, userJid, text);
   if (!result) return true;
 
-  // Invalidate any pending timeout — the turn was answered.
   lobby.turnToken++;
   if (lobby.turnTimeout) {
     clearTimeout(lobby.turnTimeout);
@@ -202,7 +208,9 @@ function scheduleTurnTimeout(sock, sender, lobby) {
   const myToken = ++lobby.turnToken;
 
   lobby.turnTimeout = setTimeout(async () => {
-    // If the token changed since this timer was scheduled, this timer is stale.
+    // If the token changed since this timer was scheduled, the turn was
+    // already answered and this timer is stale. Same if the lobby moved
+    // on or was torn down.
     if (lobby.turnToken !== myToken) return;
     if (lobby.state !== 'running') return;
     if (!lobby.gameState) return;
@@ -237,7 +245,9 @@ async function endGame(sender, lobby, outcome) {
   }
 
   for (const loser of losers) {
-    userModel.addPoints(loser, 5);
+    if (!winners.includes(loser)) {
+      userModel.addPoints(loser, 5);
+    }
   }
 
   gameStatsModel.increment(lobby.gameType, 60 * winners.length);

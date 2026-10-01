@@ -13,7 +13,7 @@ A feature-rich WhatsApp bot built on Baileys. Includes AI tools, a points and ra
 
 ### Requirements
 
-- Node.js 16 or newer
+- Node.js 20 or newer
 - FFmpeg
 - Python and yt-dlp
 - Deno for yt-dlp's YouTube support
@@ -88,7 +88,7 @@ temp/               Transient files, gitignored
 Type `!help` in any chat to see the full menu. Categories:
 
 - **AI** — `ask`, `story`, `chatbot`, `translate`, `tts`, `summary`, `mood`
-- **Games** — `games`, `game`, `ttt`, `rps`, `bombshell`, `cluster`
+- **Games** — `games`, `game`, `ttt`, `bombshell`, `cluster`
 - **Utility** — `define`, `weather`, `sticker`, `compress`, `qrcode`, `reveal`, `delete`
 - **Users** — `profile`, `leaderboard`, `register`, `crypto`, `feedback`
 - **Media** — `download`, `song`, `youtube`, `tiktok`, `facebook`
@@ -105,10 +105,9 @@ Prefix defaults to `!` and can be changed in `.env`.
 
 Runtime state lives in `data/` and is gitignored. The directory is created on first start.
 
-- `user_profiles.json` — points, levels, achievements, usernames
+- `user_profiles.json` — points, levels, game counters, usernames
 - `game_statistics.json` — per-game play counts and total points
 - `bot_settings.json` — bot mode, chatbot state, group AI moods
-- `command_cache.json` — cached command responses
 
 Content that ships with the bot lives in `content/` and is committed:
 

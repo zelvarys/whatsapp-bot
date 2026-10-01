@@ -1,4 +1,5 @@
 const wordValidator = require('../../utils/wordValidator');
+const userModel = require('../../models/userModel');
 
 const minPlayers = 3;
 const maxPlayers = 8;
@@ -49,7 +50,6 @@ function pickChallenge() {
     }
   }
 
-  // Fallback — should never hit
   return {
     direction: 'start',
     cluster: pickRandom(START_2)
@@ -76,9 +76,17 @@ function isValidAnswer(word, challenge) {
   return cleaned.endsWith(challenge.cluster);
 }
 
+function remainingPlayers(state) {
+  return state.players.filter((p) => !state.eliminated.includes(p));
+}
+
 function pickNextPlayer(state) {
-  const remaining = state.players.filter((p) => !state.eliminated.includes(p));
+  const remaining = remainingPlayers(state);
   const candidates = remaining.filter((p) => p !== state.currentPlayer);
+
+  // If only one player is left, return them so the caller can decide to
+  // end the game. Returning null would leave the lobby in an ambiguous
+  // state where no one is on the spot.
   if (candidates.length === 0) return remaining[0] || null;
   return pickRandom(candidates);
 }
@@ -93,6 +101,10 @@ function startGame(orderedPlayers) {
     gameMessageId: null,
     lastMessageId: null
   };
+
+  for (const player of orderedPlayers) {
+    userModel.recordParticipation(player);
+  }
 
   const text = `✧ *CLUSTER — START*
 
@@ -117,16 +129,21 @@ function handleTurn(game, userJid, text) {
     return eliminatePlayer(game, 'wrong answer');
   }
 
-  const next = pickNextPlayer(game);
-  if (!next) {
+  const remaining = remainingPlayers(game);
+
+  if (remaining.length <= 1) {
+    const winner = remaining[0];
     return {
-      text: '✅ Correct! But no one left to challenge...',
-      mentions: [],
-      gameOver: null
+      text: `✅ *${answer}* accepted.
+
+🏆 *@${winner.split('@')[0]} WINS CLUSTER!*
+▸ +60 points`,
+      mentions: [winner],
+      gameOver: { winners: [winner], losers: game.eliminated }
     };
   }
 
-  game.currentPlayer = next;
+  game.currentPlayer = pickNextPlayer(game);
   game.challenge = pickChallenge();
 
   return {
@@ -146,7 +163,7 @@ function eliminatePlayer(game, reason) {
   const loser = game.currentPlayer;
   game.eliminated.push(loser);
 
-  const remaining = game.players.filter((p) => !game.eliminated.includes(p));
+  const remaining = remainingPlayers(game);
 
   if (remaining.length === 1) {
     const winner = remaining[0];

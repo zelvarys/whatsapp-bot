@@ -32,7 +32,7 @@ async function showGames(sock, msg, sender) {
   await sock.sendMessage(sender, { text }, { quoted: msg });
 }
 
-async function startGame(sock, msg, sender, args, bot) {
+async function startGame(sock, msg, sender, userJid, args, bot) {
   if (!args.length) {
     return sock.sendMessage(sender, {
       text: `❌ Specify a game type!\n*Usage:* ${config.prefix}game trivia`
@@ -42,12 +42,12 @@ async function startGame(sock, msg, sender, args, bot) {
   const type = args[0].toLowerCase();
 
   switch (type) {
-    case 'guess':    return soloGames.guess(sock, msg, sender, bot);
-    case 'trivia':   return soloGames.trivia(sock, msg, sender, bot);
-    case 'scramble': return soloGames.scramble(sock, msg, sender, bot);
-    case 'riddle':   return soloGames.riddle(sock, msg, sender, bot);
-    case 'flag':     return soloGames.flag(sock, msg, sender, bot);
-    case 'hangman':  return soloGames.hangman(sock, msg, sender, bot);
+    case 'guess':    return soloGames.guess(sock, msg, sender, userJid, bot);
+    case 'trivia':   return soloGames.trivia(sock, msg, sender, userJid, bot);
+    case 'scramble': return soloGames.scramble(sock, msg, sender, userJid, bot);
+    case 'riddle':   return soloGames.riddle(sock, msg, sender, userJid, bot);
+    case 'flag':     return soloGames.flag(sock, msg, sender, userJid, bot);
+    case 'hangman':  return soloGames.hangman(sock, msg, sender, userJid, bot);
     default:
       return sock.sendMessage(sender, {
         text: `❌ Unknown game type!\nUse ${config.prefix}games to see available games`

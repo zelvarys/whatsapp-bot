@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 const QRCode = require('qrcode');
-const config = require('../../config');
 
 const TEMP_DIR = path.join(__dirname, '../../../temp');
 
@@ -32,8 +31,7 @@ async function createSticker(mediaBuffer, isVideo) {
         .outputOptions([
           '-vf', 'scale=512:512:force_original_aspect_ratio=increase,crop=512:512',
           '-lossless', '0',
-          '-quality', '75',
-          '-compression_level', '6'
+          '-quality', '75'
         ])
         .output(outputPath)
         .on('end', resolve)
@@ -50,6 +48,8 @@ async function createSticker(mediaBuffer, isVideo) {
 
 // -------------------- Compression --------------------
 
+// JPEG quality on ffmpeg runs from 2 (best) to 31 (worst). 5 is a
+// reasonable sweet spot: barely visible loss, often 60-80% smaller.
 async function compressImage(inputBuffer) {
   ensureTemp();
 
@@ -62,7 +62,7 @@ async function compressImage(inputBuffer) {
   try {
     await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        .outputOptions(['-q:v 30', '-compression_level 6'])
+        .outputOptions(['-q:v 5'])
         .output(outputPath)
         .on('end', resolve)
         .on('error', reject)
@@ -76,6 +76,9 @@ async function compressImage(inputBuffer) {
   }
 }
 
+// Scale to a maximum of 640px on the shorter side. The previous version
+// forced 640px wide, which upscaled small videos and mangled portrait
+// clips.
 async function compressVideo(inputBuffer) {
   ensureTemp();
 
@@ -90,7 +93,7 @@ async function compressVideo(inputBuffer) {
       ffmpeg(inputPath)
         .videoCodec('libx264')
         .audioCodec('aac')
-        .outputOptions(['-crf 28', '-preset faster', '-vf scale=640:-2'])
+        .outputOptions(['-crf 28', '-preset faster', '-vf', 'scale=640:-2'])
         .output(outputPath)
         .on('end', resolve)
         .on('error', reject)

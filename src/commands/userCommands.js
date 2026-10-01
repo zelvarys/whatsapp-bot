@@ -15,10 +15,6 @@ async function profile(sock, msg, sender, userJid) {
   const tier = getTierName(user.level);
   const { progress, nextLevelXp, bar } = getLevelProgress(user.xp);
 
-  const achievementsBlock = user.achievements.length > 0
-    ? `\n  *Achievements:*\n${user.achievements.map((a) => `• ${a}`).join('\n')}`
-    : ' ▸ *No achievements yet*';
-
   const text = `✧ *USER PROFILE*
 ╒═══════════════════╕
 
@@ -42,7 +38,6 @@ async function profile(sock, msg, sender, userJid) {
 │ *Next Level:* ${nextLevelXp} XP needed
 │ *Joined:* ${new Date(user.joinDate).toLocaleDateString()}
 └─────────────⊶
-${achievementsBlock}
 
 ╘═══════════════════╛`;
 
@@ -58,7 +53,7 @@ async function leaderboard(sock, msg, sender, args) {
   const users = userModel.getLeaderboard(limit);
 
   let text = `✧ *LEADERBOARD*
-╒═════════════════════╕
+╒═══════════════════╕
 
 `;
 
@@ -80,7 +75,7 @@ async function leaderboard(sock, msg, sender, args) {
     }
   });
 
-  text += `\n╘═════════════════════╛\n▸ *Total Players:* ${userModel.getAllCount()}`;
+  text += `\n╘═══════════════════╛\n▸ *Total Players:* ${userModel.getAllCount()}`;
 
   await sock.sendMessage(sender, { text }, { quoted: msg });
 }
@@ -149,10 +144,17 @@ async function crypto(sock, msg, sender, userJid, args) {
   }
 
   const data = result.data;
-  const priceUSD = data.usd.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  const priceNGN = data.ngn.toLocaleString('en-US', { style: 'currency', currency: 'NGN' });
-  const change = data.usd_24h_change ? data.usd_24h_change.toFixed(2) : '0.00';
-  const changeEmoji = parseFloat(change) >= 0 ? '📈' : '📉';
+
+  // The client guarantees usd is a number. ngn defaults to 0 when the
+  // upstream payload is missing it, so the guard here is for safety only.
+  const usd = typeof data.usd === 'number' ? data.usd : 0;
+  const ngn = typeof data.ngn === 'number' ? data.ngn : 0;
+  const changeRaw = typeof data.usd_24h_change === 'number' ? data.usd_24h_change : 0;
+
+  const priceUSD = usd.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const priceNGN = ngn.toLocaleString('en-US', { style: 'currency', currency: 'NGN' });
+  const change = changeRaw.toFixed(2);
+  const changeEmoji = changeRaw >= 0 ? '📈' : '📉';
 
   const text = `✧ *${coin.toUpperCase()} PRICE*
 ╒═══════════════════╕
@@ -211,11 +213,15 @@ async function feedback(sock, msg, sender, userJid, fullText) {
 ✧ *MESSAGE*
 ${feedbackText}`;
 
-    await sock.sendMessage(ownerJid, { text: payload });
+    try {
+      await sock.sendMessage(ownerJid, { text: payload });
+    } catch (err) {
+      console.error('Feedback forward failed:', err.message);
+    }
   }
 
   await sock.sendMessage(sender, {
-    text: "Thank you for your feedback! It has been delivered to the developer team. 💖"
+    text: 'Thank you for your feedback! It has been delivered to the developer team. 💖'
   }, { quoted: msg });
 }
 
