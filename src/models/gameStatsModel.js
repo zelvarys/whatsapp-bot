@@ -2,6 +2,8 @@ const config = require('../config');
 const repo = require('./jsonRepository');
 
 // Aggregate counters per game type. Persisted to config.gameStatisticsPath.
+// Engines call increment once when a game concludes, passing the total
+// points awarded across all participants.
 
 function loadAll() {
   const data = repo.readJson(config.gameStatisticsPath, {});

@@ -1,10 +1,10 @@
 function initialize() {
   global.userData = {};
   global.gameStats = {};
-  global.commandCache = new Map();
 
   global.botMode = 'public';
   global.chatbotState = false;
+  global.groupMoods = {};
 
   global.activeGames = new Map();
   global.tictactoeGames = new Map();

@@ -2,6 +2,12 @@ const config = require('../config');
 const repo = require('./jsonRepository');
 
 // In-memory store of all users. Persisted to config.userProfilesPath.
+//
+// gamesPlayed is only incremented when a user actually takes part in a
+// game, not on every point award. addPoints is called for individual
+// turns (a correct hangman letter, a trivia answer) and must not touch
+// participation counters. addWin increments both gamesWon and
+// gamesPlayed, because a win is by definition a game played.
 
 function loadAll() {
   const data = repo.readJson(config.userProfilesPath, {});
@@ -33,8 +39,7 @@ function getUser(jid) {
       gamesWon: 0,
       totalPoints: 0,
       joinDate: new Date().toISOString(),
-      lastActive: new Date().toISOString(),
-      achievements: []
+      lastActive: new Date().toISOString()
     };
     saveAll();
   }
@@ -49,17 +54,17 @@ function updateUser(jid, patch) {
   saveAll();
 }
 
+// Awards points and XP. Does not touch gamesPlayed — participation is
+// recorded separately via recordParticipation or addWin.
 function addPoints(jid, points) {
   const user = getUser(jid);
   user.points += points;
   user.xp += points;
   user.totalPoints += points;
-  user.gamesPlayed += 1;
 
   const oldLevel = user.level;
   user.level = Math.floor(user.xp / 100) + 1;
 
-  checkAchievements(jid);
   saveAll();
 
   return {
@@ -69,42 +74,21 @@ function addPoints(jid, points) {
   };
 }
 
+// Records that a user played a game without winning it.
+function recordParticipation(jid) {
+  const user = getUser(jid);
+  user.gamesPlayed += 1;
+  saveAll();
+  return user.gamesPlayed;
+}
+
+// Records a win. A win implies a game was played, so both counters move.
 function addWin(jid) {
   const user = getUser(jid);
   user.gamesWon += 1;
+  user.gamesPlayed += 1;
   saveAll();
   return user.gamesWon;
-}
-
-function checkAchievements(jid) {
-  const user = getUser(jid);
-  const gained = [];
-
-  if (user.level >= 100 && !user.achievements.includes('Grandmaster')) {
-    user.achievements.push('Grandmaster');
-    user.points += 1000;
-    gained.push('Grandmaster');
-  }
-
-  if (user.gamesWon >= 250 && !user.achievements.includes('Legendary Victor')) {
-    user.achievements.push('Legendary Victor');
-    user.points += 1500;
-    gained.push('Legendary Victor');
-  }
-
-  if (user.totalPoints >= 10000 && !user.achievements.includes('Ultimate Wealth')) {
-    user.achievements.push('Ultimate Wealth');
-    user.points += 2000;
-    gained.push('Ultimate Wealth');
-  }
-
-  if (user.dailyClaims >= 365 && !user.achievements.includes('Year of Dedication')) {
-    user.achievements.push('Year of Dedication');
-    user.points += 2500;
-    gained.push('Year of Dedication');
-  }
-
-  return gained;
 }
 
 function getLeaderboard(limit = 10) {
@@ -136,6 +120,7 @@ module.exports = {
   getUser,
   updateUser,
   addPoints,
+  recordParticipation,
   addWin,
   getLeaderboard,
   getUserRank,

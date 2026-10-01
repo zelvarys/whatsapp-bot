@@ -5,7 +5,6 @@ const dataDir = path.join(__dirname, '../../data');
 const userProfilesPath = path.join(dataDir, 'user_profiles.json');
 const gameStatisticsPath = path.join(dataDir, 'game_statistics.json');
 const botSettingsPath = path.join(dataDir, 'bot_settings.json');
-const commandCachePath = path.join(dataDir, 'command_cache.json');
 
 // Content files (static, committed)
 const contentDir = path.join(__dirname, '../../content');
@@ -18,24 +17,14 @@ const botVersion = '2.0';
 const maxAiResponseLength = 4000;
 const aiCooldownTime = 10000;
 const summaryMaxMessages = 50;
-const ttsMaxLength = 300;
-const maxFileSize = 15 * 1024 * 1024;
+const ttsMaxLength = 200;
 
 const commandCooldown = 2000;
-const commandCacheTtl = 300000;
 const messageIdTtl = 30 * 60 * 1000;
 
 const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/;
 const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com|vt\.tiktok\.com|vm\.tiktok\.com)\/.+/i;
 const facebookRegex = /(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.watch)\/.+/i;
-
-const linkPatterns = [
-  /https?:\/\/(?:www\.)?[^\s]+\.[a-z]{2,}(?:\/[^\s]*)?/gi,
-  /www\.[^\s]+\.[a-z]{2,}(?:\/[^\s]*)?/gi,
-  /bit\.ly\/[^\s]+/gi,
-  /t\.me\/[^\s]+/gi,
-  /wa\.me\/[^\s]+/gi
-];
 
 const cryptoApiUrl = 'https://api.coingecko.com/api/v3/simple/price';
 const supportedCryptos = [
@@ -50,12 +39,10 @@ const supportedCryptos = [
 
 const gameSettings = {
   guessMaxAttempts: 7,
-  triviaMaxAttempts: 5,
   scrambleMaxAttempts: 5,
   riddleMaxAttempts: 5,
   flagMaxAttempts: 3,
-  hangmanMaxWrong: 6,
-  tictactoeTimeLimit: 120
+  hangmanMaxWrong: 6
 };
 
 // Lobby-based multiplayer settings
@@ -84,30 +71,14 @@ const commandReactions = {
   story: '✍️',
   translate: '💬',
   summary: '💬',
-  tts: null,
-  chatbot: null,
-  mood: null,
 
   reveal: '🔍',
   compress: '📥',
   sticker: '💟',
-  qrcode: null,
-  delete: null,
   define: '🔍',
-  weather: null,
 
-  profile: null,
-  leaderboard: null,
-  register: null,
   crypto: '🪙',
   feedback: '💬',
-
-  games: null,
-  game: null,
-  tictactoe: null,
-  hangman: null,
-  bombshell: null,
-  cluster: null,
 
   song: '🔍',
   download: '📥',
@@ -115,15 +86,7 @@ const commandReactions = {
   tiktok: '📥',
   facebook: '📥',
 
-  broadcast: '🔊',
-  groups: null,
-  mode: null,
-  restart: null,
-
-  owner: null,
-  help: null,
-  ping: null,
-  stats: null
+  broadcast: '🔊'
 };
 
 module.exports = {
@@ -131,7 +94,6 @@ module.exports = {
   userProfilesPath,
   gameStatisticsPath,
   botSettingsPath,
-  commandCachePath,
   contentDir,
   botImagePath,
   botVersion,
@@ -139,14 +101,11 @@ module.exports = {
   aiCooldownTime,
   summaryMaxMessages,
   ttsMaxLength,
-  maxFileSize,
   commandCooldown,
-  commandCacheTtl,
   messageIdTtl,
   youtubeRegex,
   tiktokRegex,
   facebookRegex,
-  linkPatterns,
   cryptoApiUrl,
   supportedCryptos,
   gameSettings,

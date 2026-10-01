@@ -1,14 +1,22 @@
 const config = require('../config');
 const repo = require('./jsonRepository');
 
-// Combined bot state: public/private mode, chatbot on/off, and per-group AI moods.
-// Persisted to BOT_SETTINGS_PATH.
+// Combined bot state: public/private mode, chatbot on/off, and per-group
+// AI moods. Persisted to config.botSettingsPath.
+//
 // Shape:
 //   {
 //     mode: 'public' | 'private',
 //     chatbot: boolean,
 //     groupMoods: { "<groupJid>": "roast" | "chill" }
 //   }
+
+function ensureMoods() {
+  if (!global.groupMoods || typeof global.groupMoods !== 'object') {
+    global.groupMoods = {};
+  }
+  return global.groupMoods;
+}
 
 function load() {
   const data = repo.readJson(config.botSettingsPath, null);
@@ -32,7 +40,7 @@ function save() {
   repo.writeJson(config.botSettingsPath, {
     mode: global.botMode,
     chatbot: global.chatbotState,
-    groupMoods: global.groupMoods || {}
+    groupMoods: ensureMoods()
   });
 }
 
@@ -59,15 +67,14 @@ function isChatbotEnabled() {
 function getMood(chatJid) {
   if (!chatJid) return config.defaultMood;
   if (!chatJid.endsWith('@g.us')) return 'chill';
-  return (global.groupMoods && global.groupMoods[chatJid]) || config.defaultMood;
+  return ensureMoods()[chatJid] || config.defaultMood;
 }
 
 function setMood(chatJid, mood) {
   if (!chatJid.endsWith('@g.us')) return false;
   if (!config.moods.includes(mood)) return false;
 
-  if (!global.groupMoods) global.groupMoods = {};
-  global.groupMoods[chatJid] = mood;
+  ensureMoods()[chatJid] = mood;
   save();
   return true;
 }
