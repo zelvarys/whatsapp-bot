@@ -9,9 +9,9 @@ function buildHelpText() {
   return `⨳
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
-▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
+▸ *Dev:* Iм̶n̶c̶o̶g̶n̶i̶t̶o̶彡︎к᥀︎
 
-╔═══════ ∘◦ ✧ ◦∘ ═══════╗
+╔════════ ⊘◰ ✧ ◰⊘ ════════╗
 
 ┌─⊶ *1. AI & CREATIVE*
 │• ask <question>
@@ -21,25 +21,24 @@ function buildHelpText() {
 │• story <prompt>
 │• tts <text>
 │• mood chill/roast
-└────────────⊶
+└─────────────⊶
 
 ┌─⊶ *2. GAMES & FUN*
 │• game <type>
 │• games
-│• bombshell 
-│• hotseat
+│• bombshell
+│• cluster
 │• ttt start @friend
-└────────────⊶
+└─────────────⊶
 
 ┌─⊶ *3. UTILITY TOOLS*
 │• define <word>
 │• compress
 │• sticker
-│• pdf image/text
 │• qrcode <text>
 │• reveal
 │• weather <city>
-└────────────⊶
+└─────────────⊶
 
 ┌─⊶ *4. USER SYSTEM*
 │• profile
@@ -47,7 +46,7 @@ function buildHelpText() {
 │• register <name>
 │• crypto <coin>
 │• feedback
-└────────────⊶
+└─────────────⊶
 
 ┌─⊶ *5. MEDIA DOWNLOAD*
 │• download
@@ -55,14 +54,14 @@ function buildHelpText() {
 │• youtube
 │• tiktok
 │• facebook
-└────────────⊶
+└─────────────⊶
 
 ┌─⊶ *6. OWNER ONLY*
 │• broadcast
 │• groups
 │• mode <args>
 │• restart
-└────────────⊶
+└─────────────⊶
 
 ┌─⊶ *7. OTHERS*
 │• ping - Bot latency
@@ -70,7 +69,7 @@ function buildHelpText() {
 │• !! - Repeat command
 │• dev - Owner info
 │• help - Show help menu
-└────────────⊶
+└─────────────⊶
 
 ╘═══════════════════╛`;
 }

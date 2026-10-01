@@ -48,11 +48,9 @@ async function handle(sock, msg, sender) {
 
     await sock.sendMessage(sender, {
       sticker: stickerBuffer,
-      stickerInfo: {
-        pack: 'Incognito Bot',
-        author: 'Incognito Bot',
-        keepScale: true,
-        cropPosition: 'center'
+      stickerMetadata: {
+        packName: config.botName,
+        packPublish: config.botName
       }
     }, { quoted: msg });
   } catch (err) {

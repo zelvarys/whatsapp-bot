@@ -1,12 +1,10 @@
 const fs = require('fs');
 const config = require('../config');
-const globalState = require('./globalState');
 const socketConnection = require('./socketConnection');
 const socketEvents = require('./socketEvents');
 const userModel = require('../models/userModel');
 const gameStatsModel = require('../models/gameStatsModel');
 const botState = require('../models/botStateModel');
-const cacheModel = require('../models/cacheModel');
 const housekeeping = require('../utils/housekeepingTasks');
 const state = require('../utils/stateHelpers');
 
@@ -56,7 +54,7 @@ class WhatsAppBot {
   }
 
   ensureDirectories() {
-    const dirs = ['./temp', './data', './auth_info', './logs'];
+    const dirs = ['./temp', './data', './auth_info'];
     for (const dir of dirs) {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -69,7 +67,6 @@ class WhatsAppBot {
     const userCount = userModel.loadAll();
     gameStatsModel.loadAll();
     botState.load();
-    cacheModel.loadAll();
 
     console.log(`Loaded user data for ${userCount} users ✅`);
     console.log(`Bot mode: ${global.botMode.toUpperCase()}`);
@@ -85,6 +82,8 @@ class WhatsAppBot {
     socketEvents.attach(sock, this, saveCreds);
   }
 
+  // Wraps sendMessage so every outbound message ID is recorded. The
+  // delete command and the "reply to bot" detector rely on this.
   wrapSendMessage(sock) {
     const original = sock.sendMessage.bind(sock);
 
@@ -92,7 +91,7 @@ class WhatsAppBot {
       try {
         const sent = await original(jid, content, options);
         if (sent && sent.key && sent.key.id) {
-          state.trackBotMessage(sent.key.id, jid, options);
+          state.trackBotMessage(sent.key.id);
         }
         return sent;
       } catch (err) {
