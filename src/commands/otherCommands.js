@@ -9,67 +9,67 @@ function buildHelpText() {
   return `⨳
 ▸ *Mode:* ${global.botMode}
 ▸ *Prefix:* ${config.prefix}
-▸ *Dev:* Iм̶n̶c̶o̶g̶n̶i̶t̶o̶彡︎к᥀︎
+▸ *Dev:* I̶n̶c̶o̶g̶n̶i̶t̶o̶シ︎ꨄ︎
 
-╔════════ ⊘◰ ✧ ◰⊘ ════════╗
+╔═══════ ∘◦ ✧ ◦∘ ═══════╗
 
-┌─⊶ *1. AI & CREATIVE*
+┌─⊶ *AI & CREATIVE*
+│• summary
 │• ask <question>
 │• chatbot on/off
-│• summary <num>
-│• translate
 │• story <prompt>
+│• translate
 │• tts <text>
 │• mood chill/roast
-└─────────────⊶
+└────────────⊶
 
-┌─⊶ *2. GAMES & FUN*
+┌─⊶ *GAMES & FUN*
 │• game <type>
 │• games
 │• bombshell
 │• cluster
-│• ttt start @friend
-└─────────────⊶
+│• ttt start @tag
+└────────────⊶
 
-┌─⊶ *3. UTILITY TOOLS*
+┌─⊶ *UTILITY TOOLS*
+│• qr <text>
+│• weather <city>
+│• sticker
+│• reveal
 │• define <word>
 │• compress
-│• sticker
-│• qrcode <text>
-│• reveal
-│• weather <city>
-└─────────────⊶
+└────────────⊶
 
-┌─⊶ *4. USER SYSTEM*
-│• profile
+┌─⊶ *USER SYSTEM*
 │• leaderboard
+│• profile
 │• register <name>
 │• crypto <coin>
 │• feedback
-└─────────────⊶
+└────────────⊶
 
-┌─⊶ *5. MEDIA DOWNLOAD*
+┌─⊶ *MEDIA DOWNLOAD*
 │• download
 │• song <name/url>
 │• youtube
 │• tiktok
 │• facebook
-└─────────────⊶
+└────────────⊶
 
-┌─⊶ *6. OWNER ONLY*
+┌─⊶ *OWNER ONLY*
 │• broadcast
 │• groups
 │• mode <args>
 │• restart
-└─────────────⊶
+└────────────⊶
 
-┌─⊶ *7. OTHERS*
+┌─⊶ *OTHERS*
 │• ping - Bot latency
 │• stats - Bot statistics
 │• !! - Repeat command
 │• dev - Owner info
 │• help - Show help menu
-└─────────────⊶
+└────────────⊶
 
 ╘═══════════════════╛`;
 }
