@@ -299,7 +299,7 @@ async function mood(sock, msg, sender, userJid, args) {
   }
 
   await sock.sendMessage(sender, {
-    text: `✅ This group's AI mood is now ${describeMood(selected)}`
+    text: `This group's AI mood is now ${describeMood(selected)}`
   }, { quoted: msg });
 }
 
